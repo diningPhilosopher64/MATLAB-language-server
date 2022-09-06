@@ -66,6 +66,10 @@ class Logger {
         this._writeToLogFile(msg)
     }
 
+    public get logDir (): string {
+        return this._logDir
+    }
+
     private _writeToLogFile (message: string): void {
         // Log to file
         fs.writeFile(
