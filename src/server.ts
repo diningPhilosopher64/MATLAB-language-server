@@ -3,6 +3,7 @@ import { createConnection, InitializeResult, ProposedFeatures, TextDocuments } f
 import ArgumentManager, { Argument } from './lifecycle/ArgumentManager'
 import MatlabLifecycleManager, { ConnectionTiming } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
+import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import { getCliArgs } from './utils/CliUtils'
 
 // Create a connection for the server
@@ -33,7 +34,7 @@ connection.onInitialize(() => {
     // Defines the capabilities supported by this language server
     const initResult: InitializeResult = {
         capabilities: {
-            // Will be populated as features are added
+            documentFormattingProvider: true
         }
     }
 
@@ -61,6 +62,11 @@ connection.onNotification('matlab/updateConnection', (data: { connectionAction: 
     } else if (data.connectionAction === 'disconnect') {
         MatlabLifecycleManager.disconnectFromMatlab()
     }
+})
+
+/** -------------------- FORMATTING SUPPORT -------------------- **/
+connection.onDocumentFormatting(async params => {
+    return await FormatSupportProvider.handleDocumentFormatRequest(params, documentManager, connection)
 })
 
 // Start listening to open/change/close text document events
