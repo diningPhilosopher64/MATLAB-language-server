@@ -1,8 +1,9 @@
 classdef MatlabLanguageServerHelper < handle
-    % Class for managing the MATLAB-side operations which support the MATLAB
-    % Language Server.
+    % MATLABLANGUAGESERVERHELPER Class for managing the MATLAB-side operations
+    % which support the MATLAB Language Server.
+
     properties
-        CommManager
+        CommManager (1,:) matlabls.helpers.CommunicationManager
         FeatureHandlers = {}
     end
 
