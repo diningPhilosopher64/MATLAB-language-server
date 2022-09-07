@@ -9,6 +9,7 @@ classdef MatlabLanguageServerHelper < handle
     methods
         function this = MatlabLanguageServerHelper ()
             this.CommManager = matlabls.helpers.CommunicationManager();
+            this.initializeFeatureHandlers()
         end
 
         function close (this)
@@ -24,7 +25,8 @@ classdef MatlabLanguageServerHelper < handle
 
     methods (Access = private)
         function initializeFeatureHandlers (this)
-            % TODO: Add feature handlers here
+            % Initialize all supported feature handlers
+            this.FeatureHandlers{end + 1} = matlabls.handlers.FormatSupportHandler(this.CommManager);
         end
     end
 end
