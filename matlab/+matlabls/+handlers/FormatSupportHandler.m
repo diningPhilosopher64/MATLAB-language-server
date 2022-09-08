@@ -10,7 +10,7 @@ classdef FormatSupportHandler < matlabls.handlers.AbstractFeatureHandler
     methods
         function this = FormatSupportHandler (commManager)
             this = this@matlabls.handlers.AbstractFeatureHandler(commManager);
-            this.RequestSubscription = this.CommManager.subscribe(this.RequestChannel, @this.handleFormatRequest);
+            this.RequestSubscriptions = this.CommManager.subscribe(this.RequestChannel, @this.handleFormatRequest);
         end
     end
 

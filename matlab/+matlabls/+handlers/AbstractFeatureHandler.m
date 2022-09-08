@@ -2,8 +2,8 @@ classdef AbstractFeatureHandler < handle
     %ABSTRACTFEATUREHANDLER Serves as the base class for all feature handlers.
 
     properties
-        CommManager (1,:) matlabls.helpers.CommunicationManager
-        RequestSubscription
+        CommManager (1,1) matlabls.helpers.CommunicationManager
+        RequestSubscriptions (1,:) uint64 % Holds references to subscriptions
     end
 
     methods
@@ -12,7 +12,7 @@ classdef AbstractFeatureHandler < handle
         end
 
         function close (this)
-            this.CommManager.unsubscribe(this.RequestSubscription)
+            arrayfun(@(subRef) this.CommManager.unsubscribe(subRef), this.RequestSubscriptions)
         end
 
         function destroy (this)
