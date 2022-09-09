@@ -27,6 +27,7 @@ classdef MatlabLanguageServerHelper < handle
         function initializeFeatureHandlers (this)
             % Initialize all supported feature handlers
             this.FeatureHandlers{end + 1} = matlabls.handlers.FormatSupportHandler(this.CommManager);
+            this.FeatureHandlers{end + 1} = matlabls.handlers.LintingSupportHandler(this.CommManager);
         end
     end
 end
