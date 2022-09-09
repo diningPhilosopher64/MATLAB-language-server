@@ -4,6 +4,8 @@ import ArgumentManager, { Argument } from './lifecycle/ArgumentManager'
 import MatlabLifecycleManager, { ConnectionTiming } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
+import LintingSupportProvider from './providers/linting/LintingSupportProvider'
+import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
 import { getCliArgs } from './utils/CliUtils'
 
 // Create a connection for the server
@@ -25,7 +27,10 @@ MatlabLifecycleManager.addMatlabLifecycleListener((error, lifecycleEvent) => {
     }
 
     if (lifecycleEvent.matlabStatus === 'connected') {
-        // TODO: Handle things after MATLAB has launched
+        // Handle things after MATLAB has launched
+        documentManager.all().forEach(textDocument => {
+            void LintingSupportProvider.lintDocument(textDocument, connection)
+        })
     }
 })
 
@@ -34,7 +39,11 @@ connection.onInitialize(() => {
     // Defines the capabilities supported by this language server
     const initResult: InitializeResult = {
         capabilities: {
-            documentFormattingProvider: true
+            codeActionProvider: true,
+            documentFormattingProvider: true,
+            executeCommandProvider: {
+                commands: Object.values(MatlabLSCommands)
+            }
         }
     }
 
@@ -64,9 +73,37 @@ connection.onNotification('matlab/updateConnection', (data: { connectionAction: 
     }
 })
 
+// Handles files opened
+documentManager.onDidOpen(params => {
+    void LintingSupportProvider.lintDocument(params.document, connection)
+})
+
+// Handles files saved
+documentManager.onDidSave(params => {
+    void LintingSupportProvider.lintDocument(params.document, connection)
+})
+
+// Handles changes to the text document
+documentManager.onDidChangeContent(params => {
+    if (MatlabLifecycleManager.isMatlabReady()) {
+        // Only want to lint on content changes when linting is being backed by MATLAB
+        LintingSupportProvider.queueLintingForDocument(params.document, connection)
+    }
+})
+
+// Handle execute command requests
+connection.onExecuteCommand(params => {
+    void ExecuteCommandProvider.handleExecuteCommand(params, documentManager, connection)
+})
+
 /** -------------------- FORMATTING SUPPORT -------------------- **/
 connection.onDocumentFormatting(async params => {
     return await FormatSupportProvider.handleDocumentFormatRequest(params, documentManager, connection)
+})
+
+/** --------------------  LINTING SUPPORT   -------------------- **/
+connection.onCodeAction(params => {
+    return LintingSupportProvider.handleCodeActionRequest(params)
 })
 
 // Start listening to open/change/close text document events

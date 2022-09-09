@@ -22,6 +22,7 @@
   "license": "BSD-3-Clause",
   "devDependencies": {
     "@types/node": "^18.7.14",
+    "@types/which": "^2.0.1",
     "@types/yargs": "^17.0.12",
     "@typescript-eslint/eslint-plugin": "^5.36.1",
     "@typescript-eslint/parser": "^5.36.1",
@@ -41,6 +42,7 @@
     "vscode-languageserver": "^8.0.2",
     "vscode-languageserver-textdocument": "^1.0.5",
     "vscode-uri": "^3.0.3",
+    "which": "^2.0.2",
     "yargs": "^17.5.1"
   }
 }
