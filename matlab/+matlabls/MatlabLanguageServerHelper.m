@@ -1,4 +1,4 @@
-classdef MatlabLanguageServerHelper < handle
+classdef (Hidden) MatlabLanguageServerHelper < handle
     % MATLABLANGUAGESERVERHELPER Class for managing the MATLAB-side operations
     % which support the MATLAB Language Server.
 
@@ -13,9 +13,7 @@ classdef MatlabLanguageServerHelper < handle
         end
 
         function close (this)
-            for idx = 1:length(this.FeatureHandlers)
-                this.FeatureHandlers{idx}.close()
-            end
+            cellfun(@(handler) handler.close(), this.FeatureHandlers)
         end
 
         function delete (this)
