@@ -1,11 +1,12 @@
 import * as yargs from 'yargs'
+import { Argument } from '../lifecycle/ArgumentManager'
 
 export interface CliArgs {
-    matlabLaunchCommandArgs?: string
-    matlabCertDir?: string
-    matlabInstallPath?: string
-    matlabConnectionTiming?: string
-    matlabUrl?: string
+    [Argument.MatlabLaunchCommandArguments]?: string
+    [Argument.MatlabCertificateDirectory]?: string
+    [Argument.MatlabInstallationPath]?: string
+    [Argument.MatlabConnectionTiming]?: string
+    [Argument.MatlabUrl]?: string
 }
 
 /**
@@ -14,23 +15,23 @@ export interface CliArgs {
  * @returns The parsed command line arguments
  */
 function makeParser (): yargs.Argv<CliArgs> {
-    const argParser = yargs.option('matlabLaunchCommandArgs', {
+    const argParser = yargs.option(Argument.MatlabLaunchCommandArguments, {
         description: 'Arguments passed to MATLAB when launching',
         type: 'string',
         requiresArg: true
-    }).option('matlabCertDir', {
+    }).option(Argument.MatlabCertificateDirectory, {
         description: 'Location at which to look for a MATLAB certificate',
         type: 'string'
-    }).option('matlabInstallPath', {
+    }).option(Argument.MatlabInstallationPath, {
         description: 'The full path to the top-level directory of the MATLAB installation. If not specified, the environment path will be checked for the location of the `matlab` executable.',
         type: 'string',
         default: ''
-    }).option('matlabConnectionTiming', {
+    }).option(Argument.MatlabConnectionTiming, {
         description: 'When the language server should attempt to connect to MATLAB.',
         type: 'string',
         default: 'early',
         choices: ['early', 'late', 'never']
-    }).option('matlabUrl', {
+    }).option(Argument.MatlabUrl, {
         type: 'string',
         description: 'URL for communicating with an existing MATLAB instance',
         requiresArg: true

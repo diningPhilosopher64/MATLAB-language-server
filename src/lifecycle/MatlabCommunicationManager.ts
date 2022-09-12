@@ -4,6 +4,8 @@ import * as net from 'net'
 import * as os from 'os'
 import * as path from 'path'
 
+// Faye does not provide a @types package, so the older style
+// `require` is needed.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const Faye = require('faye')
 
@@ -35,10 +37,10 @@ class MatlabCommunicationManager {
      * @returns Information about the new MATLAB process and the connection to it.
      */
     async connectToNewMatlab (launchCommand: string, logDirectory: string, certificateDirectory?: string): Promise<MatlabProcessInfo> {
-        const tempDir = certificateDirectory ?? await fs.mkdtemp(path.join(os.tmpdir(), 'matlablsTmp-'))
+        const certDir = certificateDirectory ?? await fs.mkdtemp(path.join(os.tmpdir(), 'matlablsTmp-'))
         const port = await this._getAvailablePort()
-        const certFile = path.join(tempDir, 'cert.pem')
-        const pkeyFile = path.join(tempDir, 'pkey.p12')
+        const certFile = path.join(certDir, 'cert.pem')
+        const pkeyFile = path.join(certDir, 'pkey.p12')
         const apiKey = this._makeApiKey()
 
         // Spawn new instance of MATLAB
@@ -184,6 +186,11 @@ export abstract class MatlabConnection {
         this._lifecycleCallback?.(LifecycleEventType.DISCONNECTED)
     }
 
+    protected setupConnectionCallbacks (): void {
+        this._client.on('transport:up', this.onConnectionSuccess.bind(this))
+        this._client.on('transport:down', this.onConnectionFailure.bind(this))
+    }
+
     /**
      * Prepends a channel name with '/matlab' as expected by MATLAB
      *
@@ -220,8 +227,7 @@ class LocalMatlabConnection extends MatlabConnection {
         this._client.setHeader('mwapikey', this._apiKey)
 
         // Set callbacks for the connection status
-        this._client.on('transport:up', this.onConnectionSuccess.bind(this))
-        this._client.on('transport:down', this.onConnectionFailure.bind(this))
+        this.setupConnectionCallbacks()
     }
 }
 
@@ -242,8 +248,7 @@ class RemoteMatlabConnection extends MatlabConnection {
         this._client = new Faye.Client(this._url)
 
         // Set callbacks for the connection status
-        this._client.on('transport:up', this.onConnectionSuccess.bind(this))
-        this._client.on('transport:down', this.onConnectionFailure.bind(this))
+        this.setupConnectionCallbacks()
 
         // Publish dummy message to kickstart connection. This will cause the success/failure
         // callbacks above to be called.

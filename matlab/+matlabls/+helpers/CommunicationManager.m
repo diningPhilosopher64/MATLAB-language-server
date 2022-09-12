@@ -1,4 +1,4 @@
-classdef CommunicationManager < handle
+classdef (Hidden) CommunicationManager < handle
     % COMMUNICATIONMANAGER Class for facilitating communication between the MATLAB Language
     % Server and the MATLAB application.
 
