@@ -1,4 +1,4 @@
-classdef LintingSupportHandler < matlabls.handlers.AbstractFeatureHandler
+classdef (Hidden) LintingSupportHandler < matlabls.handlers.AbstractFeatureHandler
     % LINTINGSUPPORTHANDLER The feature handler for linting MATLAB code.
 
     properties (Access = private)

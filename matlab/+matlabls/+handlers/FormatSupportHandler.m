@@ -1,4 +1,4 @@
-classdef FormatSupportHandler < matlabls.handlers.AbstractFeatureHandler
+classdef (Hidden) FormatSupportHandler < matlabls.handlers.AbstractFeatureHandler
     % FORMATSUPPORTHANDLER The feature handler for the "Format Document" feature.
     % In the future, this may be expanded to include the "Format Selection" feature as well.
 
