@@ -4,7 +4,7 @@ classdef (Hidden) MatlabLanguageServerHelper < handle
 
     properties
         CommManager (1,1) matlabls.helpers.CommunicationManager
-        FeatureHandlers (1,:) = {}
+        FeatureHandlers (1,:) matlabls.handlers.FeatureHandler
     end
 
     methods
@@ -14,7 +14,7 @@ classdef (Hidden) MatlabLanguageServerHelper < handle
         end
 
         function close (this)
-            cellfun(@(handler) handler.close(), this.FeatureHandlers)
+            arrayfun(@(handler) handler.close(), this.FeatureHandlers)
         end
 
         function delete (this)
@@ -25,8 +25,8 @@ classdef (Hidden) MatlabLanguageServerHelper < handle
     methods (Access = private)
         function initializeFeatureHandlers (this)
             % Initialize all supported feature handlers
-            this.FeatureHandlers{end + 1} = matlabls.handlers.FormatSupportHandler(this.CommManager);
-            this.FeatureHandlers{end + 1} = matlabls.handlers.LintingSupportHandler(this.CommManager);
+            this.FeatureHandlers(end + 1) = matlabls.handlers.FormatSupportHandler(this.CommManager);
+            this.FeatureHandlers(end + 1) = matlabls.handlers.LintingSupportHandler(this.CommManager);
         end
     end
 end
