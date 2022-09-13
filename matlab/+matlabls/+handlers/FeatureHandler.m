@@ -1,4 +1,4 @@
-classdef (Hidden) FeatureHandler < handle
+classdef (Hidden) FeatureHandler < matlab.mixin.Heterogeneous & handle
     %FEATUREHANDLER Serves as the base class for all feature handlers.
 
     properties
