@@ -1,4 +1,4 @@
-classdef (Hidden) FormatSupportHandler < matlabls.handlers.AbstractFeatureHandler
+classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
     % FORMATSUPPORTHANDLER The feature handler for the "Format Document" feature.
     % In the future, this may be expanded to include the "Format Selection" feature as well.
 
@@ -9,7 +9,7 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.AbstractFeatureHandle
 
     methods
         function this = FormatSupportHandler (commManager)
-            this = this@matlabls.handlers.AbstractFeatureHandler(commManager);
+            this = this@matlabls.handlers.FeatureHandler(commManager);
             this.RequestSubscriptions = this.CommManager.subscribe(this.RequestChannel, @this.handleFormatRequest);
         end
     end

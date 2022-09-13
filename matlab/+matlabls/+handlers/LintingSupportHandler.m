@@ -1,4 +1,4 @@
-classdef (Hidden) LintingSupportHandler < matlabls.handlers.AbstractFeatureHandler
+classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
     % LINTINGSUPPORTHANDLER The feature handler for linting MATLAB code.
 
     properties (Access = private)
@@ -11,7 +11,7 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.AbstractFeatureHandl
 
     methods
         function this = LintingSupportHandler (commManager)
-            this = this@matlabls.handlers.AbstractFeatureHandler(commManager);
+            this = this@matlabls.handlers.FeatureHandler(commManager);
             this.RequestSubscriptions(1) = this.CommManager.subscribe(this.LintingRequestChannel, @this.handleLintingRequest);
             this.RequestSubscriptions(2) = this.CommManager.subscribe(this.EndStatementRequestChannel, @this.handleEndStatementRequest);
         end
