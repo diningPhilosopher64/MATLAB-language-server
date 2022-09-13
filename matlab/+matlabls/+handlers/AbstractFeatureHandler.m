@@ -1,4 +1,4 @@
-classdef AbstractFeatureHandler < handle
+classdef (Hidden) AbstractFeatureHandler < handle
     %ABSTRACTFEATUREHANDLER Serves as the base class for all feature handlers.
 
     properties
