@@ -1,5 +1,5 @@
-classdef (Hidden) AbstractFeatureHandler < handle
-    %ABSTRACTFEATUREHANDLER Serves as the base class for all feature handlers.
+classdef (Hidden) FeatureHandler < handle
+    %FEATUREHANDLER Serves as the base class for all feature handlers.
 
     properties
         CommManager (1,1) matlabls.helpers.CommunicationManager
@@ -7,7 +7,7 @@ classdef (Hidden) AbstractFeatureHandler < handle
     end
 
     methods
-        function this = AbstractFeatureHandler (commManager)
+        function this = FeatureHandler (commManager)
             this.CommManager = commManager;
         end
 

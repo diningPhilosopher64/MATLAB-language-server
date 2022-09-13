@@ -12,7 +12,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
  */
 export function getRangeUntilLineEnd (doc: TextDocument, line: number, char: number): Range {
     const lineText = getTextOnLine(doc, line)
-    return Range.create(line, char, line, Math.max(lineText.length, 0))
+    return Range.create(line, char, line, lineText.length)
 }
 
 /**
