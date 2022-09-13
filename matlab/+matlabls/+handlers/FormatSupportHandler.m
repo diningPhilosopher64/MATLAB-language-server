@@ -18,7 +18,7 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
         function handleFormatRequest (this, msg)
             % Handles format document requests
             codeToFormat = msg.data;
-            response.data = indentcode(codeToFormat, 'matlab');
+            response.data = indentcode(codeToFormat, 'matlab'); % This will pull from the user's MATLAB settings.
             this.CommManager.publish(this.ResponseChannel, response)
         end
     end
