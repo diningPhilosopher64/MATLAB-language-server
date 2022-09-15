@@ -39,8 +39,8 @@ const FIX_CHANGE_REGEX = /----CHANGE MESSAGE L (\d+) \(C (\d+)\);\s+L (\d+) \(C 
 class LintingSupportProvider {
     private readonly LINTING_REQUEST_CHANNEL = '/matlabls/linting/request'
     private readonly LINTING_RESPONSE_CHANNEL = '/matlabls/linting/response'
-    private readonly END_STATEMENT_REQUEST_CHANNEL = '/matlabls/linting/endstatement/request'
-    private readonly END_STATEMENT_RESPONSE_CHANNEL = '/matlabls/linting/endstatement/response'
+    private readonly END_STATEMENT_REQUEST_CHANNEL = '/matlabls/linting/findstatementend/request'
+    private readonly END_STATEMENT_RESPONSE_CHANNEL = '/matlabls/linting/findstatementend/response'
 
     private readonly SEVERITY_MAP = {
         0: DiagnosticSeverity.Warning,
@@ -86,13 +86,13 @@ class LintingSupportProvider {
         const matlabConnection = MatlabLifecycleManager.getMatlabConnection()
         const isMatlabAvailable = (matlabConnection != null) && MatlabLifecycleManager.isMatlabReady()
 
-        const code = textDocument.getText()
         const fileName = URI.parse(uri).fsPath
 
         let lintData: string[] = []
 
         if (isMatlabAvailable) {
             // Use MATLAB-based linting for better results and fixes
+            const code = textDocument.getText()
             lintData = await this.getLintResultsFromMatlab(code, fileName, matlabConnection)
         } else {
             // Try to use mlint executable for basic linting
@@ -121,23 +121,20 @@ class LintingSupportProvider {
         const uri = params.textDocument.uri
         const actions = this._availableCodeActions.get(uri) ?? []
 
-        let result = [...actions]
+        let codeActions = [...actions]
 
-        // Filter to actions on the lines provided. Either the diagnostic or
-        // param range must contain the edits.
-        result = result.filter(action => {
+        // Filter to find unique diagnostics
+        codeActions = codeActions.filter(action => {
             const diagnostic = action.diagnostics?.[0]
             if (diagnostic == null) {
                 return false
             }
-            return params.context.diagnostics.reduce<boolean>((prev: boolean, diag: Diagnostic) => {
-                return prev || this.isSameDiagnostic(diagnostic, diag)
-            }, false)
+            return params.context.diagnostics.some(diag => this.isSameDiagnostic(diagnostic, diag))
         })
 
         if (!MatlabLifecycleManager.isMatlabReady()) {
             // Cannot filter wanrings without MATLAB
-            return result
+            return codeActions
         }
 
         // Add filter commands
@@ -175,10 +172,10 @@ class LintingSupportProvider {
         })
 
         commands.forEach(command => {
-            result.push(CodeAction.create(command.title, command, CodeActionKind.QuickFix))
+            codeActions.push(CodeAction.create(command.title, command, CodeActionKind.QuickFix))
         })
 
-        return result
+        return codeActions
     }
 
     /**

@@ -5,15 +5,15 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
         LintingRequestChannel = '/matlabls/linting/request'
         LintingResponseChannel = '/matlabls/linting/response'
 
-        EndStatementRequestChannel = '/matlabls/linting/endstatement/request'
-        EndStatementResponseChannel = '/matlabls/linting/endstatement/response'
+        FindStatementEndRequestChannel = '/matlabls/linting/findstatementend/request'
+        FindStatementEndResponseChannel = '/matlabls/linting/findstatementend/response'
     end
 
     methods
         function this = LintingSupportHandler (commManager)
             this = this@matlabls.handlers.FeatureHandler(commManager);
             this.RequestSubscriptions(1) = this.CommManager.subscribe(this.LintingRequestChannel, @this.handleLintingRequest);
-            this.RequestSubscriptions(2) = this.CommManager.subscribe(this.EndStatementRequestChannel, @this.handleEndStatementRequest);
+            this.RequestSubscriptions(2) = this.CommManager.subscribe(this.FindStatementEndRequestChannel, @this.handleFindStatementEndRequest);
         end
     end
 
@@ -31,7 +31,7 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
             this.CommManager.publish(this.LintingResponseChannel, response)
         end
 
-        function handleEndStatementRequest (this, msg)
+        function handleFindStatementEndRequest (this, msg)
             % For the provided code, find the last line (1-based) of the
             % statement containing the provided line number (1-based).
             % For example, takes into account line continuations (...).
@@ -44,7 +44,7 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
 
             response.lineNumber = matlabls.helpers.findStatementEndLine(code, lineNumber);
 
-            this.CommManager.publish(this.EndStatementResponseChannel, response)
+            this.CommManager.publish(this.FindStatementEndResponseChannel, response)
         end
     end
 end
