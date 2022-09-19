@@ -36,7 +36,7 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
             % statement containing the provided line number (1-based).
             % For example, takes into account line continuations (...).
             %
-            % This is used to determine where linting filters ("%#ok<...>")
+            % This is used to determine where linting suppressions ("%#ok<...>")
             % should be inserted.
 
             code = msg.code;

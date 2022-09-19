@@ -2,15 +2,15 @@ import { ExecuteCommandParams, Range, TextDocumentEdit, TextDocuments, Versioned
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import LintingSupportProvider from '../linting/LintingSupportProvider'
 
-interface LintFilterArgs {
+interface LintSuppressionArgs {
     id: string
     range: Range
     uri: string
 }
 
 export const MatlabLSCommands = {
-    MLINT_FILTER_LINE: 'matlabls.lint.filter.line',
-    MLINT_FILTER_FILE: 'matlabls.lint.filter.file'
+    MLINT_SUPPRESS_ON_LINE: 'matlabls.lint.suppress.line',
+    MLINT_SUPPRESS_IN_FILE: 'matlabls.lint.suppress.file'
 }
 
 /**
@@ -26,21 +26,21 @@ class ExecuteCommandProvider {
      */
     async handleExecuteCommand (params: ExecuteCommandParams, documentManager: TextDocuments<TextDocument>, connection: _Connection): Promise<void> {
         switch (params.command) {
-            case MatlabLSCommands.MLINT_FILTER_LINE:
-            case MatlabLSCommands.MLINT_FILTER_FILE:
-                void this.handleLintingFilter(params, documentManager, connection)
+            case MatlabLSCommands.MLINT_SUPPRESS_ON_LINE:
+            case MatlabLSCommands.MLINT_SUPPRESS_IN_FILE:
+                void this.handleLintingSuppression(params, documentManager, connection)
         }
     }
 
     /**
-     * Handles command to filter a linting diagnostic.
+     * Handles command to suppress a linting diagnostic.
      *
      * @param params Parameters from the onExecuteCommand request
      * @param documentManager The text document manager
      * @param connection The language server connection
      */
-    private async handleLintingFilter (params: ExecuteCommandParams, documentManager: TextDocuments<TextDocument>, connection: _Connection): Promise<void> {
-        const args = params.arguments?.[0] as LintFilterArgs
+    private async handleLintingSuppression (params: ExecuteCommandParams, documentManager: TextDocuments<TextDocument>, connection: _Connection): Promise<void> {
+        const args = params.arguments?.[0] as LintSuppressionArgs
         const range = args.range
         const uri = args.uri
         const doc = documentManager.get(uri)
@@ -49,8 +49,8 @@ class ExecuteCommandProvider {
             return
         }
 
-        const isFilterFile = params.command === MatlabLSCommands.MLINT_FILTER_FILE
-        const textEdits = await LintingSupportProvider.filterDiagnostic(doc, range, args.id, isFilterFile)
+        const shouldSuppressThroughoutFile = params.command === MatlabLSCommands.MLINT_SUPPRESS_IN_FILE
+        const textEdits = await LintingSupportProvider.suppressDiagnostic(doc, range, args.id, shouldSuppressThroughoutFile)
 
         const edit: WorkspaceEdit = {
             changes: {

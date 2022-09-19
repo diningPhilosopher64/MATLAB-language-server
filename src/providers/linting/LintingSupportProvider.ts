@@ -31,10 +31,10 @@ const FIX_CHANGE_REGEX = /----CHANGE MESSAGE L (\d+) \(C (\d+)\);\s+L (\d+) \(C 
 /**
  * Handles requests for linting-related features.
  * Currently, this handles displaying diagnostics, providing quick-fixes,
- * and filtering diagnostics.
+ * and suppressing diagnostics.
  *
  * Note: When MATLAB is not connected, diagnostics are only updated when
- * the file is saved and filtering is not available.
+ * the file is saved and suppressing warnings is not available.
  */
 class LintingSupportProvider {
     private readonly LINTING_REQUEST_CHANNEL = '/matlabls/linting/request'
@@ -133,25 +133,25 @@ class LintingSupportProvider {
         })
 
         if (!MatlabLifecycleManager.isMatlabReady()) {
-            // Cannot filter wanrings without MATLAB
+            // Cannot suppress wanrings without MATLAB
             return codeActions
         }
 
-        // Add filter commands
+        // Add suppression commands
         const diagnostics = params.context.diagnostics
         const commands: Command[] = []
         diagnostics.forEach(diagnostic => {
-            // Don't allow filtering errors or file/function mismatch
+            // Don't allow suppressing errors or file/function mismatch
             if (diagnostic.severity === DiagnosticSeverity.Error || ['MCFIL', 'FNDEF'].includes(diagnostic.code as string)) {
                 return
             }
 
             const diagnosticCode = diagnostic.code as string
 
-            // Add filter-on-line option
+            // Add suppress-on-line option
             commands.push(Command.create(
-                `Filter message ${diagnosticCode} on this line`,
-                MatlabLSCommands.MLINT_FILTER_LINE,
+                `Suppress message ${diagnosticCode} on this line`,
+                MatlabLSCommands.MLINT_SUPPRESS_ON_LINE,
                 {
                     id: diagnosticCode,
                     range: diagnostic.range,
@@ -159,10 +159,10 @@ class LintingSupportProvider {
                 }
             ))
 
-            // Add filter-in-file option
+            // Add suppress-in-file option
             commands.push(Command.create(
-                `Filter message ${diagnosticCode} in this file`,
-                MatlabLSCommands.MLINT_FILTER_FILE,
+                `Suppress message ${diagnosticCode} in this file`,
+                MatlabLSCommands.MLINT_SUPPRESS_IN_FILE,
                 {
                     id: diagnosticCode,
                     range: diagnostic.range,
@@ -179,14 +179,14 @@ class LintingSupportProvider {
     }
 
     /**
-     * Attempt to filter a diagnostic.
+     * Attempt to suppress a diagnostic.
      *
      * @param textDocument The document
-     * @param range The range of the diagnostic being filtered
+     * @param range The range of the diagnostic being suppress
      * @param id The diagnostic's ID
-     * @param isFilterFile Whether or not to filter the diagnostic throughout the entire file
+     * @param shouldSuppressThroughoutFile Whether or not to suppress the diagnostic throughout the entire file
      */
-    async filterDiagnostic (textDocument: TextDocument, range: Range, id: string, isFilterFile: boolean): Promise<TextEdit[]> {
+    async suppressDiagnostic (textDocument: TextDocument, range: Range, id: string, shouldSuppressThroughoutFile: boolean): Promise<TextEdit[]> {
         const matlabConnection = MatlabLifecycleManager.getMatlabConnection()
         if (matlabConnection == null || !MatlabLifecycleManager.isMatlabReady()) {
             return []
@@ -205,7 +205,7 @@ class LintingSupportProvider {
                 let insertIndex = -1
                 let insertText = ''
 
-                const idText = (isFilterFile ? '*' : '') + id
+                const idText = (shouldSuppressThroughoutFile ? '*' : '') + id
 
                 if (suppressionIndex === -1) {
                     // No suppression already on line
@@ -213,7 +213,7 @@ class LintingSupportProvider {
                         insertText = `${suppressionTextStart}${idText}>`
                         insertIndex = lineText.trimEnd().length + 1
                     } else {
-                        // Insert a space between end of line and filter comment
+                        // Insert a space between end of line and suppression comment
                         insertText = ` ${suppressionTextStart}${idText}>`
                         insertIndex = lineText.trimEnd().length
                     }
@@ -221,7 +221,7 @@ class LintingSupportProvider {
                     // A suppression already exists on this line
                     insertIndex = suppressionIndex + suppressionTextStart.length
 
-                    // Get past all existing IDs being filtered
+                    // Get past all existing IDs being suppressed
                     while (insertIndex < lineText.length && /[*\da-zA-Z,]/.test(lineText[insertIndex])) {
                         insertIndex++
                     }
