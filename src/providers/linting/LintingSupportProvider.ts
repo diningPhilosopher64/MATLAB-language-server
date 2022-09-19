@@ -12,7 +12,7 @@ import which = require('which')
 import { MatlabLSCommands } from '../lspCommands/ExecuteCommandProvider'
 import { connection } from '../../server'
 
-type mlintSeverity = '1' | '2' | '3' | '4' | '5'
+type mlintSeverity = '1' | '2' | '3' | '4'
 
 interface RawLintResults {
     lintData: string[]
