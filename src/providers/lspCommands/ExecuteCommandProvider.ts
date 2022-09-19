@@ -1,4 +1,4 @@
-import { ExecuteCommandParams, Range, TextDocumentEdit, TextDocuments, VersionedTextDocumentIdentifier, WorkspaceEdit, _Connection } from 'vscode-languageserver'
+import { ExecuteCommandParams, Range, TextDocuments, _Connection } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import LintingSupportProvider from '../linting/LintingSupportProvider'
 
@@ -50,21 +50,7 @@ class ExecuteCommandProvider {
         }
 
         const shouldSuppressThroughoutFile = params.command === MatlabLSCommands.MLINT_SUPPRESS_IN_FILE
-        const textEdits = await LintingSupportProvider.suppressDiagnostic(doc, range, args.id, shouldSuppressThroughoutFile)
-
-        const edit: WorkspaceEdit = {
-            changes: {
-                [uri]: textEdits
-            },
-            documentChanges: [
-                TextDocumentEdit.create(
-                    VersionedTextDocumentIdentifier.create(uri, doc.version),
-                    textEdits
-                )
-            ]
-        }
-
-        void connection.workspace.applyEdit(edit)
+        LintingSupportProvider.suppressDiagnostic(doc, range, args.id, shouldSuppressThroughoutFile)
     }
 }
 
