@@ -56,8 +56,7 @@ class LintingSupportProvider {
         1: DiagnosticSeverity.Warning,
         2: DiagnosticSeverity.Error,
         3: DiagnosticSeverity.Error,
-        4: DiagnosticSeverity.Error,
-        5: DiagnosticSeverity.Information
+        4: DiagnosticSeverity.Error
     }
 
     private readonly _pendingFilesToLint = new Map<string, NodeJS.Timer>()
