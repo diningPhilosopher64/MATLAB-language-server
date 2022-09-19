@@ -23,10 +23,18 @@ interface EndLineResults {
 
 const LINT_DELAY = 500 // Delay (in ms) after keystroke before attempting to lint the document
 
+// Lint result parsing constants
 const LINT_MESSAGE_REGEX = /L (\d+) \(C (\d+)-?(\d*)\): ([\dA-Za-z]+): ML(\d): (.*)/
 const FIX_FLAG_REGEX = /\(CAN FIX\)/
 const FIX_MESSAGE_REGEX = /----FIX MESSAGE<\w+>\s+<([^>]*)>/
 const FIX_CHANGE_REGEX = /----CHANGE MESSAGE L (\d+) \(C (\d+)\);\s+L (\d+) \(C (\d+)\):\s+<([^>]*)>/
+
+// Warning suppression constants
+const COMMENT_REGEX = /%.*/
+const PRAGMA_REGEX = /^%#ok<( *\*?[\w.]* *,? *)*>/
+const EMPTY_PRAGMA_REGEX = /%#ok< *>/
+const PRAGMA_START = '%#ok<'
+const PRAGMA_END = '>'
 
 /**
  * Handles requests for linting-related features.
@@ -187,6 +195,67 @@ class LintingSupportProvider {
      * @param shouldSuppressThroughoutFile Whether or not to suppress the diagnostic throughout the entire file
      */
     async suppressDiagnostic (textDocument: TextDocument, range: Range, id: string, shouldSuppressThroughoutFile: boolean): Promise<TextEdit[]> {
+        const matlabConnection = MatlabLifecycleManager.getMatlabConnection()
+        if (matlabConnection == null || !MatlabLifecycleManager.isMatlabReady()) {
+            return []
+        }
+
+        return await new Promise<TextEdit[]>(resolve => {
+            const responseSub = matlabConnection.subscribe(this.END_STATEMENT_RESPONSE_CHANNEL, message => {
+                matlabConnection.unsubscribe(responseSub)
+
+                const lineToSuppress = (message as EndLineResults).lineNumber - 1 ?? range.start.line
+                const fixRange = TextDocumentUtils.getRangeUntilLineEnd(textDocument, lineToSuppress, 0)
+                const lineText = textDocument.getText(fixRange)
+
+                const idText = (shouldSuppressThroughoutFile ? '*' : '') + id
+
+                let insertIndex = -1
+                let insertText = ''
+
+                // Find comment on line, if one exists
+                const commentMatch = lineText.match(COMMENT_REGEX)
+                if (commentMatch == null) {
+                    // Case 1: No comment - insert suppression at end of line
+                    insertIndex = lineText.length
+                    const preWhitespace = lineText.endsWith(' ') ? '' : ' '
+                    insertText = preWhitespace + PRAGMA_START + idText + PRAGMA_END
+                } else {
+                    const pragmaMatch = commentMatch[0].match(PRAGMA_REGEX)
+                    insertIndex = commentMatch.index ?? (lineText.length - commentMatch[0].length)
+                    if (pragmaMatch == null) {
+                        // Case 2: There is no existing suppression pragma on this line - insert suppression pragma before comment
+                        const preWhitespace = lineText.charAt(insertIndex - 1) === ' ' ? '' : ' '
+                        const postWhitespace = ' '
+                        insertText = preWhitespace + PRAGMA_START + idText + PRAGMA_END + postWhitespace
+                    } else {
+                        // Case 3: There is an existing suppression pragma on this line - append to existing list
+                        insertIndex = insertIndex + PRAGMA_START.length
+                        const separator = pragmaMatch[0].match(EMPTY_PRAGMA_REGEX) != null ? '' : ','
+                        insertText = idText + separator
+                    }
+                }
+
+                // Create appropriate text edit
+                resolve([
+                    TextEdit.insert(
+                        Position.create(
+                            fixRange.end.line,
+                            insertIndex
+                        ),
+                        insertText
+                    )
+                ])
+            })
+
+            matlabConnection.publish(this.END_STATEMENT_REQUEST_CHANNEL, {
+                lineNumber: range.start.line + 1,
+                code: textDocument.getText()
+            })
+        })
+    }
+
+    async suppressDiagnostic_ (textDocument: TextDocument, range: Range, id: string, shouldSuppressThroughoutFile: boolean): Promise<TextEdit[]> {
         const matlabConnection = MatlabLifecycleManager.getMatlabConnection()
         if (matlabConnection == null || !MatlabLifecycleManager.isMatlabReady()) {
             return []
