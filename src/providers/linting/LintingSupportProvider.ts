@@ -495,6 +495,9 @@ class LintingSupportProvider {
             }
 
             // Parse lint message
+            // Diagnostics will be reported with a line like the following:
+            //     L {lineNumber} (C {columnNumber}): {diagnosticId}: ML{severity}: {diagnosticMessage} (CAN FIX)
+            // If the diagnostic cannot be fixed, the '(CAN FIX)' will not be present
             const parsedLine = message.match(LINT_MESSAGE_REGEX)
             if (parsedLine == null) {
                 continue
@@ -522,6 +525,11 @@ class LintingSupportProvider {
             }
 
             const fixInfo = lintData[dataIndex++]
+
+            // Parse fix message
+            // Diagnostic fixes will be reported with lines like the following:
+            //     ----FIX MESSAGE<{diagnosticFixId}> <{message}>
+            //     ----CHANGE MESSAGE L {lineNumber} (C {columnNumber});  L {lineNumber} (C {columnNumber}):  <{text}>
             const fixMsgMatch = fixInfo.match(FIX_MESSAGE_REGEX)
             if (fixMsgMatch == null) {
                 continue
