@@ -3,13 +3,13 @@ classdef (Hidden) MatlabLanguageServerHelper < handle
     % which support the MATLAB Language Server.
 
     properties
-        CommManager (1,1) matlabls.helpers.CommunicationManager
+        CommManager (1,1) matlabls.internal.CommunicationManager
         FeatureHandlers (1,:) matlabls.handlers.FeatureHandler
     end
 
     methods
         function this = MatlabLanguageServerHelper ()
-            this.CommManager = matlabls.helpers.CommunicationManager();
+            this.CommManager = matlabls.internal.CommunicationManager();
             this.initializeFeatureHandlers()
         end
 

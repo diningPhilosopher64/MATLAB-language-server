@@ -42,7 +42,7 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
             code = msg.code;
             lineNumber = msg.lineNumber;
 
-            response.lineNumber = matlabls.helpers.findStatementEndLine(code, lineNumber);
+            response.lineNumber = matlabls.internal.findStatementEndLine(code, lineNumber);
 
             this.CommManager.publish(this.FindStatementEndResponseChannel, response)
         end
