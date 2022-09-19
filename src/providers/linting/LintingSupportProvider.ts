@@ -181,6 +181,7 @@ class LintingSupportProvider {
         })
 
         commands.forEach(command => {
+            // Add suppression actions as Commands to be processed later.
             codeActions.push(CodeAction.create(command.title, command, CodeActionKind.QuickFix))
         })
 
