@@ -1,5 +1,5 @@
 import { execFile, ExecFileException } from 'child_process'
-import { CodeAction, CodeActionKind, CodeActionParams, Command, Diagnostic, DiagnosticSeverity, Position, Range, TextEdit, WorkspaceEdit, _Connection } from 'vscode-languageserver'
+import { CodeAction, CodeActionKind, CodeActionParams, Command, Diagnostic, DiagnosticSeverity, Position, Range, TextDocumentEdit, TextEdit, VersionedTextDocumentIdentifier, WorkspaceEdit, _Connection } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 import ArgumentManager, { Argument } from '../../lifecycle/ArgumentManager'
@@ -10,6 +10,7 @@ import * as TextDocumentUtils from '../../utils/TextDocumentUtils'
 import * as path from 'path'
 import which = require('which')
 import { MatlabLSCommands } from '../lspCommands/ExecuteCommandProvider'
+import { connection } from '../../server'
 
 type mlintSeverity = '1' | '2' | '3' | '4' | '5'
 
@@ -194,65 +195,77 @@ class LintingSupportProvider {
      * @param id The diagnostic's ID
      * @param shouldSuppressThroughoutFile Whether or not to suppress the diagnostic throughout the entire file
      */
-    async suppressDiagnostic (textDocument: TextDocument, range: Range, id: string, shouldSuppressThroughoutFile: boolean): Promise<TextEdit[]> {
+    suppressDiagnostic (textDocument: TextDocument, range: Range, id: string, shouldSuppressThroughoutFile: boolean): void {
         const matlabConnection = MatlabLifecycleManager.getMatlabConnection()
         if (matlabConnection == null || !MatlabLifecycleManager.isMatlabReady()) {
-            return []
+            return
         }
 
-        return await new Promise<TextEdit[]>(resolve => {
-            const responseSub = matlabConnection.subscribe(this.END_STATEMENT_RESPONSE_CHANNEL, message => {
-                matlabConnection.unsubscribe(responseSub)
+        // return await new Promise<TextEdit[]>(resolve => {
+        const responseSub = matlabConnection.subscribe(this.END_STATEMENT_RESPONSE_CHANNEL, message => {
+            matlabConnection.unsubscribe(responseSub)
 
-                const lineToSuppress = (message as EndLineResults).lineNumber - 1 ?? range.start.line
-                const fixRange = TextDocumentUtils.getRangeUntilLineEnd(textDocument, lineToSuppress, 0)
-                const lineText = textDocument.getText(fixRange)
+            const lineToSuppress = (message as EndLineResults).lineNumber - 1 ?? range.start.line
+            const fixRange = TextDocumentUtils.getRangeUntilLineEnd(textDocument, lineToSuppress, 0)
+            const lineText = textDocument.getText(fixRange)
 
-                const idText = (shouldSuppressThroughoutFile ? '*' : '') + id
+            const idText = (shouldSuppressThroughoutFile ? '*' : '') + id
 
-                let insertIndex = -1
-                let insertText = ''
+            let insertIndex = -1
+            let insertText = ''
 
-                // Find comment on line, if one exists
-                const commentMatch = lineText.match(COMMENT_REGEX)
-                if (commentMatch == null) {
-                    // Case 1: No comment - insert suppression at end of line
-                    insertIndex = lineText.length
-                    const preWhitespace = lineText.endsWith(' ') ? '' : ' '
-                    insertText = preWhitespace + PRAGMA_START + idText + PRAGMA_END
+            // Find comment on line, if one exists
+            const commentMatch = lineText.match(COMMENT_REGEX)
+            if (commentMatch == null) {
+                // Case 1: No comment - insert suppression at end of line
+                insertIndex = lineText.length
+                const preWhitespace = lineText.endsWith(' ') ? '' : ' '
+                insertText = preWhitespace + PRAGMA_START + idText + PRAGMA_END
+            } else {
+                const pragmaMatch = commentMatch[0].match(PRAGMA_REGEX)
+                insertIndex = commentMatch.index ?? (lineText.length - commentMatch[0].length)
+                if (pragmaMatch == null) {
+                    // Case 2: There is no existing suppression pragma on this line - insert suppression pragma before comment
+                    const preWhitespace = lineText.charAt(insertIndex - 1) === ' ' ? '' : ' '
+                    const postWhitespace = ' '
+                    insertText = preWhitespace + PRAGMA_START + idText + PRAGMA_END + postWhitespace
                 } else {
-                    const pragmaMatch = commentMatch[0].match(PRAGMA_REGEX)
-                    insertIndex = commentMatch.index ?? (lineText.length - commentMatch[0].length)
-                    if (pragmaMatch == null) {
-                        // Case 2: There is no existing suppression pragma on this line - insert suppression pragma before comment
-                        const preWhitespace = lineText.charAt(insertIndex - 1) === ' ' ? '' : ' '
-                        const postWhitespace = ' '
-                        insertText = preWhitespace + PRAGMA_START + idText + PRAGMA_END + postWhitespace
-                    } else {
-                        // Case 3: There is an existing suppression pragma on this line - append to existing list
-                        insertIndex = insertIndex + PRAGMA_START.length
-                        const separator = pragmaMatch[0].match(EMPTY_PRAGMA_REGEX) != null ? '' : ','
-                        insertText = idText + separator
-                    }
+                    // Case 3: There is an existing suppression pragma on this line - append to existing list
+                    insertIndex = insertIndex + PRAGMA_START.length
+                    const separator = pragmaMatch[0].match(EMPTY_PRAGMA_REGEX) != null ? '' : ','
+                    insertText = idText + separator
                 }
+            }
 
-                // Create appropriate text edit
-                resolve([
-                    TextEdit.insert(
-                        Position.create(
-                            fixRange.end.line,
-                            insertIndex
-                        ),
-                        insertText
+            // Create and apply appropriate text edit
+            const edits = [TextEdit.insert(
+                Position.create(
+                    fixRange.end.line,
+                    insertIndex
+                ),
+                insertText
+            )]
+
+            const edit: WorkspaceEdit = {
+                changes: {
+                    [textDocument.uri]: edits
+                },
+                documentChanges: [
+                    TextDocumentEdit.create(
+                        VersionedTextDocumentIdentifier.create(textDocument.uri, textDocument.version),
+                        edits
                     )
-                ])
-            })
+                ]
+            }
 
-            matlabConnection.publish(this.END_STATEMENT_REQUEST_CHANNEL, {
-                lineNumber: range.start.line + 1,
-                code: textDocument.getText()
-            })
+            void connection.workspace.applyEdit(edit)
         })
+
+        matlabConnection.publish(this.END_STATEMENT_REQUEST_CHANNEL, {
+            lineNumber: range.start.line + 1,
+            code: textDocument.getText()
+        })
+        // })
     }
 
     async suppressDiagnostic_ (textDocument: TextDocument, range: Range, id: string, shouldSuppressThroughoutFile: boolean): Promise<TextEdit[]> {
