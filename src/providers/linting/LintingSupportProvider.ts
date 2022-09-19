@@ -141,8 +141,8 @@ class LintingSupportProvider {
         const diagnostics = params.context.diagnostics
         const commands: Command[] = []
         diagnostics.forEach(diagnostic => {
-            // Don't allow suppressing errors or file/function mismatch
-            if (diagnostic.severity === DiagnosticSeverity.Error || ['MCFIL', 'FNDEF'].includes(diagnostic.code as string)) {
+            // Don't allow suppressing errors
+            if (diagnostic.severity === DiagnosticSeverity.Error) {
                 return
             }
 
