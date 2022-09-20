@@ -1,11 +1,11 @@
 {
     "compilerOptions": {
         "module": "CommonJS",
-        "target": "ESNext",
+        "target": "ES6",
         "rootDir": "./src",
         "outDir": "./out",
         "lib": [
-            "ESNext"
+            "ES6"
         ],
         "strict": true,
         "composite": true
