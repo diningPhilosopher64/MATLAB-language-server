@@ -49,9 +49,6 @@ class DocumentIndexer {
         const parsedCodeData = this.parseCodeData(textDocument.uri, rawCodeData)
 
         FileInfoIndex.codeDataCache.set(textDocument.uri, parsedCodeData)
-
-        // TODO: Remove - For testing
-        console.log('Data: ', parsedCodeData)
     }
 
     /**
