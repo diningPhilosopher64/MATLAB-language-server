@@ -4,7 +4,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
     properties (Access = private)
         RequestChannel = '/matlabls/indexDocument/request'
-        ResponseChannel = 'matlabls/indexDocument/response'
+        ResponseChannel = '/matlabls/indexDocument/response'
     end
 
     methods
