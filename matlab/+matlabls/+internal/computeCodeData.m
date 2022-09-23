@@ -37,7 +37,7 @@ function codeInfo = computeCodeData (code, filePath)
 
     %% Handle very large input
     MAXCODE = 500000;
-    if numel(code) > MAXCODE
+    if strlength(code) > MAXCODE
         % File too large - do not try to index
         code = '';
     end
