@@ -3,6 +3,7 @@ import { createConnection, InitializeResult, ProposedFeatures, TextDocuments } f
 import ArgumentManager, { Argument } from './lifecycle/ArgumentManager'
 import MatlabLifecycleManager, { ConnectionTiming } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
+import CompletionProvider from './providers/completion/CompletionProvider'
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
@@ -40,9 +41,15 @@ connection.onInitialize(() => {
     const initResult: InitializeResult = {
         capabilities: {
             codeActionProvider: true,
+            completionProvider: {
+                triggerCharacters: ['.', '(', ' ', ',', '/', '\\']
+            },
             documentFormattingProvider: true,
             executeCommandProvider: {
                 commands: Object.values(MatlabLSCommands)
+            },
+            signatureHelpProvider: {
+                triggerCharacters: ['(', ',']
             }
         }
     }
@@ -94,6 +101,15 @@ documentManager.onDidChangeContent(params => {
 // Handle execute command requests
 connection.onExecuteCommand(params => {
     void ExecuteCommandProvider.handleExecuteCommand(params, documentManager, connection)
+})
+
+/** -------------------- COMPLETION SUPPORT -------------------- **/
+connection.onCompletion(async params => {
+    return await CompletionProvider.handleCompletionRequest(params, documentManager)
+})
+
+connection.onSignatureHelp(async params => {
+    return await CompletionProvider.handleSignatureHelpRequest(params, documentManager)
 })
 
 /** -------------------- FORMATTING SUPPORT -------------------- **/
