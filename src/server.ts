@@ -1,5 +1,6 @@
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { createConnection, InitializeResult, ProposedFeatures, TextDocuments } from 'vscode-languageserver/node'
+import DocumentIndexer from './indexing/DocumentIndexer'
 import ArgumentManager, { Argument } from './lifecycle/ArgumentManager'
 import MatlabLifecycleManager, { ConnectionTiming } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
@@ -30,6 +31,7 @@ MatlabLifecycleManager.addMatlabLifecycleListener((error, lifecycleEvent) => {
         // Handle things after MATLAB has launched
         documentManager.all().forEach(textDocument => {
             void LintingSupportProvider.lintDocument(textDocument, connection)
+            void DocumentIndexer.indexDocument(textDocument)
         })
     }
 })
@@ -76,6 +78,7 @@ connection.onNotification('matlab/updateConnection', (data: { connectionAction: 
 // Handles files opened
 documentManager.onDidOpen(params => {
     void LintingSupportProvider.lintDocument(params.document, connection)
+    void DocumentIndexer.indexDocument(params.document)
 })
 
 // Handles files saved
@@ -88,6 +91,7 @@ documentManager.onDidChangeContent(params => {
     if (MatlabLifecycleManager.isMatlabReady()) {
         // Only want to lint on content changes when linting is being backed by MATLAB
         LintingSupportProvider.queueLintingForDocument(params.document, connection)
+        DocumentIndexer.queueIndexingForDocument(params.document)
     }
 })
 

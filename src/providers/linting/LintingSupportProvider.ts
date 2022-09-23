@@ -63,7 +63,7 @@ class LintingSupportProvider {
     private readonly _availableCodeActions = new Map<string, CodeAction[]>()
 
     /**
-     * Queue's a document to be linted. This handles debouncing so
+     * Queues a document to be linted. This handles debouncing so
      * that linting is not performed on every keystroke.
      *
      * @param textDocument The document to be linted
