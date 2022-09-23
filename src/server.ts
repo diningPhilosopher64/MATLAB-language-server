@@ -3,7 +3,7 @@ import { createConnection, InitializeResult, ProposedFeatures, TextDocuments } f
 import ArgumentManager, { Argument } from './lifecycle/ArgumentManager'
 import MatlabLifecycleManager, { ConnectionTiming } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
-import CompletionProvider from './providers/completion/CompletionProvider'
+import CompletionProvider from './providers/completion/CompletionSupportProvider'
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
