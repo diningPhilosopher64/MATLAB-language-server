@@ -12,7 +12,7 @@ import which = require('which')
 import { MatlabLSCommands } from '../lspCommands/ExecuteCommandProvider'
 import { connection } from '../../server'
 
-type mlintSeverity = '1' | '2' | '3' | '4'
+type mlintSeverity = '0' | '1' | '2' | '3' | '4'
 
 interface RawLintResults {
     lintData: string[]
@@ -52,7 +52,7 @@ class LintingSupportProvider {
     private readonly END_STATEMENT_RESPONSE_CHANNEL = '/matlabls/linting/findstatementend/response'
 
     private readonly SEVERITY_MAP = {
-        0: DiagnosticSeverity.Warning,
+        0: DiagnosticSeverity.Information,
         1: DiagnosticSeverity.Warning,
         2: DiagnosticSeverity.Error,
         3: DiagnosticSeverity.Error,
