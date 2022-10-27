@@ -3,6 +3,7 @@ import { URI } from 'vscode-uri'
 import { MatlabConnection } from '../lifecycle/MatlabCommunicationManager'
 import MatlabLifecycleManager from '../lifecycle/MatlabLifecycleManager'
 import FileInfoIndex, { RawCodeData } from './FileInfoIndex'
+import WorkspaceIndexer from './WorkspaceIndexer'
 
 const INDEXING_DELAY = 500 // Delay (in ms) after keystroke before attempting to re-index the document
 
@@ -46,7 +47,14 @@ class DocumentIndexer {
         }
 
         const rawCodeData = await this.getCodeDataForDocument(textDocument, matlabConnection)
-        FileInfoIndex.parseAndStoreCodeData(textDocument.uri, rawCodeData)
+
+        const parsedCodeData = FileInfoIndex.parseAndStoreCodeData(textDocument.uri, rawCodeData)
+
+        // Queue indexing for other files in @ class directory
+        const classDefFolder = parsedCodeData.classInfo?.classDefFolder ?? ''
+        if (classDefFolder !== '') {
+            WorkspaceIndexer.indexFolders([classDefFolder])
+        }
     }
 
     /**
