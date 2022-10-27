@@ -7,6 +7,8 @@ export enum Argument {
     MatlabInstallationPath = 'matlabInstallPath',
     MatlabConnectionTiming = 'matlabConnectionTiming',
 
+    ShouldIndexWorkspace = 'indexWorkspace',
+
     // Advanced arguments
     MatlabUrl = 'matlabUrl'
 }

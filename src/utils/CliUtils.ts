@@ -6,6 +6,7 @@ export interface CliArgs {
     [Argument.MatlabCertificateDirectory]?: string
     [Argument.MatlabInstallationPath]?: string
     [Argument.MatlabConnectionTiming]?: string
+    [Argument.ShouldIndexWorkspace]?: boolean
     [Argument.MatlabUrl]?: string
 }
 
@@ -31,6 +32,11 @@ function makeParser (): yargs.Argv<CliArgs> {
         type: 'string',
         default: 'early',
         choices: ['early', 'late', 'never']
+    }).option(Argument.ShouldIndexWorkspace, {
+        boolean: true,
+        default: false,
+        description: 'Whether or not the user\'s workspace should be indexed.',
+        requiresArg: false
     }).option(Argument.MatlabUrl, {
         type: 'string',
         description: 'URL for communicating with an existing MATLAB instance',

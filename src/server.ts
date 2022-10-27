@@ -1,6 +1,7 @@
 import { TextDocument } from 'vscode-languageserver-textdocument'
-import { createConnection, InitializeResult, ProposedFeatures, TextDocuments } from 'vscode-languageserver/node'
+import { ClientCapabilities, createConnection, InitializeParams, InitializeResult, ProposedFeatures, TextDocuments } from 'vscode-languageserver/node'
 import DocumentIndexer from './indexing/DocumentIndexer'
+import WorkspaceIndexer from './indexing/WorkspaceIndexer'
 import ArgumentManager, { Argument } from './lifecycle/ArgumentManager'
 import MatlabLifecycleManager, { ConnectionTiming } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
@@ -29,6 +30,10 @@ MatlabLifecycleManager.addMatlabLifecycleListener((error, lifecycleEvent) => {
 
     if (lifecycleEvent.matlabStatus === 'connected') {
         // Handle things after MATLAB has launched
+
+        // Initiate workspace indexing
+        void WorkspaceIndexer.indexWorkspace()
+
         documentManager.all().forEach(textDocument => {
             void LintingSupportProvider.lintDocument(textDocument, connection)
             void DocumentIndexer.indexDocument(textDocument)
@@ -36,8 +41,12 @@ MatlabLifecycleManager.addMatlabLifecycleListener((error, lifecycleEvent) => {
     }
 })
 
+let capabilities: ClientCapabilities
+
 // Handles an initialization request
-connection.onInitialize(() => {
+connection.onInitialize((params: InitializeParams) => {
+    capabilities = params.capabilities
+
     // Defines the capabilities supported by this language server
     const initResult: InitializeResult = {
         capabilities: {
@@ -54,6 +63,8 @@ connection.onInitialize(() => {
 
 // Handles the initialized notification
 connection.onInitialized(() => {
+    WorkspaceIndexer.setupCallbacks(capabilities)
+
     // Launch MATLAB if it should be launched early
     if (ArgumentManager.getArgument(Argument.MatlabConnectionTiming) === ConnectionTiming.Early) {
         void MatlabLifecycleManager.connectToMatlab(connection)
