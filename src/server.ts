@@ -105,20 +105,24 @@ connection.onExecuteCommand(params => {
 
 /** -------------------- COMPLETION SUPPORT -------------------- **/
 connection.onCompletion(async params => {
+    // Gather a list of possible completions to be displayed by the IDE
     return await CompletionProvider.handleCompletionRequest(params, documentManager)
 })
 
 connection.onSignatureHelp(async params => {
+    // Gather a list of possible function signatures to be displayed by the IDE
     return await CompletionProvider.handleSignatureHelpRequest(params, documentManager)
 })
 
 /** -------------------- FORMATTING SUPPORT -------------------- **/
 connection.onDocumentFormatting(async params => {
+    // Gather a set of document edits required for formatting, which the IDE will execute
     return await FormatSupportProvider.handleDocumentFormatRequest(params, documentManager, connection)
 })
 
 /** --------------------  LINTING SUPPORT   -------------------- **/
 connection.onCodeAction(params => {
+    // Retrieve a list of possible code actions to be displayed by the IDE
     return LintingSupportProvider.handleCodeActionRequest(params)
 })
 
