@@ -42,7 +42,14 @@ connection.onInitialize(() => {
         capabilities: {
             codeActionProvider: true,
             completionProvider: {
-                triggerCharacters: ['.', '(', ' ', ',', '/', '\\']
+                triggerCharacters: [
+                    '.', // Struct/class properties, package names, etc.
+                    '(', // Function call
+                    ' ', // Command-style function call
+                    ',', // Function arguments
+                    '/', // File path
+                    '\\' // File path
+                ]
             },
             documentFormattingProvider: true,
             executeCommandProvider: {
