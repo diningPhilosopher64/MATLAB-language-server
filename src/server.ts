@@ -4,6 +4,7 @@ import DocumentIndexer from './indexing/DocumentIndexer'
 import ArgumentManager, { Argument } from './lifecycle/ArgumentManager'
 import MatlabLifecycleManager, { ConnectionTiming } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
+import CompletionProvider from './providers/completion/CompletionSupportProvider'
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
@@ -42,9 +43,22 @@ connection.onInitialize(() => {
     const initResult: InitializeResult = {
         capabilities: {
             codeActionProvider: true,
+            completionProvider: {
+                triggerCharacters: [
+                    '.', // Struct/class properties, package names, etc.
+                    '(', // Function call
+                    ' ', // Command-style function call
+                    ',', // Function arguments
+                    '/', // File path
+                    '\\' // File path
+                ]
+            },
             documentFormattingProvider: true,
             executeCommandProvider: {
                 commands: Object.values(MatlabLSCommands)
+            },
+            signatureHelpProvider: {
+                triggerCharacters: ['(', ',']
             }
         }
     }
@@ -100,13 +114,26 @@ connection.onExecuteCommand(params => {
     void ExecuteCommandProvider.handleExecuteCommand(params, documentManager, connection)
 })
 
+/** -------------------- COMPLETION SUPPORT -------------------- **/
+connection.onCompletion(async params => {
+    // Gather a list of possible completions to be displayed by the IDE
+    return await CompletionProvider.handleCompletionRequest(params, documentManager)
+})
+
+connection.onSignatureHelp(async params => {
+    // Gather a list of possible function signatures to be displayed by the IDE
+    return await CompletionProvider.handleSignatureHelpRequest(params, documentManager)
+})
+
 /** -------------------- FORMATTING SUPPORT -------------------- **/
 connection.onDocumentFormatting(async params => {
+    // Gather a set of document edits required for formatting, which the IDE will execute
     return await FormatSupportProvider.handleDocumentFormatRequest(params, documentManager, connection)
 })
 
 /** --------------------  LINTING SUPPORT   -------------------- **/
 connection.onCodeAction(params => {
+    // Retrieve a list of possible code actions to be displayed by the IDE
     return LintingSupportProvider.handleCodeActionRequest(params)
 })
 
