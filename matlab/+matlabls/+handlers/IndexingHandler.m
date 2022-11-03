@@ -8,6 +8,9 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
         WorkspaceIndexingRequestChannel = '/matlabls/indexWorkspace/request'
         WorkspaceIndexingResponseChannel = '/matlabls/indexWorkspace/response/' % Needs to be appended with requestId
+
+        IdentifierDefinitionRequestChannel = '/matlabls/findIdentifierDefinition/request'
+        IdentifierDefinitionResponseChannel = '/matlabls/findIdentifierDefinition/response'
     end
 
     methods
@@ -15,6 +18,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
             this = this@matlabls.handlers.FeatureHandler(commManager);
             this.RequestSubscriptions(end + 1) = this.CommManager.subscribe(this.DocumentIndexingRequestChannel, @this.handleDocumentIndexRequest);
             this.RequestSubscriptions(end + 1) = this.CommManager.subscribe(this.WorkspaceIndexingRequestChannel, @this.handleWorkspaceIndexRequest);
+            this.RequestSubscriptions(end + 1) = this.CommManager.subscribe(this.IdentifierDefinitionRequestChannel, @this.handleIdentifierDefinitionRequest);
         end
     end
 
@@ -37,6 +41,26 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
             files = this.getAllMFilesToIndex(folders);
             this.parseFiles(requestId, files)
+        end
+
+        function handleIdentifierDefinitionRequest (this, msg)
+            % Tries to determine where the provided identifier is defined, from 
+            % the context of the given file.
+
+            containingFile = msg.containingFile;
+            identifierList = msg.identifiers;
+
+            res = struct(identifier = {}, fileInfo = {});
+
+            for n = 1:length(identifierList)
+                identifier = identifierList{n};
+                fileInfo = matlabls.helpers.whichHelper(containingFile, identifier);
+                if ~isempty(fileInfo)
+                    res(end + 1) = struct(identifier = identifier, fileInfo = fileInfo); %#ok<AGROW> 
+                end
+            end
+
+            this.CommManager.publish(this.IdentifierDefinitionResponseChannel, res)
         end
 
         function filesToIndex = getAllMFilesToIndex (~, folders)

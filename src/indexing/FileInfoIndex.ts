@@ -110,6 +110,9 @@ class FileInfoIndex {
                 // Class not discovered yet - need to create info object
                 classInfo = new MatlabClassInfo(rawCodeData.classInfo, uri)
                 this.classInfoCache.set(classInfo.name, classInfo)
+            } else {
+                // Class already known - update data
+                classInfo.appendClassData(rawCodeData.classInfo, uri)
             }
             parsedCodeData = new MatlabCodeData(uri, rawCodeData, classInfo)
         } else {
