@@ -124,7 +124,7 @@ function fileInfo = computeFileInfo(file, name)
 
     code = string(fileread(file));
     codeData = matlabls.internal.computeCodeData(code, file);
-    nameEnd = name.split(".");
+    nameEnd = split(name, ".");
     nameEnd = nameEnd(end);
     symbolInfo = [];
 
