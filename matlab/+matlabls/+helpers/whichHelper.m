@@ -2,7 +2,7 @@ function fileInfo = whichHelper(containingFile, name)
     % WHICHHELPER Helps determine the file which most likely contains the
     % provided identifier from the perspective of the containingFile.
     %
-    % For example, if file "foo.m" referrs to "ClassName", gets file most
+    % For example, if file "foo.m" refers to "ClassName", gets file most
     % likely containing the definition of "ClassName".
 
     containingFile = string(containingFile);
@@ -37,7 +37,7 @@ function fileInfo = whichHelper(containingFile, name)
 
     % 3. Look on the path from this directory
     if exist(containingDir, "dir") && ~isClassDir
-        % Don"t CD into class directory - this just confuses the path
+        % Don't CD into class directory - this just confuses the path
         checkedCd(containingDir)
     end
     file = which(name);
@@ -77,7 +77,7 @@ function fileInfo = whichHelper(containingFile, name)
 
     fi = computeFileInfo(file, name);
     if requireSymbolSearch && fi.line <= 1
-        % We didn"t actually find the symbol in the file
+        % We didn't actually find the symbol in the file
         return
     end
     fileInfo = fi;
