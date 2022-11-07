@@ -15,11 +15,11 @@ function fileInfo = whichHelper(containingFile, name)
     % 1. Look within a private directory
     privateDir = fullfile(containingDir, "private");
     if isfolder(privateDir)
-        checkedCd(privateDir)
+        checkedCd(privateDir);
         file = which(name);
         if isfile(file)
             fileInfo = computeFileInfo(file, name);
-            return
+            return;
         end
     end
 
@@ -29,13 +29,13 @@ function fileInfo = whichHelper(containingFile, name)
     fcnFile = fullfile(containingDir, strcat(name, ".m"));
     if isClassDir && isfile(fcnFile)
         fileInfo = computeFileInfo(fcnFile, name);
-        return
+        return;
     end
 
     % 3. Look on the path from this directory
     if isfolder(containingDir) && ~isClassDir
         % Don't CD into class directory - this just confuses the path
-        checkedCd(containingDir)
+        checkedCd(containingDir);
     end
     file = which(name);
 
@@ -51,7 +51,7 @@ function fileInfo = whichHelper(containingFile, name)
 
         if pathIdx > 0
             newPath = fullfile(pathParts{1:pathIdx});
-            checkedCd(newPath)
+            checkedCd(newPath);
             file = which(name);
         end
     end
@@ -70,25 +70,25 @@ function fileInfo = whichHelper(containingFile, name)
 
     if isempty(file)
         % Did not find anything
-        return
+        return;
     end
 
     fi = computeFileInfo(file, name);
     if requireSymbolSearch && fi.line <= 1
         % We didn't actually find the symbol in the file
-        return
+        return;
     end
     fileInfo = fi;
 end
 
 function checkedCd(newDir)
     previousDirectory = pwd;
-    cd(newDir)
+    cd(newDir);
     [~, warnId] = lastwarn();
     if warnId == "MATLAB:dispatcher:nameConflict"
         % Name conflicts which may cause things to misbehave
-        cd(previousDirectory)
-        lastwarn("")
+        cd(previousDirectory);
+        lastwarn("");
     end
 end
 
@@ -118,7 +118,7 @@ function fileInfo = computeFileInfo(file, name)
     if ~isfile(file)
         % File does not exist
         fileInfo = [];
-        return
+        return;
     end
 
     code = string(fileread(file));
@@ -141,14 +141,14 @@ function fileInfo = computeFileInfo(file, name)
     functionInfo = codeData.functionInfo;
     if isempty(symbolInfo)
         if isempty(functionInfo)
-            return
+            return;
         end
         symbolInfo = findInCell(functionInfo, nameEnd);
     end
 
     if isempty(symbolInfo)
         % Symbol not found in file
-        return
+        return;
     end
 
     fileInfo.line = symbolInfo.declaration.lineStart;
@@ -163,7 +163,7 @@ function symbolInfo = findInCell(cellArr, name)
         propData = cellArr{k};
         if strcmp(propData.name, name)
             symbolInfo = propData;
-            return
+            return;
         end
     end
 end
