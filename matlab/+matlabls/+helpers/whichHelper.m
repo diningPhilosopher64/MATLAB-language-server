@@ -16,10 +16,10 @@ function fileInfo = whichHelper(containingFile, name)
 
     % 1. Look within a private directory
     privateDir = fullfile(containingDir, "private");
-    if exist(privateDir, "dir")
+    if isfolder(privateDir)
         checkedCd(privateDir)
         file = which(name);
-        if ~isempty(file) && exist(file, "file")
+        if isfile(file)
             fileInfo = computeFileInfo(file, name);
             return
         end
@@ -29,13 +29,13 @@ function fileInfo = whichHelper(containingFile, name)
     pathParts = split(containingDir, filesep);
     isClassDir = ~isempty(pathParts) && startsWith(pathParts(end), "@");
     fcnFile = fullfile(containingDir, strcat(name, ".m"));
-    if isClassDir && exist(fcnFile, "file")
+    if isClassDir && isfile(fcnFile)
         fileInfo = computeFileInfo(fcnFile, name);
         return
     end
 
     % 3. Look on the path from this directory
-    if exist(containingDir, "dir") && ~isClassDir
+    if isfolder(containingDir) && ~isClassDir
         % Don't CD into class directory - this just confuses the path
         checkedCd(containingDir)
     end
@@ -94,29 +94,29 @@ function checkedCd(newDir)
 end
 
 function fileInfo = computeFileInfo(file, name)
-    if ~exist(file, "file")
+    if ~isfile(file)
         % Handle built-ins
         tempFile = regexp(file, "built-in\s*\((.*)\)", "tokens");
         if numel(tempFile) == 1
             tempFile = strcat(tempFile{1}{1}, ".m");
         end
-        if exist(tempFile, "file")
+        if isfile(tempFile)
             file = tempFile;
         end
     end
 
-    if exist(file, "file")
+    if isfile(file)
         % Handle .p files
         [directoryName, fileName, extension] = fileparts(file);
         if strcmpi(extension, ".p")
             mFile = fullfile(directoryName, strcat(fileName, '.m'));
-            if exist(mFile, 'file')
+            if isfile(mFile)
                 file = mFile;
             end
         end
     end
 
-    if ~exist(file, 'file')
+    if ~isfile(file)
         % File does not exist
         fileInfo = [];
         return
