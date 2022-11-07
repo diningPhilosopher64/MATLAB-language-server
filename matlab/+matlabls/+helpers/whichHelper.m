@@ -151,8 +151,8 @@ function fileInfo = computeFileInfo(file, name)
         return
     end
 
-    fileInfo.line = symbolInfo.lineStart;
-    fileInfo.char = symbolInfo.charStart;
+    fileInfo.line = symbolInfo.declaration.lineStart;
+    fileInfo.char = symbolInfo.declaration.charStart;
 end
 
 function symbolInfo = findInCell(cellArr, name)
