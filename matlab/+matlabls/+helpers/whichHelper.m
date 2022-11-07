@@ -5,8 +5,7 @@ function fileInfo = whichHelper(containingFile, name)
     % For example, if file "foo.m" refers to "ClassName", gets file most
     % likely containing the definition of "ClassName".
 
-    containingFile = string(containingFile);
-    name = string(name);
+    [containingFile, name] = convertCharsToStrings(containingFile, name);
 
     % Restore current directory when done
     currentDirectory = pwd;
