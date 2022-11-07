@@ -45,7 +45,7 @@ function fileInfo = whichHelper(containingFile, name)
     if isempty(file)
         pathIdx = -1;
         for k = numel(pathParts):-1:1
-            if ~(startsWith(pathParts(k), "+") || startsWith(pathParts(k), "@"))
+            if ~startsWith(pathParts(k), "+" | "@")
                 pathIdx = k;
                 break;
             end
