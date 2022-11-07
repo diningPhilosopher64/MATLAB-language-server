@@ -22,7 +22,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
         end
     end
 
-    methods (Access = public)
+    methods (Access = private)
         function handleDocumentIndexRequest (this, msg)
             % Indexes an individual document and provides the raw data.
 
