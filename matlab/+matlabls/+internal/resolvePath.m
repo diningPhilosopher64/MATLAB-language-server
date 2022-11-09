@@ -1,0 +1,241 @@
+function path = resolvePath (name, contextFile)
+    % RESOLVEPATH Attempt to determine the file which most likely contains
+    % the provided identifier from the perspective of the context file.
+    %
+    % For example, if file "foo.m" refers to "ClassName", this returns the
+    % file most likely containing the definition of "ClassName", or an
+    % empty string if that file could not be determined.
+
+    elementName = name;
+
+    % The given identifier may be a reference within a class (e.g. 'obj.Prop')
+    removeDot = count(name, '.') == 1;
+    if removeDot
+        nameResolver = matlab.internal.language.introspective.resolveName(name);
+        if isempty(nameResolver.classInfo)
+            elementName = extractAfter(name, '.');
+        end
+    end
+
+    % Check for targets within the context file
+    if isvarname(elementName) || iskeyword(elementName)
+        nameResolver = matlab.internal.language.introspective.resolveName(contextFile);
+        if ~isempty(nameResolver.classInfo) && (nameResolver.classInfo.isClass || nameResolver.classInfo.isMethod)
+            classInfo = nameResolver.classInfo;
+            className = matlab.internal.language.introspective.makePackagedName(classInfo.packageName, classInfo.className);
+            targetName = append(className, '.', elementName);
+            nameResolver = matlab.internal.language.introspective.resolveName(targetName);
+            if nameResolver.isResolved
+                if nameResolver.isCaseSensitive || isempty(matlab.internal.language.introspective.safeWhich(name, true))
+                    % Target not found within file. Broaden search (e.g. look in base classes)
+                    path = doEditResolve(targetName);
+
+                    return;
+                end
+            end
+        end
+    end
+
+    % Check for targets elsewhere
+    path = doOpenResolve(name);
+end
+
+function path = doOpenResolve (name)
+    % Attempt to resolve the name in the same way that open.m does
+
+    fullPath = matlab.internal.language.introspective.safeWhich(name);
+    if isempty(fullPath)
+        if isfile(name)
+            fullPath = name;
+        else
+            nameResolver = matlab.internal.language.introspective.resolveName(name);
+            classInfo = nameResolver.classInfo;
+            if isempty(classInfo) || ~(classInfo.isClass || classInfo.isMethod)
+                fullPath = nameResolver.nameLocation;
+            end
+        end
+    end
+
+    if isempty(fullPath)
+        if isempty(name) || isfolder(name)
+            path = '';
+            return;
+        else
+            path = doEditResolve(name);
+            return;
+        end
+    end
+
+    % If no extension was specified, call which with a '.' appended, so that
+    % we can see if the exact match is available.
+    if ~hasExtension(name)
+        % Get all files/dirs which have just the name
+        tmpPath = which(strcat(name, '.'), '-all');
+        if ~isempty(tmpPath)
+            for i = 1:length(tmpPath)
+                % If we find a file, set the path to it, and stop. This means
+                % we find files in the same order as which -all returns them.
+                if isfile(tmpPath{i})
+                    fullPath = tmpPath{i};
+                    break;
+                end
+            end
+        end
+    end
+
+    if ~isfile(fullPath)
+        % File not found
+        path = '';
+        return;
+    end
+
+    % Check for .p
+    [~, openAction] = finfo(fullPath);
+    if strcmp(openAction, 'openp')
+        [~, ~, ext] = fileparts(name);
+        if ~strcmp(ext, '.p')
+            fullPath = fullPath(1:end-2);
+            if ~isfile([fullPath, '.m'])
+                % .m file associated with the .p file does not exist
+                path = '';
+                return;
+            end
+        end
+    end
+
+    path = doEditResolve(fullPath);
+end
+
+function path = doEditResolve (name)
+    % Attempt to resolve the name in the same way that edit.m does
+
+    [name, hasLocalFunction, result, ~, path] = matlab.internal.language.introspective.fixLocalFunctionCase(name);
+
+    if hasLocalFunction
+        if result && path(end) == 'p'
+            % See if a corresponding M file exists
+            path(end) = 'm';
+            if ~isfile(path)
+                result = 0;
+            end
+        end
+        if ~result
+            path = name;
+        end
+    else
+        classResolver = matlab.internal.language.introspective.NameResolver(name, '', false);
+        classResolver.findBuiltins = false;
+        classResolver.executeResolve();
+        resolvedSymbol = classResolver.resolvedSymbol;
+
+        classInfo = resolvedSymbol.classInfo;
+        whichTopic = resolvedSymbol.nameLocation;
+
+        if isempty(whichTopic)
+            [~, path] = resolveWithFileSystemAndExts(name);
+        else
+            % whichTopic is the full path to the resolved output either by class
+            % inference or by which
+            
+            switch exist(whichTopic, 'file')
+                case 0 % Name resolver found something which is not a file
+                    whichTopic = classInfo.definition;
+                case 3 % MEX File
+                    path = '';
+                    return
+                case {4, 6} % P File or Simulink Model
+                    % See if a corresponding M file exists
+                    mTopic = regexprep(whichTopic, '\.\w+$', '.m');
+                    if isfile(mTopic)
+                        whichTopic = mTopic;
+                    elseif resolvedSymbol.isUnderqualified
+                        path = '';
+                        return
+                    end
+            end
+
+            if isAbsolutePath(whichTopic)
+                path = whichTopic;
+            else
+                path = which(whichTopic);
+            end
+        end
+    end
+end
+
+function result = isAbsolutePath(filePath)
+    % Helper method to determine if the given path to an existing file is
+    % absolute.
+    % NOTE: the given filePath is assumed to exist.
+
+    result = false;
+    directoryPart = fileparts(filePath);
+
+    if isunix && strncmp(directoryPart, '/', 1)
+        result = true;
+    elseif ispc && ... % Match C:\, C:/, \\, and // as absolute paths
+            (~isempty(regexp(directoryPart, '^([\w]:[\\/]|\\\\|//)', 'once')))
+        result = true;
+    end
+end
+
+function result = hasExtension(s)
+    % Helper method that determines if filename specified has an extension.
+    % Returns 1 if filename does have an extension, 0 otherwise
+    [~,~,ext] = fileparts(s);
+    result = ~isempty(ext);
+end
+
+function [result, absPathname] = resolveWithFileSystemAndExts(argName)
+    % Helper method that checks the filesystem for files by adding m or mlx    
+    result = 0;
+    
+    if ~hasExtension(argName)
+        argMlx = [argName '.mlx'];
+        [result, absPathname] = resolveWithDir(argMlx, false);
+    
+        if ~result
+            argM = [argName '.m'];
+            [result, absPathname] = resolveWithDir(argM, false);
+        end
+    end
+    
+    if ~result
+        absPathname = '';
+    end
+end
+
+function [result, absPathname] = resolveWithDir(argName, errorDir)
+    % Helper method that checks the filesystem for files    
+    result = 0;
+    absPathname = argName;
+    
+    dir_result = dir(argName);
+    
+    if isempty(dir_result) && isSimpleFile(argName)
+        dir_result = dir(fullfile('private', argName));
+    end
+    
+    if ~isempty(dir_result)
+        if (numel(dir_result) == 1) && ~dir_result.isdir
+            result = 1;  % File exists
+            absPathname = fullfile(dir_result.folder, dir_result.name);  
+        elseif errorDir
+            error(message('MATLAB:Editor:BadDir', argName));
+        end
+    end
+end
+
+function result = isSimpleFile(file)
+    % Helper method that checks for directory seps.
+    result = false;
+    if isunix
+        if ~contains(file, '/')
+            result = true;
+        end
+    else % on windows be more restrictive
+        if ~contains(file, ["\", "/", ":"]) % need to keep : for c: case
+            result = true;
+        end
+    end
+end
