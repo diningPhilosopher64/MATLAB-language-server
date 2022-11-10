@@ -37,73 +37,7 @@ function path = resolvePath (name, contextFile)
     end
 
     % Check for targets elsewhere
-    path = doOpenResolve(name);
-end
-
-function path = doOpenResolve (name)
-    % Attempt to resolve the name in the same way that open.m does
-
-    fullPath = matlab.internal.language.introspective.safeWhich(name);
-    if isempty(fullPath)
-        if isfile(name)
-            fullPath = name;
-        else
-            nameResolver = matlab.internal.language.introspective.resolveName(name);
-            classInfo = nameResolver.classInfo;
-            if isempty(classInfo) || ~(classInfo.isClass || classInfo.isMethod)
-                fullPath = nameResolver.nameLocation;
-            end
-        end
-    end
-
-    if isempty(fullPath)
-        if isempty(name) || isfolder(name)
-            path = '';
-            return;
-        else
-            path = doEditResolve(name);
-            return;
-        end
-    end
-
-    % If no extension was specified, call which with a '.' appended, so that
-    % we can see if the exact match is available.
-    if ~hasExtension(name)
-        % Get all files/dirs which have just the name
-        tmpPath = which(strcat(name, '.'), '-all');
-        if ~isempty(tmpPath)
-            for i = 1:length(tmpPath)
-                % If we find a file, set the path to it, and stop. This means
-                % we find files in the same order as which -all returns them.
-                if isfile(tmpPath{i})
-                    fullPath = tmpPath{i};
-                    break;
-                end
-            end
-        end
-    end
-
-    if ~isfile(fullPath)
-        % File not found
-        path = '';
-        return;
-    end
-
-    % Check for .p
-    [~, openAction] = finfo(fullPath);
-    if strcmp(openAction, 'openp')
-        [~, ~, ext] = fileparts(name);
-        if ~strcmp(ext, '.p')
-            fullPath = fullPath(1:end-2);
-            if ~isfile([fullPath, '.m'])
-                % .m file associated with the .p file does not exist
-                path = '';
-                return;
-            end
-        end
-    end
-
-    path = doEditResolve(fullPath);
+    path = doEditResolve(name);
 end
 
 function path = doEditResolve (name)
@@ -112,24 +46,35 @@ function path = doEditResolve (name)
     [name, hasLocalFunction, result, ~, path] = matlab.internal.language.introspective.fixLocalFunctionCase(name);
 
     if hasLocalFunction
+        % Handle a situation like `myFunc>localFunc`
         if result && path(end) == 'p'
             % See if a corresponding M file exists
             path(end) = 'm';
             if ~isfile(path)
-                result = 0;
+                path = '';
+                return;
             end
         end
+
         if ~result
-            path = name;
+            path = '';
+            return;
         end
     else
         classResolver = matlab.internal.language.introspective.NameResolver(name, '', false);
-        classResolver.findBuiltins = false;
+        if isprop(classResolver, 'findBuiltins')
+            classResolver.findBuiltins = false;
+        end
         classResolver.executeResolve();
-        resolvedSymbol = classResolver.resolvedSymbol;
-
-        classInfo = resolvedSymbol.classInfo;
-        whichTopic = resolvedSymbol.nameLocation;
+        
+        if isprop(classResolver, 'resolvedSymbol')
+            resolvedSymbol = classResolver.resolvedSymbol;
+            classInfo = resolvedSymbol.classInfo;
+            whichTopic = resolvedSymbol.nameLocation;
+        else
+            classInfo = classResolver.classInfo;
+            whichTopic = classResolver.nameLocation;
+        end
 
         if isempty(whichTopic)
             [~, path] = resolveWithFileSystemAndExts(name);
@@ -148,7 +93,7 @@ function path = doEditResolve (name)
                     mTopic = regexprep(whichTopic, '\.\w+$', '.m');
                     if isfile(mTopic)
                         whichTopic = mTopic;
-                    elseif resolvedSymbol.isUnderqualified
+                    else
                         path = '';
                         return
                     end
@@ -208,7 +153,7 @@ end
 function [result, absPathname] = resolveWithDir(argName, errorDir)
     % Helper method that checks the filesystem for files    
     result = 0;
-    absPathname = argName;
+    absPathname = '';
     
     dir_result = dir(argName);
     
@@ -219,9 +164,7 @@ function [result, absPathname] = resolveWithDir(argName, errorDir)
     if ~isempty(dir_result)
         if (numel(dir_result) == 1) && ~dir_result.isdir
             result = 1;  % File exists
-            absPathname = fullfile(dir_result.folder, dir_result.name);  
-        elseif errorDir
-            error(message('MATLAB:Editor:BadDir', argName));
+            absPathname = fullfile(dir_result.folder, dir_result.name);
         end
     end
 end
