@@ -78,17 +78,60 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
             end
         end
 
-        function parseFiles (this, requestId, files, index)
-            % Parses the given list of files and sends the data back to the language server.
+        function parseFiles (this, requestId, files)
+            % Processes the given list of files and sends the data back to the language server.
+
+            if isMATLABReleaseOlderThan('R2021b')
+                % If backgroundPool doesn't exist, leverage a timer to avoid blocking thread
+                this.doParseFilesWithTimer(this, requestId, files);
+            else
+                parfeval(backgroundPool, @this.doParseFiles, 0, requestId, files);
+            end
+        end
+
+        function doParseFilesWithTimer (this, requestId, files, index)
             % This leverages a timer to achieve an "asynchronous" looping effect, allowing
             % other operations to take place between parsing each file. This prevents the MATLAB
-            % thread from becomming blocked for an extended period of time. 
+            % thread from becomming blocked for an extended period of time.
 
             if nargin == 3
                 index = 1;
             end
 
             filePath = files(index);
+            isLastFile = index == length(files);
+
+            this.parseFile(requestId, filePath, isLastFile);
+
+            if ~isLastFile
+                % More files - queue next file to parse
+                t = timer(TimerFcn = @timerCallback, StartDelay = 0.001);
+                t.start();
+            end
+
+            function timerCallback (t, ~)
+                % Destroy existing timer
+                t.stop();
+                t.delete();
+
+                % Parse next file
+                this.parseFiles(requestId, files, index + 1);
+            end
+        end
+
+        function doParseFiles (requestId, files)
+            % This can be executed in a separate thread (e.g. parfeval) to avoid blocking the
+            % MATLAB thread.
+
+            for n = 1:length(files)
+                filePath = files(n);
+                isLastFile = n == length(files);
+                this.parseFile(requestId, filePath, isLastFile);
+            end
+        end
+
+        function parseFile (this, requestId, filePath, isLastFile)
+            % Parses the given file and sends its data back to the language server
 
             code = fileread(filePath);
             codeData = matlabls.internal.computeCodeData(code, filePath);
@@ -97,29 +140,14 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
             msg.filePath = filePath;
             msg.codeData = codeData;
 
-            if index == length(files)
+            if isLastFile
                 msg.isDone = true;
             else
                 msg.isDone = false;
             end
 
-            responseChannel = [this.WorkspaceIndexingResponseChannel requestId];
-            this.CommManager.publish(responseChannel, msg)
-
-            if ~msg.isDone
-                % More files - queue next file to parse
-                t = timer(TimerFcn = @timerCallback, StartDelay = 0.001); % Use a timer to avoid blocking the MATLAB thread for an extended period of time
-                t.start()
-            end
-
-            function timerCallback (t, ~)
-                % Destroy existing timer
-                t.stop()
-                t.delete()
-
-                % Parse next file
-                this.parseFiles(requestId, files, index + 1)
-            end
+            responseChannel = strcmp(this.WorkspaceIndexingResponseChannel, requestId);
+            this.CommManager.publish(responseChannel, msg);
         end
     end
 end
