@@ -47,10 +47,10 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
             filesToIndex = [];
 
-            for n = 1:length(folders)
+            for n = 1:numel(folders)
                 fileListing = dir([folders{n} '/**/*.m']);
-                fileNames = strings(length(fileListing), 1);
-                for m = 1:length(fileListing)
+                fileNames = strings(numel(fileListing), 1);
+                for m = 1:numel(fileListing)
                     fileNames(m) = string([fileListing(m).folder filesep fileListing(m).name]);
                 end
                 filesToIndex = [filesToIndex; fileNames]; %#ok<AGROW>
@@ -78,7 +78,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
             end
 
             filePath = files(index);
-            isLastFile = index == length(files);
+            isLastFile = index == numel(files);
 
             this.parseFile(requestId, filePath, isLastFile);
 
@@ -102,9 +102,9 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
             % This can be executed in a separate thread (e.g. parfeval) to avoid blocking the
             % MATLAB thread.
 
-            for n = 1:length(files)
+            for n = 1:numel(files)
                 filePath = files{n};
-                isLastFile = n == length(files);
+                isLastFile = n == numel(files);
                 this.parseFile(requestId, filePath, isLastFile);
             end
         end
