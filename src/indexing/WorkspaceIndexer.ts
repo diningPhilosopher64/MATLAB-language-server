@@ -1,15 +1,7 @@
 import { ClientCapabilities, WorkspaceFolder, WorkspaceFoldersChangeEvent } from 'vscode-languageserver'
-import { URI } from 'vscode-uri'
 import ArgumentManager, { Argument } from '../lifecycle/ArgumentManager'
-import MatlabLifecycleManager from '../lifecycle/MatlabLifecycleManager'
 import { connection } from '../server'
-import FileInfoIndex, { RawCodeData } from './FileInfoIndex'
-
-interface WorkspaceFileIndexedResponse {
-    isDone: boolean
-    filePath: string
-    codeData: RawCodeData
-}
+import Indexer from './Indexer'
 
 /**
  * Handles indexing files in the user's workspace to gather data about classes,
@@ -18,8 +10,6 @@ interface WorkspaceFileIndexedResponse {
 class WorkspaceIndexer {
     private readonly REQUEST_CHANNEL = '/matlabls/indexWorkspace/request'
     private readonly RESPONSE_CHANNEL = '/matlabls/indexWorkspace/response/' // Needs to be appended with requestId
-
-    private requestCt = 1
 
     private isWorkspaceIndexingSupported = false
 
@@ -56,39 +46,7 @@ class WorkspaceIndexer {
             return
         }
 
-        this.indexFolders(folders.map(folder => folder.uri))
-    }
-
-    /**
-     * Indexes the given list of workspace folders.
-     *
-     * @param folders A list of folder URIs to be indexed.
-     */
-    indexFolders (folders: string[]): void {
-        const matlabConnection = MatlabLifecycleManager.getMatlabConnection()
-
-        if (matlabConnection == null || !MatlabLifecycleManager.isMatlabReady()) {
-            return
-        }
-
-        const requestId = this.requestCt++
-        const responseSub = matlabConnection.subscribe(`${this.RESPONSE_CHANNEL}${requestId}`, msg => {
-            const fileResults = msg as WorkspaceFileIndexedResponse
-
-            if (fileResults.isDone) {
-                // No more files being indexed - safe to unsubscribe
-                matlabConnection.unsubscribe(responseSub)
-            }
-
-            // Convert file path to URI, which is used as an index when storing the code data
-            const fileUri = URI.file(fileResults.filePath).toString()
-            FileInfoIndex.parseAndStoreCodeData(fileUri, fileResults.codeData)
-        })
-
-        matlabConnection.publish(this.REQUEST_CHANNEL, {
-            folders,
-            requestId
-        })
+        Indexer.indexFolders(folders.map(folder => folder.uri))
     }
 
     /**
@@ -101,7 +59,7 @@ class WorkspaceIndexer {
             return
         }
 
-        this.indexFolders(folders.map(folder => folder.uri))
+        Indexer.indexFolders(folders.map(folder => folder.uri))
     }
 
     /**

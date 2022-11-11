@@ -4,21 +4,17 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
     properties (Access = private)
         DocumentIndexingRequestChannel = '/matlabls/indexDocument/request'
-        DocumentIndexingResponseChannel = '/matlabls/indexDocument/response'
+        DocumentIndexingResponseChannel = '/matlabls/indexDocument/response/' % Needs to be appended with requestId
 
-        WorkspaceIndexingRequestChannel = '/matlabls/indexWorkspace/request'
-        WorkspaceIndexingResponseChannel = '/matlabls/indexWorkspace/response/' % Needs to be appended with requestId
-
-        IdentifierDefinitionRequestChannel = '/matlabls/findIdentifierDefinition/request'
-        IdentifierDefinitionResponseChannel = '/matlabls/findIdentifierDefinition/response'
+        FolderIndexingRequestChannel = '/matlabls/indexFolders/request'
+        FolderIndexingResponseChannel = '/matlabls/indexFolders/response/' % Needs to be appended with requestId
     end
 
     methods
         function this = IndexingHandler (commManager)
             this = this@matlabls.handlers.FeatureHandler(commManager);
             this.RequestSubscriptions(end + 1) = this.CommManager.subscribe(this.DocumentIndexingRequestChannel, @this.handleDocumentIndexRequest);
-            this.RequestSubscriptions(end + 1) = this.CommManager.subscribe(this.WorkspaceIndexingRequestChannel, @this.handleWorkspaceIndexRequest);
-            this.RequestSubscriptions(end + 1) = this.CommManager.subscribe(this.IdentifierDefinitionRequestChannel, @this.handleIdentifierDefinitionRequest);
+            this.RequestSubscriptions(end + 1) = this.CommManager.subscribe(this.FolderIndexingRequestChannel, @this.handleFolderIndexRequest);
         end
     end
 
@@ -28,39 +24,22 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
             code = msg.code;
             filePath = msg.filePath;
+            requestId = num2str(msg.requestId);
 
             codeData = matlabls.internal.computeCodeData(code, filePath);
-            this.CommManager.publish(this.DocumentIndexingResponseChannel, codeData)
+
+            responseChannel = strcat(this.DocumentIndexingResponseChannel, requestId);
+            this.CommManager.publish(responseChannel, codeData)
         end
 
-        function handleWorkspaceIndexRequest (this, msg)
-            % Indexes the provided workspace folders
+        function handleFolderIndexRequest (this, msg)
+            % Indexes M-files the provided folders
 
             folders = msg.folders;
             requestId = num2str(msg.requestId);
 
             files = this.getAllMFilesToIndex(folders);
             this.parseFiles(requestId, files)
-        end
-
-        function handleIdentifierDefinitionRequest (this, msg)
-            % Tries to determine where the provided identifier is defined, from 
-            % the context of the given file.
-
-            containingFile = msg.containingFile;
-            identifierList = msg.identifiers;
-
-            res = struct(identifier = {}, fileInfo = {});
-
-            for n = 1:length(identifierList)
-                identifier = identifierList{n};
-                fileInfo = matlabls.helpers.whichHelper(containingFile, identifier);
-                if ~isempty(fileInfo)
-                    res(end + 1) = struct(identifier = identifier, fileInfo = fileInfo); %#ok<AGROW> 
-                end
-            end
-
-            this.CommManager.publish(this.IdentifierDefinitionResponseChannel, res)
         end
 
         function filesToIndex = getAllMFilesToIndex (~, folders)
@@ -74,7 +53,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
                 for m = 1:length(fileListing)
                     fileNames(m) = string([fileListing(m).folder filesep fileListing(m).name]);
                 end
-                filesToIndex = [filesToIndex; fileNames]; %#ok<AGROW> 
+                filesToIndex = [filesToIndex; fileNames]; %#ok<AGROW>
             end
         end
 
@@ -119,12 +98,12 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
             end
         end
 
-        function doParseFiles (requestId, files)
+        function doParseFiles (this, requestId, files)
             % This can be executed in a separate thread (e.g. parfeval) to avoid blocking the
             % MATLAB thread.
 
             for n = 1:length(files)
-                filePath = files(n);
+                filePath = files{n};
                 isLastFile = n == length(files);
                 this.parseFile(requestId, filePath, isLastFile);
             end
@@ -146,7 +125,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
                 msg.isDone = false;
             end
 
-            responseChannel = strcmp(this.WorkspaceIndexingResponseChannel, requestId);
+            responseChannel = strcat(this.FolderIndexingResponseChannel, requestId);
             this.CommManager.publish(responseChannel, msg);
         end
     end

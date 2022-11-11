@@ -66,7 +66,7 @@ function path = doEditResolve (name)
             classResolver.findBuiltins = false;
         end
         classResolver.executeResolve();
-        
+
         if isprop(classResolver, 'resolvedSymbol')
             resolvedSymbol = classResolver.resolvedSymbol;
             classInfo = resolvedSymbol.classInfo;
@@ -81,7 +81,7 @@ function path = doEditResolve (name)
         else
             % whichTopic is the full path to the resolved output either by class
             % inference or by which
-            
+
             switch exist(whichTopic, 'file')
                 case 0 % Name resolver found something which is not a file
                     whichTopic = classInfo.definition;
@@ -134,33 +134,33 @@ end
 function [result, absPathname] = resolveWithFileSystemAndExts(argName)
     % Helper method that checks the filesystem for files by adding m or mlx    
     result = 0;
-    
+
     if ~hasExtension(argName)
         argMlx = [argName '.mlx'];
-        [result, absPathname] = resolveWithDir(argMlx, false);
-    
+        [result, absPathname] = resolveWithDir(argMlx);
+
         if ~result
             argM = [argName '.m'];
-            [result, absPathname] = resolveWithDir(argM, false);
+            [result, absPathname] = resolveWithDir(argM);
         end
     end
-    
+
     if ~result
         absPathname = '';
     end
 end
 
-function [result, absPathname] = resolveWithDir(argName, errorDir)
+function [result, absPathname] = resolveWithDir(argName)
     % Helper method that checks the filesystem for files    
     result = 0;
     absPathname = '';
-    
+
     dir_result = dir(argName);
-    
+
     if isempty(dir_result) && isSimpleFile(argName)
         dir_result = dir(fullfile('private', argName));
     end
-    
+
     if ~isempty(dir_result)
         if (numel(dir_result) == 1) && ~dir_result.isdir
             result = 1;  % File exists

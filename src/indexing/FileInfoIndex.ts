@@ -139,8 +139,8 @@ export class MatlabClassInfo {
     baseClasses: string[]
     readonly classDefFolder: string
 
-    range: Range
-    declaration: Range
+    range?: Range
+    declaration?: Range
 
     constructor (rawClassInfo: CodeDataClassInfo, public uri?: string) {
         this.methods = new Map<string, MatlabFunctionInfo>()
@@ -152,8 +152,10 @@ export class MatlabClassInfo {
         this.baseClasses = rawClassInfo.baseClasses
         this.classDefFolder = rawClassInfo.classDefFolder
 
-        this.range = convertRange(rawClassInfo.range)
-        this.declaration = convertRange(rawClassInfo.declaration)
+        if (rawClassInfo.isClassDef) {
+            this.range = convertRange(rawClassInfo.range)
+            this.declaration = convertRange(rawClassInfo.declaration)
+        }
 
         this.parsePropertiesAndEnums(rawClassInfo)
     }
