@@ -99,28 +99,12 @@ function path = doEditResolve (name)
                     end
             end
 
-            if isAbsolutePath(whichTopic)
+            if matlab.desktop.editor.EditorUtils.isAbsolute(whichTopic)
                 path = whichTopic;
             else
                 path = which(whichTopic);
             end
         end
-    end
-end
-
-function result = isAbsolutePath(filePath)
-    % Helper method to determine if the given path to an existing file is
-    % absolute.
-    % NOTE: the given filePath is assumed to exist.
-
-    result = false;
-    directoryPart = fileparts(filePath);
-
-    if isunix && strncmp(directoryPart, '/', 1)
-        result = true;
-    elseif ispc && ... % Match C:\, C:/, \\, and // as absolute paths
-            (~isempty(regexp(directoryPart, '^([\w]:[\\/]|\\\\|//)', 'once')))
-        result = true;
     end
 end
 
