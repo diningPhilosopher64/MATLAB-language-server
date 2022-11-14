@@ -51,7 +51,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
                 fileListing = dir([folders{n} '/**/*.m']);
                 fileNames = strings(numel(fileListing), 1);
                 for m = 1:numel(fileListing)
-                    fileNames(m) = string([fileListing(m).folder filesep fileListing(m).name]);
+                    fileNames(m) = fullfile(fileListing(m).folder, fileListing(m).name);
                 end
                 filesToIndex = [filesToIndex; fileNames]; %#ok<AGROW>
             end
