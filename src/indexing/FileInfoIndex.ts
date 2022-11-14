@@ -92,6 +92,38 @@ class FileInfoIndex {
      * Maps class name to class info
      */
     readonly classInfoCache = new Map<string, MatlabClassInfo>()
+
+    /**
+     * Parses the raw data into a more usable form. Caches the resulting data
+     * in the code data index.
+     *
+     * @param uri The uri of the document from which the data was extracted
+     * @param rawCodeData The raw data
+     * @returns An object containing the parsed data
+     */
+    parseAndStoreCodeData (uri: string, rawCodeData: RawCodeData): MatlabCodeData {
+        let parsedCodeData: MatlabCodeData
+
+        if (rawCodeData.classInfo.hasClassInfo) {
+            let classInfo = this.classInfoCache.get(rawCodeData.classInfo.name)
+            if (classInfo == null) {
+                // Class not discovered yet - need to create info object
+                classInfo = new MatlabClassInfo(rawCodeData.classInfo, uri)
+                this.classInfoCache.set(classInfo.name, classInfo)
+            } else {
+                // Class already known - update data
+                classInfo.appendClassData(rawCodeData.classInfo, uri)
+            }
+            parsedCodeData = new MatlabCodeData(uri, rawCodeData, classInfo)
+        } else {
+            parsedCodeData = new MatlabCodeData(uri, rawCodeData)
+        }
+
+        // Store in cache
+        this.codeDataCache.set(uri, parsedCodeData)
+
+        return parsedCodeData
+    }
 }
 
 /**
@@ -107,8 +139,8 @@ export class MatlabClassInfo {
     baseClasses: string[]
     readonly classDefFolder: string
 
-    range: Range
-    declaration: Range
+    range?: Range
+    declaration?: Range
 
     constructor (rawClassInfo: CodeDataClassInfo, public uri?: string) {
         this.methods = new Map<string, MatlabFunctionInfo>()
@@ -120,8 +152,10 @@ export class MatlabClassInfo {
         this.baseClasses = rawClassInfo.baseClasses
         this.classDefFolder = rawClassInfo.classDefFolder
 
-        this.range = convertRange(rawClassInfo.range)
-        this.declaration = convertRange(rawClassInfo.declaration)
+        if (rawClassInfo.isClassDef) {
+            this.range = convertRange(rawClassInfo.range)
+            this.declaration = convertRange(rawClassInfo.declaration)
+        }
 
         this.parsePropertiesAndEnums(rawClassInfo)
     }
