@@ -1,4 +1,5 @@
-import { Range } from 'vscode-languageserver'
+import { Position, Range } from 'vscode-languageserver'
+import { isPositionGreaterThan, isPositionLessThan } from '../utils/PositionUtils'
 
 /**
  * Defines the structure of the raw data retrieved from MATLAB.
@@ -33,7 +34,7 @@ interface CodeDataFunctionInfo {
     range: CodeDataRange
     parentClass: string
     isPublic: boolean
-    declaration: CodeDataRange
+    declaration?: CodeDataRange // Will be undefined if function is prototype
     variableInfo: CodeDataFunctionVariableInfo
     globals: string[]
     isPrototype: boolean
@@ -219,7 +220,7 @@ export class MatlabClassInfo {
 /**
  * Class to contain info about members of a class (e.g. Properties or Enumerations)
  */
-class MatlabClassMemberInfo {
+export class MatlabClassMemberInfo {
     readonly name: string
     readonly range: Range
     readonly parentClass: string
@@ -234,11 +235,11 @@ class MatlabClassMemberInfo {
 /**
  * Class to contain info about functions
  */
-class MatlabFunctionInfo {
+export class MatlabFunctionInfo {
     name: string
 
     range: Range
-    declaration: Range
+    declaration: Range | null
 
     isPrototype: boolean
 
@@ -252,7 +253,7 @@ class MatlabFunctionInfo {
         this.name = rawFunctionInfo.name
 
         this.range = convertRange(rawFunctionInfo.range)
-        this.declaration = convertRange(rawFunctionInfo.declaration)
+        this.declaration = rawFunctionInfo.declaration != null ? convertRange(rawFunctionInfo.declaration) : null
 
         this.isPrototype = rawFunctionInfo.isPrototype
 
@@ -361,6 +362,29 @@ export class MatlabCodeData {
      */
     get isClassDef (): boolean {
         return this.classInfo != null
+    }
+
+    findContainingFunction (position: Position): MatlabFunctionInfo | null {
+        let containingFunction: MatlabFunctionInfo | null = null
+
+        for (const functionInfo of this.functions.values()) {
+            const start = functionInfo.range.start
+            const end = functionInfo.range.end
+
+            // Check if position is within range
+            if (isPositionLessThan(start, position, true) && isPositionGreaterThan(end, position)) {
+                if (containingFunction == null) {
+                    containingFunction = functionInfo
+                } else {
+                    // Prefer a narrower function if we already have a match (e.g. nested functions)
+                    if (isPositionGreaterThan(start, containingFunction.range.start)) {
+                        containingFunction = functionInfo
+                    }
+                }
+            }
+        }
+
+        return containingFunction
     }
 
     /**

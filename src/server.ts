@@ -8,6 +8,7 @@ import Logger from './logging/Logger'
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
+import NavigationSupportProvider from './providers/navigation/NavigationSupportProvider'
 import { getCliArgs } from './utils/CliUtils'
 
 // Create a connection for the server
@@ -51,6 +52,7 @@ connection.onInitialize((params: InitializeParams) => {
     const initResult: InitializeResult = {
         capabilities: {
             codeActionProvider: true,
+            definitionProvider: true,
             documentFormattingProvider: true,
             executeCommandProvider: {
                 commands: Object.values(MatlabLSCommands)
@@ -119,6 +121,11 @@ connection.onDocumentFormatting(async params => {
 /** --------------------  LINTING SUPPORT   -------------------- **/
 connection.onCodeAction(params => {
     return LintingSupportProvider.handleCodeActionRequest(params)
+})
+
+/** --------------------  NAVIGATION SUPPORT   -------------------- **/
+connection.onDefinition(async params => {
+    return await NavigationSupportProvider.handleDefinitionRequest(params, documentManager)
 })
 
 // Start listening to open/change/close text document events

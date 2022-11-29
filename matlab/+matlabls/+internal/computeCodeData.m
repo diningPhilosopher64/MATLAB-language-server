@@ -247,7 +247,7 @@ function functionReferences = parseFunctionData (functionNode, isPublic, isClass
             topLevelFunctionNode = topLevelFunctionNode.trueparent;
         end
         [declLineEnd, declCharEnd] = topLevelFunctionNode.pos2lc(topLevelFunctionNode.righttreepos);
-        functionInfo.declaration = createRange(functionInfo.range.lineStart, functionInfo.range.charStart, declLineEnd, declCharEnd);
+        functionInfo.declaration = createRange(functionInfo.range.lineStart, functionInfo.range.charStart, declLineEnd, declCharEnd + 1);
     end
 
     if ~isClassDef
