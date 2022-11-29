@@ -55,13 +55,6 @@ class NavigationSupportProvider {
             return []
         }
 
-        const codeData = FileInfoIndex.codeDataCache.get(uri)
-
-        if (codeData == null) {
-            // File not indexed - unable to look for definition
-            return []
-        }
-
         return await this.findDefinition(uri, params.position, expression, matlabConnection)
     }
 
