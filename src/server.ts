@@ -8,7 +8,7 @@ import Logger from './logging/Logger'
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
-import NavigationSupportProvider from './providers/navigation/NavigationSupportProvider'
+import NavigationSupportProvider, { RequestType } from './providers/navigation/NavigationSupportProvider'
 import { getCliArgs } from './utils/CliUtils'
 
 // Create a connection for the server
@@ -56,7 +56,8 @@ connection.onInitialize((params: InitializeParams) => {
             documentFormattingProvider: true,
             executeCommandProvider: {
                 commands: Object.values(MatlabLSCommands)
-            }
+            },
+            referencesProvider: true
         }
     }
 
@@ -125,7 +126,11 @@ connection.onCodeAction(params => {
 
 /** --------------------  NAVIGATION SUPPORT   -------------------- **/
 connection.onDefinition(async params => {
-    return await NavigationSupportProvider.handleDefinitionRequest(params, documentManager)
+    return await NavigationSupportProvider.handleDefOrRefRequest(params, documentManager, RequestType.Definition)
+})
+
+connection.onReferences(async params => {
+    return await NavigationSupportProvider.handleDefOrRefRequest(params, documentManager, RequestType.References)
 })
 
 // Start listening to open/change/close text document events

@@ -1,6 +1,8 @@
-import { Definition, DefinitionParams, Location, Position, Range, TextDocuments } from 'vscode-languageserver'
+import { DefinitionParams, Location, Position, Range, ReferenceParams, TextDocuments } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
-import FileInfoIndex, { MatlabClassMemberInfo, MatlabCodeData, MatlabFunctionInfo } from '../../indexing/FileInfoIndex'
+import { URI } from 'vscode-uri'
+import * as fs from 'fs/promises'
+import FileInfoIndex, { FunctionVisibility, MatlabClassMemberInfo, MatlabCodeData, MatlabFunctionInfo } from '../../indexing/FileInfoIndex'
 import Indexer from '../../indexing/Indexer'
 import { MatlabConnection } from '../../lifecycle/MatlabCommunicationManager'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
@@ -31,10 +33,15 @@ class Expression {
     }
 }
 
+export enum RequestType {
+    Definition,
+    References
+}
+
 class NavigationSupportProvider {
     private readonly DOTTED_IDENTIFIER_REGEX = /[\w.]+/ // Does this need to be more specific? Like /[_a-zA-Z]\w*(?:\.[\w]+)*/
 
-    async handleDefinitionRequest (params: DefinitionParams, documentManager: TextDocuments<TextDocument>): Promise<Definition> {
+    async handleDefOrRefRequest (params: DefinitionParams | ReferenceParams, documentManager: TextDocuments<TextDocument>, requestType: RequestType): Promise<Location[]> {
         const matlabConnection = MatlabLifecycleManager.getMatlabConnection()
         if (matlabConnection == null) {
             return []
@@ -47,18 +54,22 @@ class NavigationSupportProvider {
             return []
         }
 
-        // Find ID for which to find the definition
-        const expression = this.getDefinitionTarget(textDocument, params.position)
+        // Find ID for which to find the definition or references
+        const expression = this.getTarget(textDocument, params.position)
 
         if (expression == null) {
             // No target found
             return []
         }
 
-        return await this.findDefinition(uri, params.position, expression, matlabConnection)
+        if (requestType === RequestType.Definition) {
+            return await this.findDefinition(uri, params.position, expression, matlabConnection)
+        } else {
+            return this.findReferences(uri, params.position, expression)
+        }
     }
 
-    private getDefinitionTarget (textDocument: TextDocument, position: Position): Expression | null {
+    private getTarget (textDocument: TextDocument, position: Position): Expression | null {
         const idAtPosition = this.getIdentifierAtPosition(textDocument, position)
 
         if (idAtPosition.identifier === '') {
@@ -113,7 +124,7 @@ class NavigationSupportProvider {
         return result
     }
 
-    private async findDefinition (uri: string, position: Position, expression: Expression, matlabConnection: MatlabConnection): Promise<Definition> {
+    private async findDefinition (uri: string, position: Position, expression: Expression, matlabConnection: MatlabConnection): Promise<Location[]> {
         // Get code data for current file
         const codeData = FileInfoIndex.codeDataCache.get(uri)
 
@@ -128,16 +139,23 @@ class NavigationSupportProvider {
             return definitionInCodeData
         }
 
-        // Fall back to the MATLAB path
-        return await this.findDefinitionOnPath(uri, position, expression, matlabConnection)
+        // Check the MATLAB path
+        const definitionOnPath = await this.findDefinitionOnPath(uri, position, expression, matlabConnection)
+
+        if (definitionOnPath != null) {
+            return definitionOnPath
+        }
+
+        // If not on path, may be in user's workspace
+        return this.findDefinitionInWorkspace(uri, position, expression)
     }
 
-    private findDefinitionInCodeData (uri: string, position: Position, expression: Expression, codeData: MatlabCodeData): Definition | null {
+    private findDefinitionInCodeData (uri: string, position: Position, expression: Expression, codeData: MatlabCodeData): Location[] | null {
         // If first part of expression targeted - look for a local variable
         if (expression.selectedComponent === 0) {
             const containingFunction = codeData.findContainingFunction(position)
             if (containingFunction != null) {
-                const varDefs = this.getVariableDefinitions(containingFunction, expression.unqualifiedTarget, uri)
+                const varDefs = this.getVariableDefsOrRefs(containingFunction, expression.unqualifiedTarget, uri, RequestType.Definition)
                 if (varDefs != null) {
                     return varDefs
                 }
@@ -148,7 +166,7 @@ class NavigationSupportProvider {
         let functionDeclaration = this.getFunctionDeclaration(codeData, expression.fullExpression)
         if (functionDeclaration != null) {
             const functionRange = functionDeclaration.declaration ?? Range.create(0, 0, 0, 0)
-            return Location.create(functionDeclaration.uri, functionRange)
+            return [Location.create(functionDeclaration.uri, functionRange)]
         }
 
         // Check for definitions within classes
@@ -157,7 +175,7 @@ class NavigationSupportProvider {
             functionDeclaration = this.getFunctionDeclaration(codeData, expression.last)
             if (functionDeclaration != null) {
                 const functionRange = functionDeclaration.declaration ?? Range.create(0, 0, 0, 0)
-                return Location.create(functionDeclaration.uri, functionRange)
+                return [Location.create(functionDeclaration.uri, functionRange)]
             }
 
             // Look for possible properties
@@ -167,7 +185,7 @@ class NavigationSupportProvider {
                     const propertyRange = Range.create(propertyDeclaration.range.start, propertyDeclaration.range.end)
                     const uri = codeData.classInfo.uri
                     if (uri != null) {
-                        return Location.create(uri, propertyRange)
+                        return [Location.create(uri, propertyRange)]
                     }
                 }
             }
@@ -176,16 +194,70 @@ class NavigationSupportProvider {
         return null
     }
 
-    private getVariableDefinitions (containingFunction: MatlabFunctionInfo, variableName: string, uri: string): Definition | null {
+    private findReferences (uri: string, position: Position, expression: Expression): Location[] {
+        // Get code data for current file
+        const codeData = FileInfoIndex.codeDataCache.get(uri)
+
+        if (codeData == null) {
+            // File not indexed - unable to look for references
+            return []
+        }
+
+        const referencesInCodeData = this.findReferencesInCodeData(uri, position, expression, codeData)
+
+        if (referencesInCodeData != null) {
+            return referencesInCodeData
+        }
+
+        return []
+    }
+
+    private findReferencesInCodeData (uri: string, position: Position, expression: Expression, codeData: MatlabCodeData): Location[] | null {
+        // If first part of expression is targeted - look for a local variable
+        if (expression.selectedComponent === 0) {
+            const containingFunction = codeData.findContainingFunction(position)
+            if (containingFunction != null) {
+                const varRefs = this.getVariableDefsOrRefs(containingFunction, expression.unqualifiedTarget, uri, RequestType.References)
+                if (varRefs != null) {
+                    return varRefs
+                }
+            }
+        }
+
+        // Check for functions in file
+        const functionDeclaration = this.getFunctionDeclaration(codeData, expression.fullExpression)
+        if (functionDeclaration != null && functionDeclaration.visibility === FunctionVisibility.Private) {
+            // Found a local function. Look through this file's references
+            return codeData.references.get(functionDeclaration.name)?.map(range => Location.create(uri, range)) ?? []
+        }
+
+        // Check other files
+        const refs: Location[] = []
+        for (const [, fileCodeData] of FileInfoIndex.codeDataCache) {
+            if (fileCodeData.functions.get(expression.fullExpression)?.visibility === FunctionVisibility.Private) {
+                // Skip files with other local functions
+                continue
+            }
+            const varRefs = fileCodeData.references.get(expression.fullExpression)
+            if (varRefs != null) {
+                varRefs.forEach(range => refs.push(Location.create(fileCodeData.uri, range)))
+            }
+        }
+        return refs
+    }
+
+    private getVariableDefsOrRefs (containingFunction: MatlabFunctionInfo, variableName: string, uri: string, requestType: RequestType): Location[] | null {
         const variableInfo = containingFunction.variableInfo.get(variableName)
 
         if (variableInfo == null) {
             return null
         }
 
+        const varInfoRanges = requestType === RequestType.Definition ? variableInfo.definitions : variableInfo.references
+
         // TODO: How do we want to handle global variables?
-        return variableInfo.definitions.map(defRange => {
-            return Location.create(uri, defRange)
+        return varInfoRanges.map(range => {
+            return Location.create(uri, range)
         })
     }
 
@@ -207,13 +279,19 @@ class NavigationSupportProvider {
         return codeData.classInfo.properties.get(propertyName) ?? null
     }
 
-    private async findDefinitionOnPath (uri: string, position: Position, expression: Expression, matlabConnection: MatlabConnection): Promise<Definition> {
+    private async findDefinitionOnPath (uri: string, position: Position, expression: Expression, matlabConnection: MatlabConnection): Promise<Location[] | null> {
         const resolvedPath = await PathResolver.resolvePaths([expression.targetExpression], uri, matlabConnection)
         const resolvedUri = resolvedPath[0].uri
 
         if (resolvedUri === '') {
             // Not found
-            return []
+            return null
+        }
+
+        // Ensure URI is not a directory. This can occur with some packages.
+        const fileStats = await fs.stat(URI.parse(resolvedUri).fsPath)
+        if (fileStats.isDirectory()) {
+            return null
         }
 
         if (!FileInfoIndex.codeDataCache.has(resolvedUri)) {
@@ -231,7 +309,55 @@ class NavigationSupportProvider {
             }
         }
 
-        return Location.create(resolvedUri, Range.create(0, 0, 0, 0))
+        return [Location.create(resolvedUri, Range.create(0, 0, 0, 0))]
+    }
+
+    private findDefinitionInWorkspace (uri: string, position: Position, expression: Expression): Location[] {
+        const expressionToMatch = expression.fullExpression
+
+        for (const [fileUri, fileCodeData] of FileInfoIndex.codeDataCache) {
+            if (uri === fileUri) continue // Already looked in the current file
+
+            let match = fileCodeData.packageName === '' ? '' : fileCodeData.packageName + '.'
+
+            if (fileCodeData.classInfo != null) {
+                const classUri = fileCodeData.classInfo.uri
+                if (classUri == null) continue
+
+                // Check class name
+                match += fileCodeData.classInfo.name
+                if (expressionToMatch === match) {
+                    const range = fileCodeData.classInfo.declaration ?? Range.create(0, 0, 0, 0)
+                    return [Location.create(classUri, range)]
+                }
+
+                // Check properties and enums
+                for (const [propName, propData] of fileCodeData.classInfo.properties) {
+                    const propMatch = match + '.' + propName
+                    if (expressionToMatch === propMatch) {
+                        return [Location.create(classUri, propData.range)]
+                    }
+                }
+
+                for (const [enumName, enumData] of fileCodeData.classInfo.enumerations) {
+                    const enumMatch = match + '.' + enumName
+                    if (expressionToMatch === enumMatch) {
+                        return [Location.create(classUri, enumData.range)]
+                    }
+                }
+            }
+
+            // Check functions
+            for (const [funcName, funcData] of fileCodeData.functions) {
+                const funcMatch = (match === '') ? funcName : match + '.' + funcName
+                if (expressionToMatch === funcMatch) {
+                    const range = funcData.declaration ?? Range.create(0, 0, 0, 0)
+                    return [Location.create(funcData.uri, range)]
+                }
+            }
+        }
+
+        return []
     }
 }
 
