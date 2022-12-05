@@ -364,6 +364,12 @@ export class MatlabCodeData {
         return this.classInfo != null
     }
 
+    /**
+     * Finds the info for the function containing the given position.
+     *
+     * @param position A position in the document
+     * @returns The info for the function containing the position, or null if no function contains that position.
+     */
     findContainingFunction (position: Position): MatlabFunctionInfo | null {
         let containingFunction: MatlabFunctionInfo | null = null
 
