@@ -8,6 +8,7 @@ import { MatlabConnection } from '../../lifecycle/MatlabCommunicationManager'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import { getTextOnLine } from '../../utils/TextDocumentUtils'
 import PathResolver from './PathResolver'
+import { connection } from '../../server'
 
 /**
  * Represents a code expression, either a single identifier or a dotted expression.
@@ -73,7 +74,7 @@ class NavigationSupportProvider {
      * @returns An array of locations
      */
     async handleDefOrRefRequest (params: DefinitionParams | ReferenceParams, documentManager: TextDocuments<TextDocument>, requestType: RequestType): Promise<Location[]> {
-        const matlabConnection = MatlabLifecycleManager.getMatlabConnection()
+        const matlabConnection = await MatlabLifecycleManager.getOrCreateMatlabConnection(connection)
         if (matlabConnection == null) {
             return []
         }
