@@ -136,7 +136,7 @@ class MatlabLifecycleManager {
     handleConnectionStatusChange (data: MatlabConnectionStatusParam): void {
         if (data.connectionAction === 'connect') {
             void this.connectToMatlab(connection)
-        } else if (data.connectionAction === 'disconnect') {
+        } else {
             this.disconnectFromMatlab()
         }
     }
