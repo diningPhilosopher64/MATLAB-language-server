@@ -8,6 +8,9 @@ import * as path from 'path'
 import MatlabCommunicationManager, { LifecycleEventType, MatlabConnection } from './MatlabCommunicationManager'
 import Logger from '../logging/Logger'
 import ArgumentManager, { Argument } from './ArgumentManager'
+import { connection } from '../server'
+import LifecycleNotificationHelper from './LifecycleNotificationHelper'
+import NotificationService, { Notification } from '../notifications/NotificationService'
 
 export enum ConnectionTiming {
     Early = 'early',
@@ -23,6 +26,10 @@ enum ConnectionState {
 
 interface MatlabLifecycleEvent {
     matlabStatus: 'connected' | 'disconnected'
+}
+
+export interface MatlabConnectionStatusParam {
+    connectionAction: 'connect' | 'disconnect'
 }
 
 type MatlabLifecycleCallback = (error: Error | null, evt: MatlabLifecycleEvent) => void
@@ -118,6 +125,19 @@ class MatlabLifecycleManager {
      */
     addMatlabLifecycleListener (callback: MatlabLifecycleCallback): void {
         this._matlabLifecycleCallbacks.push(callback)
+    }
+
+    /**
+     * Handles requests from the language client to either connect to or disconnect from MATLAB
+     *
+     * @param data Data about whether or not MATLAB should be connected or disconnected
+     */
+    handleConnectionStatusChange (data: MatlabConnectionStatusParam): void {
+        if (data.connectionAction === 'connect') {
+            void this.connectToMatlab(connection)
+        } else if (data.connectionAction === 'disconnect') {
+            this.disconnectFromMatlab()
+        }
     }
 
     /**
@@ -235,14 +255,15 @@ class MatlabProcess {
         }
 
         this.isValid = false
-        this._notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
+        LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
     }
 
     /**
      * Attempts to launch a new instance of MATLAB
      */
     async launchMatlab (): Promise<void> {
-        this._notifyConnectionStatusChange(ConnectionState.CONNECTING)
+        LifecycleNotificationHelper.didMatlabLaunchFail = false
+        LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.CONNECTING)
 
         return await new Promise<void>(resolve => {
             const outFile = path.join(Logger.logDir, 'matlabls_conn.json')
@@ -263,7 +284,7 @@ class MatlabProcess {
                 this._matlabPid = info.matlabPid
                 this._matlabConnection?.initialize().then(() => {
                     fs.unwatchFile(outFile)
-                    this._notifyConnectionStatusChange(ConnectionState.CONNECTED)
+                    LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.CONNECTED)
                     resolve()
                 }).catch(reason => {
                     Logger.error('Failed to connect to MATLAB')
@@ -280,20 +301,20 @@ class MatlabProcess {
      * @param url The URL at which to find MATLAB
      */
     async connectToMatlab (url: string): Promise<void> {
-        this._notifyConnectionStatusChange(ConnectionState.CONNECTING)
+        LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.CONNECTING)
 
         this._matlabConnection = await MatlabCommunicationManager.connectToExistingMatlab(url)
 
         this._matlabConnection.setLifecycleListener(lifecycleEvent => {
             if (lifecycleEvent === LifecycleEventType.CONNECTED) {
                 this._isReady = true
-                this._notifyConnectionStatusChange(ConnectionState.CONNECTED)
+                LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.CONNECTED)
             } else if (lifecycleEvent === LifecycleEventType.DISCONNECTED) {
                 // Connection failed - retry after delay
                 this._matlabConnection?.close()
                 this._matlabConnection = null
                 this._isReady = false
-                this._notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
+                LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
                 setTimeout(() => {
                     void this.connectToMatlab(url)
                 }, 1000)
@@ -309,11 +330,11 @@ class MatlabProcess {
      * @param outFile The file in which MATLAB should output connection details
      */
     private async _launchMatlabProcess (outFile: string): Promise<void> {
-        const matlabLaunchCommand = this._getMatlabLaunchCommand(outFile)
+        const { command, args } = await this._getMatlabLaunchCommand(outFile)
 
         Logger.log('Launching MATLAB...')
 
-        const { matlabProcess, matlabConnection } = await MatlabCommunicationManager.connectToNewMatlab(matlabLaunchCommand, ArgumentManager.getArgument(Argument.MatlabCertificateDirectory) as string)
+        const { matlabProcess, matlabConnection } = await MatlabCommunicationManager.connectToNewMatlab(command, args, ArgumentManager.getArgument(Argument.MatlabCertificateDirectory) as string)
 
         this._matlabProcess = matlabProcess
         this._matlabConnection = matlabConnection
@@ -333,13 +354,12 @@ class MatlabProcess {
          * This could include the user killing the process.
          */
         this._matlabProcess.on('close', () => {
-            // TODO: Do we need to handle an exit code?
             // Close connection
             Logger.log('MATLAB process terminated')
             this._matlabConnection?.close()
             this.isValid = false
 
-            this._notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
+            LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
         })
 
         // Handles errors with the MATLAB process
@@ -349,6 +369,9 @@ class MatlabProcess {
             if (error.stack != null) {
                 Logger.error(`Error launching MATLAB: ${error.stack}`)
             }
+
+            LifecycleNotificationHelper.didMatlabLaunchFail = true
+            NotificationService.sendNotification(Notification.MatlabLaunchFailed)
         })
 
         this._matlabConnection.setLifecycleListener(lifecycleEvent => {
@@ -357,7 +380,7 @@ class MatlabProcess {
                 this._matlabConnection?.close()
                 this.isValid = false
 
-                this._notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
+                LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
             }
         })
     }
@@ -368,42 +391,48 @@ class MatlabProcess {
      * @param outFile The file in which MATLAB should output connection details
      * @returns The matlab launch command
      */
-    private _getMatlabLaunchCommand (outFile: string): string {
+    private _getMatlabLaunchCommand (outFile: string): { command: string, args: string[] } {
         const matlabInstallPath = ArgumentManager.getArgument(Argument.MatlabInstallationPath) as string ?? ''
-        let launchCmd = 'matlab'
+        let command = 'matlab'
         if (matlabInstallPath !== '') {
             const matlabPath = path.normalize(path.join(
                 matlabInstallPath,
                 'bin',
                 'matlab'
             ))
-            launchCmd = matlabPath.includes(' ') ? `"${matlabPath}"` : matlabPath
+            command = matlabPath.includes(' ') ? `"${matlabPath}"` : matlabPath
         }
 
-        let args = ArgumentManager.getArgument(Argument.MatlabLaunchCommandArguments) as string ?? '-nosplash'
+        const args: string[] = []
+
+        const argsFromSettings = ArgumentManager.getArgument(Argument.MatlabLaunchCommandArguments) as string ?? null
+        if (argsFromSettings != null) {
+            args.push(argsFromSettings)
+        }
+
+        args.push('-nosplash')
 
         if (os.platform() === 'win32') {
-            args += ' -wait'
+            args.push('-wait')
         }
 
-        const startupFolderFlag = '-useStartupFolderPref'
-        const memManagerFlag = '-memmgr release'
-        const logFileFlag = `-logfile ${path.join(Logger.logDir, 'matlabls.log')}`
-        const runCmd = `-r "addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')"`
-        const desktopMode = os.platform() === 'win32' ? '-noDisplayDesktop' : '-nodesktop' // Workaround for Windows until better solution is implemented
+        args.push('-useStartupFolderPref') // Startup folder flag
+        args.push('-memmgr', 'release') // Memory manager
+        args.push('-logfile', path.join(Logger.logDir, 'matlabls.log')) // Log file
+        args.push('-r', `"addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')"`) // Startup command
 
-        return `${launchCmd} ${args} ${startupFolderFlag} ${memManagerFlag} ${logFileFlag} ${runCmd} ${desktopMode}`
-    }
+        // Desktop mode
+        if (os.platform() === 'win32') {
+            // Workaround for Windows until a better solution is implemented
+            args.push('-noDisplayDesktop')
+        } else {
+            args.push('-nodesktop')
+        }
 
-    /**
-     * Sends notification to the front-end of a change in the MATLAB connection state.
-     *
-     * @param connectionStatus The connection state
-     */
-    private _notifyConnectionStatusChange (connectionStatus: ConnectionState): void {
-        void this._connection.sendNotification('matlab/connectionStatusChange', {
-            connectionStatus
-        })
+        return {
+            command,
+            args
+        }
     }
 }
 

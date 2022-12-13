@@ -1,6 +1,7 @@
 
 import { DocumentFormattingParams, HandlerResult, Position, Range, TextDocuments, TextEdit, _Connection } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
+import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import * as TextDocumentUtils from '../../utils/TextDocumentUtils'
 
@@ -47,6 +48,7 @@ class FormatSupportProvider {
 
         // If MATLAB is not available, no-op
         if (matlabConnection == null || !MatlabLifecycleManager.isMatlabReady()) {
+            LifecycleNotificationHelper.notifyMatlabRequirement()
             return []
         }
 

@@ -3,8 +3,9 @@ import { ClientCapabilities, createConnection, InitializeParams, InitializeResul
 import DocumentIndexer from './indexing/DocumentIndexer'
 import WorkspaceIndexer from './indexing/WorkspaceIndexer'
 import ArgumentManager, { Argument } from './lifecycle/ArgumentManager'
-import MatlabLifecycleManager, { ConnectionTiming } from './lifecycle/MatlabLifecycleManager'
+import MatlabLifecycleManager, { ConnectionTiming, MatlabConnectionStatusParam } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
+import NotificationService, { Notification } from './notifications/NotificationService'
 import CompletionProvider from './providers/completion/CompletionSupportProvider'
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
@@ -95,13 +96,10 @@ connection.onShutdown(() => {
 })
 
 // Set up connection notification listeners
-connection.onNotification('matlab/updateConnection', (data: { connectionAction: 'connect' | 'disconnect' }) => {
-    if (data.connectionAction === 'connect') {
-        void MatlabLifecycleManager.connectToMatlab(connection)
-    } else if (data.connectionAction === 'disconnect') {
-        MatlabLifecycleManager.disconnectFromMatlab()
-    }
-})
+NotificationService.registerNotificationListener(
+    Notification.MatlabConnectionClientUpdate,
+    data => MatlabLifecycleManager.handleConnectionStatusChange(data as MatlabConnectionStatusParam)
+)
 
 // Handles files opened
 documentManager.onDidOpen(params => {
