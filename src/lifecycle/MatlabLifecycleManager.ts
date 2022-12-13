@@ -404,30 +404,24 @@ class MatlabProcess {
             command = matlabPath.includes(' ') ? `"${matlabPath}"` : matlabPath
         }
 
-        const args: string[] = []
+        const args = [
+            '-nosplash',
+            '-useStartupFolderPref', // Startup folder flag
+            '-memmgr', 'release', // Memory manager
+            '-logFile', path.join(Logger.logDir, 'matlabls.log'), // Log file
+            '-r', `"addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')"` // Startup command
+        ]
+
+        if (os.platform() === 'win32') {
+            args.push('-wait')
+            args.push('-noDisplayDesktop') // Workaround for '-nodesktop' on Windows until a better solution is implemented
+        } else {
+            args.push('-nodesktop')
+        }
 
         const argsFromSettings = ConfigurationManager.getArgument(Argument.MatlabLaunchCommandArguments) ?? null
         if (argsFromSettings != null) {
             args.push(argsFromSettings)
-        }
-
-        args.push('-nosplash')
-
-        if (os.platform() === 'win32') {
-            args.push('-wait')
-        }
-
-        args.push('-useStartupFolderPref') // Startup folder flag
-        args.push('-memmgr', 'release') // Memory manager
-        args.push('-logfile', path.join(Logger.logDir, 'matlabls.log')) // Log file
-        args.push('-r', `"addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')"`) // Startup command
-
-        // Desktop mode
-        if (os.platform() === 'win32') {
-            // Workaround for Windows until a better solution is implemented
-            args.push('-noDisplayDesktop')
-        } else {
-            args.push('-nodesktop')
         }
 
         return {
