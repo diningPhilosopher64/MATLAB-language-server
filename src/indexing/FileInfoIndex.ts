@@ -1,5 +1,5 @@
 import { Position, Range } from 'vscode-languageserver'
-import { isPositionGreaterThan, isPositionLessThan } from '../utils/PositionUtils'
+import { isPositionGreaterThan, isPositionLessThanOrEqualTo } from '../utils/PositionUtils'
 
 /**
  * Defines the structure of the raw data retrieved from MATLAB.
@@ -378,7 +378,7 @@ export class MatlabCodeData {
             const end = functionInfo.range.end
 
             // Check if position is within range
-            if (isPositionLessThan(start, position, true) && isPositionGreaterThan(end, position)) {
+            if (isPositionLessThanOrEqualTo(start, position) && isPositionGreaterThan(end, position)) {
                 if (containingFunction == null) {
                     containingFunction = functionInfo
                 } else {
