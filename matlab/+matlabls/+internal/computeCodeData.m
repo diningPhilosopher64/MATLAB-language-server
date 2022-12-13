@@ -247,7 +247,7 @@ function functionReferences = parseFunctionData (functionNode, isPublic, isClass
             topLevelFunctionNode = topLevelFunctionNode.trueparent;
         end
         [declLineEnd, declCharEnd] = topLevelFunctionNode.pos2lc(topLevelFunctionNode.righttreepos);
-        functionInfo.declaration = createRange(functionInfo.range.lineStart, functionInfo.range.charStart, declLineEnd, declCharEnd);
+        functionInfo.declaration = createRange(functionInfo.range.lineStart, functionInfo.range.charStart, declLineEnd, declCharEnd + 1);
     end
 
     if ~isClassDef
@@ -391,14 +391,15 @@ function variableInfo = addArgumentsInfo (functionNode, variableInfo)
 end
 
 function variableInfo = addVariableInfoImpl (vars, ranges, variableInfo, field)
-    info = cell(1, numel(vars));
-    for k = 1:numel(vars)
-        name = vars{k};
-        if isempty(name)
-            info{k} = {};
-            continue
-        end
-        info{k} = { name, ranges(k) };
+    % Remove any empty entries - these could be caused by function input
+    % arguments being omitted using ~
+    nonemptyIndices = ~cellfun(@isempty, vars);
+    validVars = vars(nonemptyIndices);
+    validRanges = ranges(nonemptyIndices);
+
+    info = cell(1, numel(validVars));
+    for k = 1:numel(validVars)
+        info{k} = { validVars{k}, validRanges(k) };
     end
     if ~isfield(variableInfo, field)
         variableInfo.(field) = info;

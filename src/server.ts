@@ -9,6 +9,7 @@ import CompletionProvider from './providers/completion/CompletionSupportProvider
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
+import NavigationSupportProvider, { RequestType } from './providers/navigation/NavigationSupportProvider'
 import { getCliArgs } from './utils/CliUtils'
 
 // Create a connection for the server
@@ -62,10 +63,12 @@ connection.onInitialize((params: InitializeParams) => {
                     '\\' // File path
                 ]
             },
+            definitionProvider: true,
             documentFormattingProvider: true,
             executeCommandProvider: {
                 commands: Object.values(MatlabLSCommands)
             },
+            referencesProvider: true,
             signatureHelpProvider: {
                 triggerCharacters: ['(', ',']
             }
@@ -146,6 +149,15 @@ connection.onDocumentFormatting(async params => {
 connection.onCodeAction(params => {
     // Retrieve a list of possible code actions to be displayed by the IDE
     return LintingSupportProvider.handleCodeActionRequest(params)
+})
+
+/** --------------------  NAVIGATION SUPPORT   -------------------- **/
+connection.onDefinition(async params => {
+    return await NavigationSupportProvider.handleDefOrRefRequest(params, documentManager, RequestType.Definition)
+})
+
+connection.onReferences(async params => {
+    return await NavigationSupportProvider.handleDefOrRefRequest(params, documentManager, RequestType.References)
 })
 
 // Start listening to open/change/close text document events
