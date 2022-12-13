@@ -203,7 +203,7 @@ class NavigationSupportProvider {
         }
 
         // If not on path, may be in user's workspace
-        return this.findDefinitionInWorkspace(uri, position, expression)
+        return this.findDefinitionInWorkspace(uri, expression)
     }
 
     /**
@@ -319,11 +319,10 @@ class NavigationSupportProvider {
      * Searches the (indexed) workspace for the definition of the given expression. These files may not be on the MATLAB path.
      *
      * @param uri The URI of the file containing the expression
-     * @param position The position of the expression
      * @param expression The expression for which we are looking for the definition
      * @returns The definition location(s). Returns an empty array if no definitions found.
      */
-    private findDefinitionInWorkspace (uri: string, position: Position, expression: Expression): Location[] {
+    private findDefinitionInWorkspace (uri: string, expression: Expression): Location[] {
         const expressionToMatch = expression.fullExpression
 
         for (const [fileUri, fileCodeData] of FileInfoIndex.codeDataCache) {
