@@ -25,6 +25,7 @@ classdef (Hidden) MatlabLanguageServerHelper < handle
     methods (Access = private)
         function initializeFeatureHandlers (this)
             % Initialize all supported feature handlers
+            this.FeatureHandlers(end + 1) = matlabls.handlers.CompletionSupportHandler(this.CommManager);
             this.FeatureHandlers(end + 1) = matlabls.handlers.FormatSupportHandler(this.CommManager);
             this.FeatureHandlers(end + 1) = matlabls.handlers.IndexingHandler(this.CommManager);
             this.FeatureHandlers(end + 1) = matlabls.handlers.LintingSupportHandler(this.CommManager);
