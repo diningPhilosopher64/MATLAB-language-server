@@ -230,8 +230,7 @@ class NavigationSupportProvider {
         // Check for functions in file
         let functionDeclaration = this.getFunctionDeclaration(codeData, expression.fullExpression)
         if (functionDeclaration != null) {
-            const functionRange = functionDeclaration.declaration ?? Range.create(0, 0, 0, 0)
-            return [Location.create(functionDeclaration.uri, functionRange)]
+            return [this.getLocationForFunctionDeclaration(functionDeclaration)]
         }
 
         // Check for definitions within classes
@@ -239,8 +238,7 @@ class NavigationSupportProvider {
             // Look for methods/properties within class definitions (e.g. obj.foo)
             functionDeclaration = this.getFunctionDeclaration(codeData, expression.last)
             if (functionDeclaration != null) {
-                const functionRange = functionDeclaration.declaration ?? Range.create(0, 0, 0, 0)
-                return [Location.create(functionDeclaration.uri, functionRange)]
+                return [this.getLocationForFunctionDeclaration(functionDeclaration)]
             }
 
             // Look for possible properties
@@ -257,6 +255,19 @@ class NavigationSupportProvider {
         }
 
         return null
+    }
+
+    /**
+     * Gets the location of the given function's declaration. If the function does not have
+     * a definite declaration, provides a location at the beginning of the file. For example,
+     * this may be the case for built-in functions like 'plot'.
+     *
+     * @param functionInfo Info about the function
+     * @returns The location of the function declaration
+     */
+    private getLocationForFunctionDeclaration (functionInfo: MatlabFunctionInfo): Location {
+        const range = functionInfo.declaration ?? Range.create(0, 0, 0, 0)
+        return Location.create(functionInfo.uri, range)
     }
 
     /**
@@ -332,19 +343,15 @@ class NavigationSupportProvider {
                 }
 
                 // Check properties
-                for (const [propName, propData] of fileCodeData.classInfo.properties) {
-                    const propMatch = match + '.' + propName
-                    if (expressionToMatch === propMatch) {
-                        return [Location.create(classUri, propData.range)]
-                    }
+                const matchedProperty = this.findMatchingClassMember(expressionToMatch, match, classUri, fileCodeData.classInfo.properties)
+                if (matchedProperty != null) {
+                    return matchedProperty
                 }
 
                 // Check enums
-                for (const [enumName, enumData] of fileCodeData.classInfo.enumerations) {
-                    const enumMatch = match + '.' + enumName
-                    if (expressionToMatch === enumMatch) {
-                        return [Location.create(classUri, enumData.range)]
-                    }
+                const matchedEnum = this.findMatchingClassMember(expressionToMatch, match, classUri, fileCodeData.classInfo.enumerations)
+                if (matchedEnum != null) {
+                    return matchedEnum
                 }
             }
 
@@ -359,6 +366,26 @@ class NavigationSupportProvider {
         }
 
         return []
+    }
+
+    /**
+     * Finds the class member (property or enumeration) in the given map which matches to given expression.
+     *
+     * @param expressionToMatch The expression being compared against
+     * @param matchPrefix The prefix which should be attached to the class members before comparison
+     * @param classUri The URI for the current class
+     * @param classMemberMap The map of class members
+     * @returns An array containing the location of the matched class member, or null if one was not found
+     */
+    private findMatchingClassMember (expressionToMatch: string, matchPrefix: string, classUri: string, classMemberMap: Map<string, MatlabClassMemberInfo>): Location[] | null {
+        for (const [memberName, memberData] of classMemberMap) {
+            const match = matchPrefix + '.' + memberName
+            if (expressionToMatch === match) {
+                return [Location.create(classUri, memberData.range)]
+            }
+        }
+
+        return null
     }
 
     /**
