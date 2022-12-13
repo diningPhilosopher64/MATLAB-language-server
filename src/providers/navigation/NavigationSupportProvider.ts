@@ -63,7 +63,7 @@ export enum RequestType {
  * Currently, this handles Go-to-Definition and Go-to-References.
  */
 class NavigationSupportProvider {
-    private readonly DOTTED_IDENTIFIER_REGEX = /[\w.]+/ // Does this need to be more specific? Like /[_a-zA-Z]\w*(?:\.[\w]+)*/
+    private readonly DOTTED_IDENTIFIER_REGEX = /[\w.]+/
 
     /**
      * Handles requests for definitions or references.
