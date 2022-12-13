@@ -2,7 +2,7 @@ import { execFile, ExecFileException } from 'child_process'
 import { CodeAction, CodeActionKind, CodeActionParams, Command, Diagnostic, DiagnosticSeverity, Position, Range, TextDocumentEdit, TextEdit, VersionedTextDocumentIdentifier, WorkspaceEdit, _Connection } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
-import ArgumentManager, { Argument } from '../../lifecycle/ArgumentManager'
+import ConfigurationManager from '../../lifecycle/ConfigurationManager'
 import { MatlabConnection } from '../../lifecycle/MatlabCommunicationManager'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import Logger from '../../logging/Logger'
@@ -426,7 +426,7 @@ class LintingSupportProvider {
             return null
         }
 
-        const matlabInstallPath = ArgumentManager.getArgument(Argument.MatlabInstallationPath) as string
+        const matlabInstallPath = (await ConfigurationManager.getConfiguration()).installPath
         let binPath = ''
 
         if (matlabInstallPath !== '') {

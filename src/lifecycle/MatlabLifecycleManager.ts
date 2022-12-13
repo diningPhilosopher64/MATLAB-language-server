@@ -7,7 +7,7 @@ import * as path from 'path'
 
 import MatlabCommunicationManager, { LifecycleEventType, MatlabConnection } from './MatlabCommunicationManager'
 import Logger from '../logging/Logger'
-import ArgumentManager, { Argument } from './ArgumentManager'
+import ConfigurationManager, { Argument } from './ConfigurationManager'
 import { connection } from '../server'
 import LifecycleNotificationHelper from './LifecycleNotificationHelper'
 import NotificationService, { Notification } from '../notifications/NotificationService'
@@ -108,7 +108,8 @@ class MatlabLifecycleManager {
         }
 
         // No active connection - should create a connection if desired
-        if (ArgumentManager.getArgument(Argument.MatlabConnectionTiming) !== ConnectionTiming.Never) {
+        const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
+        if (connectionTiming !== ConnectionTiming.Never) {
             const matlabProcess = await this.connectToMatlab(connection)
             return matlabProcess.getConnection()
         }
@@ -149,7 +150,7 @@ class MatlabLifecycleManager {
      */
     private _shouldConnectToExistingMatlab (): boolean {
         // Assume we should connect to existing MATLAB if the matlabUrl startup flag has been provided
-        return Boolean(ArgumentManager.getArgument(Argument.MatlabUrl))
+        return Boolean(ConfigurationManager.getArgument(Argument.MatlabUrl))
     }
 
     /**
@@ -159,7 +160,7 @@ class MatlabLifecycleManager {
      * @returns The connected MATLAB process
      */
     private async _connectToExistingMatlab (connection: _Connection): Promise<MatlabProcess> {
-        const url = ArgumentManager.getArgument(Argument.MatlabUrl) as string
+        const url = ConfigurationManager.getArgument(Argument.MatlabUrl)
 
         if (this._matlabProcess == null || !this._matlabProcess.isValid) {
             this._matlabProcess = new MatlabProcess(connection)
@@ -334,7 +335,7 @@ class MatlabProcess {
 
         Logger.log('Launching MATLAB...')
 
-        const { matlabProcess, matlabConnection } = await MatlabCommunicationManager.connectToNewMatlab(command, args, ArgumentManager.getArgument(Argument.MatlabCertificateDirectory) as string)
+        const { matlabProcess, matlabConnection } = await MatlabCommunicationManager.connectToNewMatlab(command, args, ConfigurationManager.getArgument(Argument.MatlabCertificateDirectory))
 
         this._matlabProcess = matlabProcess
         this._matlabConnection = matlabConnection
@@ -391,8 +392,8 @@ class MatlabProcess {
      * @param outFile The file in which MATLAB should output connection details
      * @returns The matlab launch command
      */
-    private _getMatlabLaunchCommand (outFile: string): { command: string, args: string[] } {
-        const matlabInstallPath = ArgumentManager.getArgument(Argument.MatlabInstallationPath) as string ?? ''
+    private async _getMatlabLaunchCommand (outFile: string): Promise<{ command: string, args: string[] }> {
+        const matlabInstallPath = (await ConfigurationManager.getConfiguration()).installPath
         let command = 'matlab'
         if (matlabInstallPath !== '') {
             const matlabPath = path.normalize(path.join(
@@ -405,7 +406,7 @@ class MatlabProcess {
 
         const args: string[] = []
 
-        const argsFromSettings = ArgumentManager.getArgument(Argument.MatlabLaunchCommandArguments) as string ?? null
+        const argsFromSettings = ConfigurationManager.getArgument(Argument.MatlabLaunchCommandArguments) ?? null
         if (argsFromSettings != null) {
             args.push(argsFromSettings)
         }
