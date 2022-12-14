@@ -31,12 +31,13 @@ class MatlabCommunicationManager {
      * Launches and connects to MATLAB.
      *
      * @param launchCommand The command with which MATLAB is launched
+     * @param launchArguments The arguments with which MATLAB is launched
      * @param logDirectory The directory in which MATLAB should log data
      * @param certificateDirectory The directory in which a certificate should be generated.
      * If no directory is provided, a temporary directory will be created.
      * @returns Information about the new MATLAB process and the connection to it.
      */
-    async connectToNewMatlab (launchCommand: string, logDirectory: string, certificateDirectory?: string): Promise<MatlabProcessInfo> {
+    async connectToNewMatlab (launchCommand: string, launchArguments: string[], logDirectory: string, certificateDirectory?: string): Promise<MatlabProcessInfo> {
         const certDir = certificateDirectory ?? await fs.mkdtemp(path.join(os.tmpdir(), 'matlablsTmp-'))
         const port = await this._getAvailablePort()
         const certFile = path.join(certDir, 'cert.pem')
@@ -44,9 +45,7 @@ class MatlabCommunicationManager {
         const apiKey = this._makeApiKey()
 
         // Spawn new instance of MATLAB
-        const matlabProcess = spawn(launchCommand, [], {
-            shell: true,
-            stdio: 'pipe',
+        const matlabProcess = spawn(launchCommand, launchArguments, {
             cwd: process.env.HOME,
             env: {
                 ...process.env,
@@ -133,7 +132,7 @@ export abstract class MatlabConnection {
      * Does not attempt to close MATLAB.
      */
     close (): void {
-        this._client.disconnect()
+        this._client?.disconnect()
         this._lifecycleCallback = null
     }
 

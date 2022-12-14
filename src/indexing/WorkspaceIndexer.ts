@@ -1,5 +1,5 @@
 import { ClientCapabilities, WorkspaceFolder, WorkspaceFoldersChangeEvent } from 'vscode-languageserver'
-import ArgumentManager, { Argument } from '../lifecycle/ArgumentManager'
+import ConfigurationManager from '../lifecycle/ConfigurationManager'
 import { connection } from '../server'
 import Indexer from './Indexer'
 
@@ -8,9 +8,6 @@ import Indexer from './Indexer'
  * functions, and variables.
  */
 class WorkspaceIndexer {
-    private readonly REQUEST_CHANNEL = '/matlabls/indexWorkspace/request'
-    private readonly RESPONSE_CHANNEL = '/matlabls/indexWorkspace/response/' // Needs to be appended with requestId
-
     private isWorkspaceIndexingSupported = false
 
     /**
@@ -28,7 +25,7 @@ class WorkspaceIndexer {
         }
 
         connection.workspace.onDidChangeWorkspaceFolders((params: WorkspaceFoldersChangeEvent) => {
-            this.handleWorkspaceFoldersAdded(params.added)
+            void this.handleWorkspaceFoldersAdded(params.added)
         })
     }
 
@@ -36,7 +33,7 @@ class WorkspaceIndexer {
      * Attempts to index the files in the user's workspace.
      */
     async indexWorkspace (): Promise<void> {
-        if (!this.shouldIndexWorkspace()) {
+        if (!(await this.shouldIndexWorkspace())) {
             return
         }
 
@@ -54,8 +51,8 @@ class WorkspaceIndexer {
      *
      * @param folders The list of folders added to the workspace
      */
-    private handleWorkspaceFoldersAdded (folders: WorkspaceFolder[]): void {
-        if (!this.shouldIndexWorkspace()) {
+    private async handleWorkspaceFoldersAdded (folders: WorkspaceFolder[]): Promise<void> {
+        if (!(await this.shouldIndexWorkspace())) {
             return
         }
 
@@ -69,8 +66,9 @@ class WorkspaceIndexer {
      *
      * @returns True if workspace indexing should occurr, false otherwise.
      */
-    private shouldIndexWorkspace (): boolean {
-        return this.isWorkspaceIndexingSupported && ArgumentManager.getArgument(Argument.ShouldIndexWorkspace) as boolean
+    private async shouldIndexWorkspace (): Promise<boolean> {
+        const shouldIndexWorkspace = (await ConfigurationManager.getConfiguration()).indexWorkspace
+        return this.isWorkspaceIndexingSupported && shouldIndexWorkspace
     }
 }
 

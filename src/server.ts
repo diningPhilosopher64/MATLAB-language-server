@@ -2,15 +2,15 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
 import { ClientCapabilities, createConnection, InitializeParams, InitializeResult, ProposedFeatures, TextDocuments } from 'vscode-languageserver/node'
 import DocumentIndexer from './indexing/DocumentIndexer'
 import WorkspaceIndexer from './indexing/WorkspaceIndexer'
-import ArgumentManager, { Argument } from './lifecycle/ArgumentManager'
-import MatlabLifecycleManager, { ConnectionTiming } from './lifecycle/MatlabLifecycleManager'
+import ConfigurationManager from './lifecycle/ConfigurationManager'
+import MatlabLifecycleManager, { ConnectionTiming, MatlabConnectionStatusParam } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
+import NotificationService, { Notification } from './notifications/NotificationService'
 import CompletionProvider from './providers/completion/CompletionSupportProvider'
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
 import NavigationSupportProvider, { RequestType } from './providers/navigation/NavigationSupportProvider'
-import { getCliArgs } from './utils/CliUtils'
 
 // Create a connection for the server
 export const connection = createConnection(ProposedFeatures.all)
@@ -20,10 +20,6 @@ Logger.initialize(connection.console)
 
 // Create basic text document manager
 const documentManager: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
-
-// Get CLI arguments
-const cliArgs = getCliArgs()
-ArgumentManager.initializeFromCliArguments(cliArgs)
 
 MatlabLifecycleManager.addMatlabLifecycleListener((error, lifecycleEvent) => {
     if (error != null) {
@@ -80,13 +76,20 @@ connection.onInitialize((params: InitializeParams) => {
 
 // Handles the initialized notification
 connection.onInitialized(() => {
+    ConfigurationManager.setup(capabilities)
+
     WorkspaceIndexer.setupCallbacks(capabilities)
 
+    void startMatlabIfEarlyLaunch()
+})
+
+async function startMatlabIfEarlyLaunch (): Promise<void> {
     // Launch MATLAB if it should be launched early
-    if (ArgumentManager.getArgument(Argument.MatlabConnectionTiming) === ConnectionTiming.Early) {
+    const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
+    if (connectionTiming === ConnectionTiming.Early) {
         void MatlabLifecycleManager.connectToMatlab(connection)
     }
-})
+}
 
 // Handles a shutdown request
 connection.onShutdown(() => {
@@ -95,13 +98,10 @@ connection.onShutdown(() => {
 })
 
 // Set up connection notification listeners
-connection.onNotification('matlab/updateConnection', (data: { connectionAction: 'connect' | 'disconnect' }) => {
-    if (data.connectionAction === 'connect') {
-        void MatlabLifecycleManager.connectToMatlab(connection)
-    } else if (data.connectionAction === 'disconnect') {
-        MatlabLifecycleManager.disconnectFromMatlab()
-    }
-})
+NotificationService.registerNotificationListener(
+    Notification.MatlabConnectionClientUpdate,
+    data => MatlabLifecycleManager.handleConnectionStatusChange(data as MatlabConnectionStatusParam)
+)
 
 // Handles files opened
 documentManager.onDidOpen(params => {

@@ -1,5 +1,5 @@
 import * as yargs from 'yargs'
-import { Argument } from '../lifecycle/ArgumentManager'
+import { Argument } from '../lifecycle/ConfigurationManager'
 
 export interface CliArgs {
     [Argument.MatlabLaunchCommandArguments]?: string

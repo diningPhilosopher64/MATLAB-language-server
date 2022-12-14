@@ -9,6 +9,7 @@ import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import { getTextOnLine } from '../../utils/TextDocumentUtils'
 import PathResolver from './PathResolver'
 import { connection } from '../../server'
+import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 
 /**
  * Represents a code expression, either a single identifier or a dotted expression.
@@ -76,6 +77,7 @@ class NavigationSupportProvider {
     async handleDefOrRefRequest (params: DefinitionParams | ReferenceParams, documentManager: TextDocuments<TextDocument>, requestType: RequestType): Promise<Location[]> {
         const matlabConnection = await MatlabLifecycleManager.getOrCreateMatlabConnection(connection)
         if (matlabConnection == null) {
+            LifecycleNotificationHelper.notifyMatlabRequirement()
             return []
         }
 
