@@ -396,12 +396,11 @@ class MatlabProcess {
         const matlabInstallPath = (await ConfigurationManager.getConfiguration()).installPath
         let command = 'matlab'
         if (matlabInstallPath !== '') {
-            const matlabPath = path.normalize(path.join(
+            command = path.normalize(path.join(
                 matlabInstallPath,
                 'bin',
                 'matlab'
             ))
-            command = matlabPath.includes(' ') ? `"${matlabPath}"` : matlabPath
         }
 
         const args = [
