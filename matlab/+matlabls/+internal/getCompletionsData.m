@@ -5,6 +5,6 @@ function completionResults = getCompletionsData (code, fileName, cursorPosition)
     builtin('_programmingAidsTest', '', '', 0, []);
 
     % Get data
-    completionsCmd = ['builtin(''_programmingAidsTest'', ' mat2str(fileName) ', ' mat2str(code) ', ' mat2str(cursorPosition) ', [])'];
+    completionsCmd = ['builtin(''_programmingAidsTest'', ' mat2str(fileName) ', ' mat2str(code) ', ' mat2str(cursorPosition) ', [], true, true)'];
     completionResults = evalin('base', completionsCmd);
 end

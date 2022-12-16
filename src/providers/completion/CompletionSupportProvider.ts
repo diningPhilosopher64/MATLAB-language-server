@@ -1,4 +1,4 @@
-import { CompletionItem, CompletionItemKind, CompletionParams, ParameterInformation, Position, SignatureHelp, SignatureHelpParams, SignatureInformation, TextDocuments } from 'vscode-languageserver'
+import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, ParameterInformation, Position, SignatureHelp, SignatureHelpParams, SignatureInformation, TextDocuments } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
@@ -11,6 +11,7 @@ interface MCompletionData {
 
 interface MWidgetData {
     choices?: MCompletionChoice | MCompletionChoice[] // If there is only one choice, it is not given as an array
+    truncated?: boolean
 }
 
 interface MCompletionChoice {
@@ -86,11 +87,11 @@ class CompletionProvider {
      * @param documentManager The text document manager
      * @returns An array of possible completions
      */
-    async handleCompletionRequest (params: CompletionParams, documentManager: TextDocuments<TextDocument>): Promise<CompletionItem[]> {
+    async handleCompletionRequest (params: CompletionParams, documentManager: TextDocuments<TextDocument>): Promise<CompletionList> {
         const doc = documentManager.get(params.textDocument.uri)
 
         if (doc == null) {
-            return []
+            return CompletionList.create()
         }
 
         const completionData = await this.retrieveCompletionData(doc, params.position)
@@ -158,7 +159,7 @@ class CompletionProvider {
      * @param completionData The raw completion data
      * @returns A list of completion items
      */
-    private parseCompletionItems (completionData: MCompletionData): CompletionItem[] {
+    private parseCompletionItems (completionData: MCompletionData): CompletionList {
         const completionItems: CompletionItem[] = []
 
         const completionsMap = new Map<string, { kind: CompletionItemKind, doc: string }>()
@@ -198,7 +199,7 @@ class CompletionProvider {
             completionItems.push(completionItem)
         })
 
-        return completionItems
+        return CompletionList.create(completionItems, completionData.widgetData?.truncated ?? false)
     }
 
     /**
