@@ -85,7 +85,7 @@ connection.onInitialized(() => {
 
 async function startMatlabIfEarlyLaunch (): Promise<void> {
     // Launch MATLAB if it should be launched early
-    const connectionTiming = (await ConfigurationManager.getConfiguration()).matlab.matlabConnectionTiming
+    const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
     if (connectionTiming === ConnectionTiming.Early) {
         void MatlabLifecycleManager.connectToMatlab(connection)
     }
@@ -142,7 +142,7 @@ connection.onSignatureHelp(async params => {
 /** -------------------- FORMATTING SUPPORT -------------------- **/
 connection.onDocumentFormatting(async params => {
     // Gather a set of document edits required for formatting, which the IDE will execute
-    return await FormatSupportProvider.handleDocumentFormatRequest(params, documentManager, connection)
+    return await FormatSupportProvider.handleDocumentFormatRequest(params, documentManager)
 })
 
 /** --------------------  LINTING SUPPORT   -------------------- **/

@@ -29,7 +29,7 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
             % Update settings
             s.matlab.editor.tab.InsertSpaces.TemporaryValue = msg.insertSpaces;
             s.matlab.editor.tab.TabSize.TemporaryValue = msg.tabSize;
-            s.matlab.editor.tab.IndentSize.TemporaryValue = msg.indentSize;
+            s.matlab.editor.tab.IndentSize.TemporaryValue = msg.tabSize;
 
             % Format code
             response.data = indentcode(codeToFormat, 'matlab'); % This will pull from the user's MATLAB settings.

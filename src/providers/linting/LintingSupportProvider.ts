@@ -426,7 +426,7 @@ class LintingSupportProvider {
             return null
         }
 
-        const matlabInstallPath = (await ConfigurationManager.getConfiguration()).matlab.installPath
+        const matlabInstallPath = (await ConfigurationManager.getConfiguration()).installPath
         let binPath = ''
 
         if (matlabInstallPath !== '') {
