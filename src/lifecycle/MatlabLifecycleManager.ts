@@ -108,7 +108,7 @@ class MatlabLifecycleManager {
         }
 
         // No active connection - should create a connection if desired
-        const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
+        const connectionTiming = (await ConfigurationManager.getConfiguration()).matlab.matlabConnectionTiming
         if (connectionTiming !== ConnectionTiming.Never) {
             const matlabProcess = await this.connectToMatlab(connection)
             return matlabProcess.getConnection()
@@ -393,7 +393,7 @@ class MatlabProcess {
      * @returns The matlab launch command
      */
     private async _getMatlabLaunchCommand (outFile: string): Promise<{ command: string, args: string[] }> {
-        const matlabInstallPath = (await ConfigurationManager.getConfiguration()).installPath
+        const matlabInstallPath = (await ConfigurationManager.getConfiguration()).matlab.installPath
         let command = 'matlab'
         if (matlabInstallPath !== '') {
             command = path.normalize(path.join(

@@ -85,7 +85,7 @@ connection.onInitialized(() => {
 
 async function startMatlabIfEarlyLaunch (): Promise<void> {
     // Launch MATLAB if it should be launched early
-    const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
+    const connectionTiming = (await ConfigurationManager.getConfiguration()).matlab.matlabConnectionTiming
     if (connectionTiming === ConnectionTiming.Early) {
         void MatlabLifecycleManager.connectToMatlab(connection)
     }

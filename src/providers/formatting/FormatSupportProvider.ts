@@ -1,6 +1,7 @@
 
 import { DocumentFormattingParams, HandlerResult, Position, Range, TextDocuments, TextEdit, _Connection } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
+import ConfigurationManager from '../../lifecycle/ConfigurationManager'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import * as TextDocumentUtils from '../../utils/TextDocumentUtils'
@@ -52,6 +53,11 @@ class FormatSupportProvider {
             return []
         }
 
+        const editorConfiguration = (await ConfigurationManager.getConfiguration(doc.uri)).editor
+        const insertSpaces = editorConfiguration.insertSpaces ?? true
+        const tabSize = editorConfiguration.tabSize ?? 4
+        const indentSize = (editorConfiguration.indentSize ?? 'tabSize') === 'tabSize' ? tabSize : editorConfiguration.indentSize
+
         return await new Promise<TextEdit[]>(resolve => {
             const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
                 matlabConnection.unsubscribe(responseSub)
@@ -65,7 +71,10 @@ class FormatSupportProvider {
             })
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
-                data: doc.getText()
+                data: doc.getText(),
+                insertSpaces,
+                tabSize,
+                indentSize
             })
         })
     }

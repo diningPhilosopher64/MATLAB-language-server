@@ -28,14 +28,26 @@ interface CliArguments {
 }
 
 interface Settings {
+    matlab: MatlabSettings
+    editor: EditorSettings
+}
+
+interface MatlabSettings {
     installPath: string
     matlabConnectionTiming: ConnectionTiming
     indexWorkspace: boolean
 }
 
+interface EditorSettings {
+    insertSpaces: boolean
+    tabSize: number
+    indentSize: 'tabSize' | number
+}
+
 class ConfigurationManager {
-    private configuration: Settings | null = null
     private readonly defaultConfiguration: Settings
+
+    private readonly configurationMap: Map<string, Settings> = new Map()
     private globalSettings: Settings
 
     // Holds additional command line arguments that are not part of the configuration
@@ -47,15 +59,25 @@ class ConfigurationManager {
         const cliArgs = getCliArgs()
 
         this.defaultConfiguration = {
-            installPath: '',
-            matlabConnectionTiming: ConnectionTiming.Early,
-            indexWorkspace: false
+            matlab: {
+                installPath: '',
+                matlabConnectionTiming: ConnectionTiming.Early,
+                indexWorkspace: false
+            },
+            editor: {
+                insertSpaces: true,
+                tabSize: 4,
+                indentSize: 'tabSize'
+            }
         }
 
         this.globalSettings = {
-            installPath: cliArgs[Argument.MatlabInstallationPath] ?? this.defaultConfiguration.installPath,
-            matlabConnectionTiming: cliArgs[Argument.MatlabConnectionTiming] as ConnectionTiming ?? this.defaultConfiguration.matlabConnectionTiming,
-            indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.indexWorkspace
+            matlab: {
+                installPath: cliArgs[Argument.MatlabInstallationPath] ?? this.defaultConfiguration.matlab.installPath,
+                matlabConnectionTiming: cliArgs[Argument.MatlabConnectionTiming] as ConnectionTiming ?? this.defaultConfiguration.matlab.matlabConnectionTiming,
+                indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.matlab.indexWorkspace
+            },
+            editor: this.defaultConfiguration.editor
         }
 
         this.additionalArguments = {
@@ -82,17 +104,28 @@ class ConfigurationManager {
     }
 
     /**
-     * Gets the configuration for the langauge server
-     *
-     * @returns The current configuration
+     * @param resource The document URI for which we are scoping the configuration.
+     * If none is provided, a default (non-scoped) configuration is provided
      */
-    async getConfiguration (): Promise<Settings> {
+    async getConfiguration (resource?: string): Promise<Settings> {
         if (this.hasConfigurationCapability) {
-            if (this.configuration == null) {
-                this.configuration = await connection.workspace.getConfiguration('matlab') as Settings
+            let result = this.configurationMap.get(resource ?? 'default')
+            if (result == null) {
+                // No cached configuration for this resource - retrieve and cache
+                const configs = await connection.workspace.getConfiguration([
+                    { scopeUri: resource, section: 'matlab' },
+                    { scopeUri: resource, section: 'editor' }
+                ]) as [MatlabSettings, EditorSettings]
+
+                result = {
+                    matlab: configs[0],
+                    editor: configs[1]
+                }
+
+                this.configurationMap.set(resource ?? 'default', result)
             }
 
-            return this.configuration
+            return result
         }
 
         return this.globalSettings
@@ -114,10 +147,13 @@ class ConfigurationManager {
      */
     private handleConfigurationChanged (params: DidChangeConfigurationParams): void {
         if (this.hasConfigurationCapability) {
-            // Clear cached configuration
-            this.configuration = null
+            // Clear cached configurations
+            this.configurationMap.clear()
         } else {
-            this.globalSettings = params.settings?.matlab ?? this.defaultConfiguration
+            this.globalSettings = {
+                matlab: params.settings?.matlab ?? this.defaultConfiguration.matlab,
+                editor: params.settings?.editor ?? this.defaultConfiguration.editor
+            }
         }
     }
 }

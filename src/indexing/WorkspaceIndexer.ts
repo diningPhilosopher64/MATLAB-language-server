@@ -67,7 +67,7 @@ class WorkspaceIndexer {
      * @returns True if workspace indexing should occurr, false otherwise.
      */
     private async shouldIndexWorkspace (): Promise<boolean> {
-        const shouldIndexWorkspace = (await ConfigurationManager.getConfiguration()).indexWorkspace
+        const shouldIndexWorkspace = (await ConfigurationManager.getConfiguration()).matlab.indexWorkspace
         return this.isWorkspaceIndexingSupported && shouldIndexWorkspace
     }
 }
