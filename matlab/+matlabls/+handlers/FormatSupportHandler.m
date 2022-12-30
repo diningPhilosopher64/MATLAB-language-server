@@ -21,12 +21,18 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
 
             s = settings;
 
-            % Cache current settings
-            oldInsertSpaces = s.matlab.editor.tab.InsertSpaces.ActiveValue;
-            oldTabSize = s.matlab.editor.tab.TabSize.ActiveValue;
-            oldIndentSize = s.matlab.editor.tab.IndentSize.ActiveValue;
+            % Handle restoring current settings
+            names = ["InsertSpaces", "TabSize", "IndentSize"];
+            initialValues = cell(1, 3);
+            shouldResetTemporaryValues = zeros(1, 3);
+            for i = 1:numel(names)
+                initialValues{i} = s.matlab.editor.tab.(names(i)).ActiveValue;
+                shouldResetTemporaryValues(i) = ~s.matlab.editor.tab.(names(i)).hasTemporaryValue;
+            end
 
-            % Update settings
+            cleanupHandle = onCleanup(@() this.restoreSettings(names, initialValues, shouldResetTemporaryValues));
+
+            % Update settings for formatting
             s.matlab.editor.tab.InsertSpaces.TemporaryValue = msg.insertSpaces;
             s.matlab.editor.tab.TabSize.TemporaryValue = msg.tabSize;
             s.matlab.editor.tab.IndentSize.TemporaryValue = msg.tabSize;
@@ -34,13 +40,19 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
             % Format code
             response.data = indentcode(codeToFormat, 'matlab'); % This will pull from the user's MATLAB settings.
 
-            % Reset settings
-            s.matlab.editor.tab.InsertSpaces.TemporaryValue = oldInsertSpaces;
-            s.matlab.editor.tab.TabSize.TemporaryValue = oldTabSize;
-            s.matlab.editor.tab.IndentSize.TemporaryValue = oldIndentSize;
-
             % Send formatted code
             this.CommManager.publish(this.ResponseChannel, response)
+        end
+
+        function restoreSettings (~, names, initialValues, shouldResetTemporaryValues)
+            s = settings;
+            for i = 1:numel(names)
+                if (shouldResetTemporaryValues(i))
+                    clearTemporaryValue(s.matlab.editor.tab.(names(i)));
+                else
+                    s.matlab.editor.tab.(names(i)).TemporaryValue = initialValues{i};
+                end
+            end
         end
     end
 end
