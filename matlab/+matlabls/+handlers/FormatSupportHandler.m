@@ -18,8 +18,34 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
         function handleFormatRequest (this, msg)
             % Handles format document requests
             codeToFormat = msg.data;
+
+            s = settings;
+
+            % Update settings (temporarily) for formatting
+            cleanupObj1 = setTemporaryValue(s.matlab.editor.tab.InsertSpaces, msg.insertSpaces); %#ok<NASGU> 
+            cleanupObj2 = setTemporaryValue(s.matlab.editor.tab.TabSize, msg.tabSize); %#ok<NASGU>
+            cleanupObj3 = setTemporaryValue(s.matlab.editor.tab.IndentSize, msg.tabSize); %#ok<NASGU>
+
+            % Format code
             response.data = indentcode(codeToFormat, 'matlab'); % This will pull from the user's MATLAB settings.
+
+            % Send formatted code
             this.CommManager.publish(this.ResponseChannel, response)
         end
+    end
+end
+
+function cleanupObj = setTemporaryValue (setting, tempValue)
+    if setting.hasTemporaryValue
+        originalValue = setting.TemporaryValue;
+        cleanupObj = onCleanup(@() setTempValue(setting, originalValue));
+    else
+        cleanupObj = onCleanup(@() setting.clearTemporaryValue);
+    end
+
+    setTempValue(setting, tempValue);
+
+    function setTempValue (setting, tempValue)
+        setting.TemporaryValue = tempValue;
     end
 end

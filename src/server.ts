@@ -142,7 +142,7 @@ connection.onSignatureHelp(async params => {
 /** -------------------- FORMATTING SUPPORT -------------------- **/
 connection.onDocumentFormatting(async params => {
     // Gather a set of document edits required for formatting, which the IDE will execute
-    return await FormatSupportProvider.handleDocumentFormatRequest(params, documentManager, connection)
+    return await FormatSupportProvider.handleDocumentFormatRequest(params, documentManager)
 })
 
 /** --------------------  LINTING SUPPORT   -------------------- **/

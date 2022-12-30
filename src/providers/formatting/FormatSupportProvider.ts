@@ -1,8 +1,9 @@
 
-import { DocumentFormattingParams, HandlerResult, Position, Range, TextDocuments, TextEdit, _Connection } from 'vscode-languageserver'
+import { DocumentFormattingParams, FormattingOptions, HandlerResult, Position, Range, TextDocuments, TextEdit, _Connection } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
+import { connection } from '../../server'
 import * as TextDocumentUtils from '../../utils/TextDocumentUtils'
 
 interface FormatDocumentResponse {
@@ -26,23 +27,23 @@ class FormatSupportProvider {
      * @param connection The language server connection
      * @returns An array of text edits required for the formatting operation, or null if the operation cannot be performed
      */
-    async handleDocumentFormatRequest (params: DocumentFormattingParams, documentManager: TextDocuments<TextDocument>, connection: _Connection): Promise<HandlerResult<TextEdit[] | null | undefined, void>> {
+    async handleDocumentFormatRequest (params: DocumentFormattingParams, documentManager: TextDocuments<TextDocument>): Promise<HandlerResult<TextEdit[] | null | undefined, void>> {
         const docToFormat = documentManager.get(params.textDocument.uri)
         if (docToFormat == null) {
             return null
         }
 
-        return await this.formatDocument(docToFormat, connection)
+        return await this.formatDocument(docToFormat, params.options)
     }
 
     /**
      * Determines the edits required to format the given document.
      *
      * @param doc The document being formatted
-     * @param connection The language server connection
+     * @param options The formatting options
      * @returns An array of text edits required to format the document
      */
-    private async formatDocument (doc: TextDocument, connection: _Connection): Promise<TextEdit[]> {
+    private async formatDocument (doc: TextDocument, options: FormattingOptions): Promise<TextEdit[]> {
         // For format, we try to instantiate MATLAB if it is not already running
         const matlabConnection = await MatlabLifecycleManager.getOrCreateMatlabConnection(connection)
 
@@ -65,7 +66,9 @@ class FormatSupportProvider {
             })
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
-                data: doc.getText()
+                data: doc.getText(),
+                insertSpaces: options.insertSpaces,
+                tabSize: options.tabSize
             })
         })
     }
