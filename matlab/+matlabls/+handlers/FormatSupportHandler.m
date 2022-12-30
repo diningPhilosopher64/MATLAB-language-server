@@ -21,21 +21,10 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
 
             s = settings;
 
-            % Handle restoring current settings
-            names = ["InsertSpaces", "TabSize", "IndentSize"];
-            initialValues = cell(1, 3);
-            shouldResetTemporaryValues = zeros(1, 3);
-            for i = 1:numel(names)
-                initialValues{i} = s.matlab.editor.tab.(names(i)).ActiveValue;
-                shouldResetTemporaryValues(i) = ~s.matlab.editor.tab.(names(i)).hasTemporaryValue;
-            end
-
-            cleanupHandle = onCleanup(@() this.restoreSettings(names, initialValues, shouldResetTemporaryValues));
-
-            % Update settings for formatting
-            s.matlab.editor.tab.InsertSpaces.TemporaryValue = msg.insertSpaces;
-            s.matlab.editor.tab.TabSize.TemporaryValue = msg.tabSize;
-            s.matlab.editor.tab.IndentSize.TemporaryValue = msg.tabSize;
+            % Update settings (temporarily) for formatting
+            cleanupObj1 = setTemporaryValue(s.matlab.editor.tab.InsertSpaces, msg.insertSpaces); %#ok<NASGU> 
+            cleanupObj2 = setTemporaryValue(s.matlab.editor.tab.TabSize, msg.tabSize); %#ok<NASGU>
+            cleanupObj3 = setTemporaryValue(s.matlab.editor.tab.IndentSize, msg.tabSize); %#ok<NASGU>
 
             % Format code
             response.data = indentcode(codeToFormat, 'matlab'); % This will pull from the user's MATLAB settings.
@@ -43,16 +32,20 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
             % Send formatted code
             this.CommManager.publish(this.ResponseChannel, response)
         end
+    end
+end
 
-        function restoreSettings (~, names, initialValues, shouldResetTemporaryValues)
-            s = settings;
-            for i = 1:numel(names)
-                if (shouldResetTemporaryValues(i))
-                    clearTemporaryValue(s.matlab.editor.tab.(names(i)));
-                else
-                    s.matlab.editor.tab.(names(i)).TemporaryValue = initialValues{i};
-                end
-            end
-        end
+function cleanupObj = setTemporaryValue (setting, tempValue)
+    if setting.hasTemporaryValue
+        originalValue = setting.TemporaryValue;
+        cleanupObj = onCleanup(@() setTempValue(setting, originalValue));
+    else
+        cleanupObj = onCleanup(@() setting.clearTemporaryValue);
+    end
+
+    setTempValue(setting, tempValue);
+
+    function setTempValue (setting, tempValue)
+        setting.TemporaryValue = tempValue;
     end
 end
