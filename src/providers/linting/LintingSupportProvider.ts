@@ -141,7 +141,7 @@ class LintingSupportProvider {
         })
 
         if (!MatlabLifecycleManager.isMatlabReady()) {
-            // Cannot suppress wanrings without MATLAB
+            // Cannot suppress warnings without MATLAB
             return codeActions
         }
 
