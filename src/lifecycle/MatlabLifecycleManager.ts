@@ -406,13 +406,13 @@ class MatlabProcess {
         }
 
         const args = [
-            '-nosplash',
+            '-nosplash', // Hide splash screen
             '-useStartupFolderPref', // Startup folder flag
             '-memmgr', 'release', // Memory manager
             '-logfile', path.join(Logger.logDir, 'matlabls.log'), // Log file
             '-log',
             '-r', `addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')`, // Startup command
-            '-noAppIcon'
+            '-noAppIcon' // Hide MATLAB application icon in taskbar/dock, if applicable
         ]
 
         if (os.platform() === 'win32') {
