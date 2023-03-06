@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, ParameterInformation, Position, SignatureHelp, SignatureHelpParams, SignatureInformation, TextDocuments } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'

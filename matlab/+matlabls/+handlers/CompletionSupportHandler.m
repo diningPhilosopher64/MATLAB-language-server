@@ -1,3 +1,5 @@
+% Copyright 2022 - 2023 The MathWorks, Inc.
+
 classdef (Hidden) CompletionSupportHandler < matlabls.handlers.FeatureHandler
     % COMPLETIONSUPPORTHANDLER The feature handler for tab completion and function
     % signature support.

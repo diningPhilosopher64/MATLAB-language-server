@@ -1,3 +1,5 @@
+% Copyright 2022 - 2023 The MathWorks, Inc.
+
 function path = resolvePath (name, contextFile)
     % RESOLVEPATH Attempt to determine the file which most likely contains
     % the provided identifier from the perspective of the context file.

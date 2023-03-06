@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import { ClientCapabilities, WorkspaceFolder, WorkspaceFoldersChangeEvent } from 'vscode-languageserver'
 import ConfigurationManager from '../lifecycle/ConfigurationManager'
 import { connection } from '../server'

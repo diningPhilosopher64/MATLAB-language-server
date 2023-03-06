@@ -1,3 +1,5 @@
+% Copyright 2022 - 2023 The MathWorks, Inc.
+
 classdef (Hidden) NavigationSupportHandler < matlabls.handlers.FeatureHandler
     % NAVIGATIONHANDLER The feature handler to support navigation workflows.
 

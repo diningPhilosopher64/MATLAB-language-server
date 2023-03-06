@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { ClientCapabilities, createConnection, InitializeParams, InitializeResult, ProposedFeatures, TextDocuments } from 'vscode-languageserver/node'
 import DocumentIndexer from './indexing/DocumentIndexer'

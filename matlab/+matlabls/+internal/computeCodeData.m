@@ -1,3 +1,5 @@
+% Copyright 2022 - 2023 The MathWorks, Inc.
+
 function codeInfo = computeCodeData (code, filePath)
     %COMPUTECODEDATA Compute sub-function location information for the
     % MATLAB code file specified by fullpath. The data is a struct:

@@ -1,3 +1,5 @@
+% Copyright 2022 - 2023 The MathWorks, Inc.
+
 classdef (Hidden) FeatureHandler < matlab.mixin.Heterogeneous & handle
     %FEATUREHANDLER Serves as the base class for all feature handlers.
 

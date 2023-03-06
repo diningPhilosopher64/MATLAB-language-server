@@ -1,3 +1,5 @@
+% Copyright 2022 - 2023 The MathWorks, Inc.
+
 classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
     % INDEXINGHANDLER The feature handler for indexing documents for variable,
     % function, and class references and definitions.

@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import { Position, Range } from 'vscode-languageserver'
 import { isPositionGreaterThan, isPositionLessThanOrEqualTo } from '../utils/PositionUtils'
 

@@ -1,3 +1,5 @@
+% Copyright 2022 - 2023 The MathWorks, Inc.
+
 classdef (Hidden) MatlabLanguageServerHelper < handle
     % MATLABLANGUAGESERVERHELPER Class for managing the MATLAB-side operations
     % which support the MATLAB Language Server.

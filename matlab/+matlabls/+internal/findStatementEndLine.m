@@ -1,3 +1,5 @@
+% Copyright 2022 - 2023 The MathWorks, Inc.
+
 function endLineNumber = findStatementEndLine (code, lineNumber)
     % In the given code, find the last line (1-based) of the
     % statement containin the provided line number (1-based).

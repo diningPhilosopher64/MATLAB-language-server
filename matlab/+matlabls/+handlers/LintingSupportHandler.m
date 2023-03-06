@@ -1,3 +1,5 @@
+% Copyright 2022 - 2023 The MathWorks, Inc.
+
 classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
     % LINTINGSUPPORTHANDLER The feature handler for linting MATLAB code.
 
