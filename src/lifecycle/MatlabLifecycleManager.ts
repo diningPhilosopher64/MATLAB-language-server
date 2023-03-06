@@ -409,8 +409,10 @@ class MatlabProcess {
             '-nosplash',
             '-useStartupFolderPref', // Startup folder flag
             '-memmgr', 'release', // Memory manager
-            '-logFile', path.join(Logger.logDir, 'matlabls.log'), // Log file
-            '-r', `addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')` // Startup command
+            '-logfile', path.join(Logger.logDir, 'matlabls.log'), // Log file
+            '-log',
+            '-r', `addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')`, // Startup command
+            '-noAppIcon'
         ]
 
         if (os.platform() === 'win32') {
