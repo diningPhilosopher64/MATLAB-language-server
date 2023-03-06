@@ -60,8 +60,16 @@ class MatlabCommunicationManager {
             }
         })
 
+        // Clean up temp directory on close
+        matlabProcess.on('close', () => {
+            if (certificateDirectory == null) {
+                // Only remove temp directory if we create it
+                fs.rmdir(certDir)
+            }
+        })
+
         // Create connection to new MATLAB instance - connection will not yet be initialized
-        const matlabConnection = new LocalMatlabConnection(port, certFile, apiKey)
+        const matlabConnection = new LocalMatlabConnection(port, certFile, pkeyFile, apiKey)
 
         return {
             matlabProcess,
@@ -209,12 +217,14 @@ export abstract class MatlabConnection {
  */
 class LocalMatlabConnection extends MatlabConnection {
     private readonly _certPath: string
+    private readonly _pkeyPath: string
     private readonly _apiKey: string
 
-    constructor (port: string, certPath: string, apiKey: string) {
+    constructor (port: string, certPath: string, pkeyPath: string, apiKey: string) {
         super()
         this._url = `https://localhost:${port}/messageservice/async`
         this._certPath = certPath
+        this._pkeyPath = pkeyPath
         this._apiKey = apiKey
     }
 
@@ -230,6 +240,10 @@ class LocalMatlabConnection extends MatlabConnection {
 
         // Set callbacks for the connection status
         this.setupConnectionCallbacks()
+
+        // Cleanup cert and pkey files, as they are no longer needed
+        fs.rm(this._certPath)
+        fs.rm(this._pkeyPath)
     }
 }
 
