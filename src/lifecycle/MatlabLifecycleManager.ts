@@ -406,18 +406,18 @@ class MatlabProcess {
         }
 
         const args = [
-            '-nosplash', // Hide splash screen
-            '-useStartupFolderPref', // Startup folder flag
-            '-memmgr', 'release', // Memory manager
-            '-logfile', path.join(Logger.logDir, 'matlabls.log'), // Log file
             '-log',
+            '-logfile', path.join(Logger.logDir, 'matlabls.log'), // Log file
+            '-memmgr', 'release', // Memory manager
+            '-noAppIcon', // Hide MATLAB application icon in taskbar/dock, if applicable
+            '-nosplash', // Hide splash screen
             '-r', `addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')`, // Startup command
-            '-noAppIcon' // Hide MATLAB application icon in taskbar/dock, if applicable
+            '-useStartupFolderPref' // Startup folder flag
         ]
 
         if (os.platform() === 'win32') {
-            args.push('-wait')
             args.push('-noDisplayDesktop') // Workaround for '-nodesktop' on Windows until a better solution is implemented
+            args.push('-wait')
         } else {
             args.push('-nodesktop')
         }
