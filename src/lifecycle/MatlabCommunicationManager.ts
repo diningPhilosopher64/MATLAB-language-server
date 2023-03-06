@@ -1,6 +1,7 @@
 // Copyright 2022 - 2023 The MathWorks, Inc.
 
 import { ChildProcess, spawn } from 'child_process'
+import { randomInt } from 'crypto'
 import * as fs from 'fs/promises'
 import * as net from 'net'
 import * as os from 'os'
@@ -104,11 +105,11 @@ class MatlabCommunicationManager {
      */
     private _makeApiKey (): string {
         const possibleChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~'
-        const keyLength = 25
+        const keyLength = 1024
 
         let apiKey = ''
         for (let i = 0; i < keyLength; i++) {
-            apiKey += possibleChars.charAt(Math.random() * possibleChars.length)
+            apiKey += possibleChars.charAt(randomInt(possibleChars.length))
         }
         return apiKey
     }
