@@ -1,10 +1,10 @@
-% Copyright 2022 - 2023 The MathWorks, Inc.
-
 function endLineNumber = findStatementEndLine (code, lineNumber)
     % In the given code, find the last line (1-based) of the
     % statement containin the provided line number (1-based).
     % Takes into account things like line continuations (...)
     % and multi-line array declarations.
+
+    % Copyright 2022 - 2023 The MathWorks, Inc.
 
     t = mtree(code);
     if t.mtfind('Kind', 'ERR').count == 0

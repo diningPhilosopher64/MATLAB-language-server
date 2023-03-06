@@ -1,5 +1,3 @@
-% Copyright 2022 - 2023 The MathWorks, Inc.
-
 function path = resolvePath (name, contextFile)
     % RESOLVEPATH Attempt to determine the file which most likely contains
     % the provided identifier from the perspective of the context file.
@@ -7,6 +5,8 @@ function path = resolvePath (name, contextFile)
     % For example, if file "foo.m" refers to "ClassName", this returns the
     % file most likely containing the definition of "ClassName", or an
     % empty string if that file could not be determined.
+
+    % Copyright 2022 - 2023 The MathWorks, Inc.
 
     elementName = name;
 

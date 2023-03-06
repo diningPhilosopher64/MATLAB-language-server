@@ -1,8 +1,8 @@
-% Copyright 2022 - 2023 The MathWorks, Inc.
-
 classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
     % FORMATSUPPORTHANDLER The feature handler for the "Format Document" feature.
     % In the future, this may be expanded to include the "Format Selection" feature as well.
+
+    % Copyright 2022 - 2023 The MathWorks, Inc.
 
     properties (Access = private)
         RequestChannel = "/matlabls/formatDocument/request"
