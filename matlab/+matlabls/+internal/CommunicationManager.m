@@ -2,6 +2,8 @@ classdef (Hidden) CommunicationManager < handle
     % COMMUNICATIONMANAGER Class for facilitating communication between the MATLAB Language
     % Server and the MATLAB application.
 
+    % Copyright 2022 - 2023 The MathWorks, Inc.
+
     % NOTE: This class serves as a passthrough to Message Service APIs
     % and will be obfuscated to hide their usage from end users.
 

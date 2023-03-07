@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import { Range } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 

@@ -6,6 +6,8 @@ function path = resolvePath (name, contextFile)
     % file most likely containing the definition of "ClassName", or an
     % empty string if that file could not be determined.
 
+    % Copyright 2022 - 2023 The MathWorks, Inc.
+
     elementName = name;
 
     % The given identifier may be a reference within a class (e.g. 'obj.Prop')

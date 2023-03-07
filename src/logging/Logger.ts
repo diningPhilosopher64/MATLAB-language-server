@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import * as fs from 'fs'
 import * as os from 'os'
 import * as path from 'path'

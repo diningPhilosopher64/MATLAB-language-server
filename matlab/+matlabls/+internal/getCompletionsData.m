@@ -1,6 +1,8 @@
 function completionResults = getCompletionsData (code, fileName, cursorPosition)
     %GETCOMPLETIONSDATA Retrieve completion data for the given code based on the cursor position
 
+    % Copyright 2022 - 2023 The MathWorks, Inc.
+
     % Force tab completions to load, if necessary
     builtin('_programmingAidsTest', '', '', 0, []);
 

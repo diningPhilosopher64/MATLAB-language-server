@@ -1,4 +1,7 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import { ChildProcess, spawn } from 'child_process'
+import { randomInt } from 'crypto'
 import * as fs from 'fs/promises'
 import * as net from 'net'
 import * as os from 'os'
@@ -57,8 +60,16 @@ class MatlabCommunicationManager {
             }
         })
 
+        // Clean up temp directory on close
+        matlabProcess.on('close', () => {
+            if (certificateDirectory == null) {
+                // Only remove temp directory if we create it
+                fs.rmdir(certDir)
+            }
+        })
+
         // Create connection to new MATLAB instance - connection will not yet be initialized
-        const matlabConnection = new LocalMatlabConnection(port, certFile, apiKey)
+        const matlabConnection = new LocalMatlabConnection(port, certFile, pkeyFile, apiKey)
 
         return {
             matlabProcess,
@@ -102,11 +113,11 @@ class MatlabCommunicationManager {
      */
     private _makeApiKey (): string {
         const possibleChars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~'
-        const keyLength = 25
+        const keyLength = 1024
 
         let apiKey = ''
         for (let i = 0; i < keyLength; i++) {
-            apiKey += possibleChars.charAt(Math.random() * possibleChars.length)
+            apiKey += possibleChars.charAt(randomInt(possibleChars.length))
         }
         return apiKey
     }
@@ -206,12 +217,14 @@ export abstract class MatlabConnection {
  */
 class LocalMatlabConnection extends MatlabConnection {
     private readonly _certPath: string
+    private readonly _pkeyPath: string
     private readonly _apiKey: string
 
-    constructor (port: string, certPath: string, apiKey: string) {
+    constructor (port: string, certPath: string, pkeyPath: string, apiKey: string) {
         super()
         this._url = `https://localhost:${port}/messageservice/async`
         this._certPath = certPath
+        this._pkeyPath = pkeyPath
         this._apiKey = apiKey
     }
 
@@ -227,6 +240,10 @@ class LocalMatlabConnection extends MatlabConnection {
 
         // Set callbacks for the connection status
         this.setupConnectionCallbacks()
+
+        // Cleanup cert and pkey files, as they are no longer needed
+        fs.rm(this._certPath)
+        fs.rm(this._pkeyPath)
     }
 }
 

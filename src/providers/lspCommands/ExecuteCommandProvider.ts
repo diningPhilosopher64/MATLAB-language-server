@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import { ExecuteCommandParams, Range, TextDocuments, _Connection } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import LintingSupportProvider from '../linting/LintingSupportProvider'

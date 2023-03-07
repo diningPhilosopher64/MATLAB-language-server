@@ -29,7 +29,9 @@ function codeInfo = computeCodeData (code, filePath)
     %   codeInfo.functionInfo(k).variableInfo
     %   codeInfo.functionInfo(k).globals
     %   codeInfo.functionInfo(k).isPrototype
-    
+
+    % Copyright 2022 - 2023 The MathWorks, Inc.
+
     timeStart = tic;
 
     functionMap = containers.Map('KeyType', 'char', 'ValueType', 'any');
@@ -48,16 +50,16 @@ function codeInfo = computeCodeData (code, filePath)
 
     % Determine if in classdef folder (i.e. a folder name starting with '@')
     isInClassDefFolder = startsWith(dirParts(end), '@');
-    
+
     % Determine if in package (i.e. folder(s) starting with '+')
     codeInfo.packageName = dirParts(dirParts.startsWith('+')).replace('+', '').join('.');
     if ismissing(codeInfo.packageName)
         codeInfo.packageName = '';
     end
-    
+
     %% Parse code
     mt = mtree(code);
-    
+
     %% Parse class data
     classInfo = struct( ...
         'isClassDef', false, ...
@@ -70,7 +72,7 @@ function codeInfo = computeCodeData (code, filePath)
         'classDefFolder', '', ...
         'baseClasses', cell(1) ...
     );
-    
+
     if isInClassDefFolder
         classInfo.classDefFolder = directory;
     end
@@ -81,7 +83,7 @@ function codeInfo = computeCodeData (code, filePath)
     if classNode.count > 0
         classInfo.isClassDef = true;
         classInfo.hasClassInfo = true;
-        
+
         % Parse any class inheritance
         if classNode.kind == "LT" % Class inherits
             classInfo.baseClasses = classNode.Right.Full.mtfind('Kind', 'ID').strings();
@@ -234,7 +236,7 @@ function functionReferences = parseFunctionData (functionNode, isPublic, isClass
     body = functionNode.Tree;
     variableInfo = addVariableDefinitions(body.asgvars, variableInfo); % Note: asgvars - for all nodes selected, find the left sides of any assignments
     variableInfo = addVariableReferences(body.mtfind('Isvar', true), variableInfo); % Find variables
-    
+
     %% Collect data
     functionInfo.variableInfo = variableInfo;
     functionInfo.globals = globalVarNodes.strings();

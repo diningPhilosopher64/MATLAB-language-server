@@ -4,6 +4,8 @@ function endLineNumber = findStatementEndLine (code, lineNumber)
     % Takes into account things like line continuations (...)
     % and multi-line array declarations.
 
+    % Copyright 2022 - 2023 The MathWorks, Inc.
+
     t = mtree(code);
     if t.mtfind('Kind', 'ERR').count == 0
         % Find left and right bounds of command

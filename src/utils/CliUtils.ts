@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import * as yargs from 'yargs'
 import { Argument } from '../lifecycle/ConfigurationManager'
 

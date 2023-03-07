@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import { ChildProcess } from 'child_process'
 import { _Connection } from 'vscode-languageserver'
 
@@ -404,16 +406,18 @@ class MatlabProcess {
         }
 
         const args = [
-            '-nosplash',
-            '-useStartupFolderPref', // Startup folder flag
+            '-log',
+            '-logfile', path.join(Logger.logDir, 'matlabls.log'), // Log file
             '-memmgr', 'release', // Memory manager
-            '-logFile', path.join(Logger.logDir, 'matlabls.log'), // Log file
-            '-r', `addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')` // Startup command
+            '-noAppIcon', // Hide MATLAB application icon in taskbar/dock, if applicable
+            '-nosplash', // Hide splash screen
+            '-r', `addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')`, // Startup command
+            '-useStartupFolderPref' // Startup folder flag
         ]
 
         if (os.platform() === 'win32') {
-            args.push('-wait')
             args.push('-noDisplayDesktop') // Workaround for '-nodesktop' on Windows until a better solution is implemented
+            args.push('-wait')
         } else {
             args.push('-nodesktop')
         }

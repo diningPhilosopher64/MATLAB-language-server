@@ -2,6 +2,8 @@ function initmatlabls (outFile)
     % Initializes a MATLAB session to talk to a MATLAB language server.
     % Writes connection info to the outFile specified by the client
 
+    % Copyright 2022 - 2023 The MathWorks, Inc.
+
     % Prevent clearing the workspace from cleaning up the MatlabLanguageServerHelper
     mlock
 

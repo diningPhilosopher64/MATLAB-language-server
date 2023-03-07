@@ -1,3 +1,5 @@
+// Copyright 2022 - 2023 The MathWorks, Inc.
+
 import NotificationService, { Notification } from '../notifications/NotificationService'
 
 export enum ConnectionState {

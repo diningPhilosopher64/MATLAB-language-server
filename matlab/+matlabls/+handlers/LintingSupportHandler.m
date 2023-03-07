@@ -1,6 +1,8 @@
 classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
     % LINTINGSUPPORTHANDLER The feature handler for linting MATLAB code.
 
+    % Copyright 2022 - 2023 The MathWorks, Inc.
+
     properties (Access = private)
         LintingRequestChannel = '/matlabls/linting/request'
         LintingResponseChannel = '/matlabls/linting/response'
