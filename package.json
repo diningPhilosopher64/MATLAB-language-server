@@ -19,7 +19,7 @@
     "url": "git@github.mathworks.com:development/matlab-language-server.git"
   },
   "author": "The MathWorks, Inc.",
-  "license": "XSLA",
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^18.7.18",
     "@types/which": "^2.0.1",
