@@ -26,6 +26,7 @@ end
 
 function logConnectionData (outFile)
     c.matlabPid = feature("getpid");
+    c.matlabRelease = ['R' version('-release')]
     connectionData = jsonencode(c);
 
     disp(strcat("Printing connection data to file: ", newline, "    ", outFile))

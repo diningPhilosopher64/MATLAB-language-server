@@ -13,6 +13,7 @@ import ConfigurationManager, { Argument } from './ConfigurationManager'
 import { connection } from '../server'
 import LifecycleNotificationHelper from './LifecycleNotificationHelper'
 import NotificationService, { Notification } from '../notifications/NotificationService'
+import { Actions, reportTelemetryAction } from '../logging/TelemetryUtils'
 
 export enum ConnectionTiming {
     Early = 'early',
@@ -259,6 +260,7 @@ class MatlabProcess {
 
         this.isValid = false
         LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
+        reportTelemetryAction(Actions.ShutdownMatlab)
     }
 
     /**
@@ -285,12 +287,16 @@ class MatlabProcess {
                 const info = JSON.parse(data.toString())
 
                 this._matlabPid = info.matlabPid
+                const matlabRelease = info.matlabRelease as string // e.g. R2023a
+
                 this._matlabConnection?.initialize().then(() => {
                     fs.unwatchFile(outFile)
                     LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.CONNECTED)
+                    reportTelemetryAction(Actions.StartMatlab, matlabRelease)
                     resolve()
-                }).catch(reason => {
+                }).catch(() => {
                     Logger.error('Failed to connect to MATLAB')
+                    reportTelemetryAction(Actions.StartMatlab, 'Failed to connect to MATLAB')
                 })
             })
 
@@ -384,6 +390,7 @@ class MatlabProcess {
                 this.isValid = false
 
                 LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
+                reportTelemetryAction(Actions.ShutdownMatlab, 'Error while communicating with MATLAB')
             }
         })
     }
