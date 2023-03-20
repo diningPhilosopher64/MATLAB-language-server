@@ -14,6 +14,10 @@ export enum Actions {
     FormatDocument = 'formatDocument'
 }
 
+export enum ActionErrorConditions {
+    MatlabUnavailable = 'MATLAB unavailable'
+}
+
 function reportTelemetry(eventKey: string, data: unknown): void {
     NotificationService.sendNotification(Notification.LogTelemetryData, {
         eventKey,

@@ -4,7 +4,7 @@ import { DocumentFormattingParams, FormattingOptions, HandlerResult, Position, R
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
-import { Actions, reportTelemetryAction } from '../../logging/TelemetryUtils'
+import { ActionErrorConditions, Actions, reportTelemetryAction } from '../../logging/TelemetryUtils'
 import { connection } from '../../server'
 import * as TextDocumentUtils from '../../utils/TextDocumentUtils'
 
@@ -52,6 +52,7 @@ class FormatSupportProvider {
         // If MATLAB is not available, no-op
         if (matlabConnection == null || !MatlabLifecycleManager.isMatlabReady()) {
             LifecycleNotificationHelper.notifyMatlabRequirement()
+            reportTelemetryAction(Actions.FormatDocument, ActionErrorConditions.MatlabUnavailable)
             return []
         }
 
