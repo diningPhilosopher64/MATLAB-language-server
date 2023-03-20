@@ -11,7 +11,9 @@ export enum Actions {
     OpenFile = 'openFile',
     StartMatlab = 'startMATLAB',
     ShutdownMatlab = 'shutdownMATLAB',
-    FormatDocument = 'formatDocument'
+    FormatDocument = 'formatDocument',
+    GoToReference = 'goToReference',
+    GoToDefinition = 'goToDefinition'
 }
 
 export enum ActionErrorConditions {
@@ -25,7 +27,7 @@ function reportTelemetry(eventKey: string, data: unknown): void {
     })
 }
 
-export function reportTelemetryAction(actionType: string, data: string = ''): void {
+export function reportTelemetryAction(actionType: string, data = ''): void {
     reportTelemetry(EventKeys.Action, {
         action_type: actionType,
         result: data

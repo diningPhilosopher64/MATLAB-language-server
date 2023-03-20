@@ -12,6 +12,7 @@ import { getTextOnLine } from '../../utils/TextDocumentUtils'
 import PathResolver from './PathResolver'
 import { connection } from '../../server'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
+import { ActionErrorConditions, Actions, reportTelemetryAction } from '../../logging/TelemetryUtils'
 
 /**
  * Represents a code expression, either a single identifier or a dotted expression.
@@ -61,6 +62,10 @@ export enum RequestType {
     References
 }
 
+function reportTelemetry (type: RequestType, errorCondition = '') {
+    reportTelemetryAction(type === RequestType.Definition ? Actions.GoToDefinition : Actions.GoToReference, errorCondition)
+}
+
 /**
  * Handles requests for navigation-related features.
  * Currently, this handles Go-to-Definition and Go-to-References.
@@ -80,6 +85,7 @@ class NavigationSupportProvider {
         const matlabConnection = await MatlabLifecycleManager.getOrCreateMatlabConnection(connection)
         if (matlabConnection == null) {
             LifecycleNotificationHelper.notifyMatlabRequirement()
+            reportTelemetry(requestType, ActionErrorConditions.MatlabUnavailable)
             return []
         }
 
@@ -87,6 +93,7 @@ class NavigationSupportProvider {
         const textDocument = documentManager.get(uri)
 
         if (textDocument == null) {
+            reportTelemetry(requestType, 'No document')
             return []
         }
 
@@ -95,6 +102,7 @@ class NavigationSupportProvider {
 
         if (expression == null) {
             // No target found
+            reportTelemetry(requestType, 'No navigation target')
             return []
         }
 
@@ -189,6 +197,7 @@ class NavigationSupportProvider {
 
         if (codeData == null) {
             // File not indexed - unable to look for definition
+            reportTelemetry(RequestType.Definition, 'File not indexed')
             return []
         }
 
@@ -196,6 +205,7 @@ class NavigationSupportProvider {
         const definitionInCodeData = this.findDefinitionInCodeData(uri, position, expression, codeData)
 
         if (definitionInCodeData != null) {
+            reportTelemetry(RequestType.Definition)
             return definitionInCodeData
         }
 
@@ -203,10 +213,12 @@ class NavigationSupportProvider {
         const definitionOnPath = await this.findDefinitionOnPath(uri, position, expression, matlabConnection)
 
         if (definitionOnPath != null) {
+            reportTelemetry(RequestType.Definition)
             return definitionOnPath
         }
 
         // If not on path, may be in user's workspace
+        reportTelemetry(RequestType.Definition)
         return this.findDefinitionInWorkspace(uri, expression)
     }
 
@@ -405,10 +417,13 @@ class NavigationSupportProvider {
 
         if (codeData == null) {
             // File not indexed - unable to look for references
+            reportTelemetry(RequestType.References, 'File not indexed')
             return []
         }
 
         const referencesInCodeData = this.findReferencesInCodeData(uri, position, expression, codeData)
+
+        reportTelemetry(RequestType.References)
 
         if (referencesInCodeData != null) {
             return referencesInCodeData
