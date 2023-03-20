@@ -4,6 +4,7 @@ import { DocumentFormattingParams, FormattingOptions, HandlerResult, Position, R
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
+import { Actions, reportTelemetryAction } from '../../logging/TelemetryUtils'
 import { connection } from '../../server'
 import * as TextDocumentUtils from '../../utils/TextDocumentUtils'
 
@@ -63,6 +64,7 @@ class FormatSupportProvider {
                     Position.create(0, 0),
                     endRange.end
                 ), newCode)
+                reportTelemetryAction(Actions.FormatDocument)
                 resolve([edit])
             })
 

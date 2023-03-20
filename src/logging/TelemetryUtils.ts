@@ -10,7 +10,8 @@ enum EventKeys {
 export enum Actions {
     OpenFile = 'openFile',
     StartMatlab = 'startMATLAB',
-    ShutdownMatlab = 'shutdownMATLAB'
+    ShutdownMatlab = 'shutdownMATLAB',
+    FormatDocument = 'formatDocument'
 }
 
 function reportTelemetry(eventKey: string, data: unknown): void {
