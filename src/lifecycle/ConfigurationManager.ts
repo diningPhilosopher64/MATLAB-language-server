@@ -1,6 +1,7 @@
 // Copyright 2022 - 2023 The MathWorks, Inc.
 
 import { ClientCapabilities, DidChangeConfigurationNotification, DidChangeConfigurationParams } from 'vscode-languageserver'
+import { reportTelemetrySettingsChange } from '../logging/TelemetryUtils'
 import { connection } from '../server'
 import { getCliArgs } from '../utils/CliUtils'
 
@@ -33,12 +34,25 @@ interface Settings {
     installPath: string
     matlabConnectionTiming: ConnectionTiming
     indexWorkspace: boolean
+    telemetry: boolean
 }
+
+type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry'
+
+const SETTING_NAMES: SettingName[] = [ 
+    'installPath',
+    'matlabConnectionTiming',
+    'indexWorkspace',
+    'telemetry'
+]
 
 class ConfigurationManager {
     private configuration: Settings | null = null
     private readonly defaultConfiguration: Settings
     private globalSettings: Settings
+
+    // Cache used to detect which settings are changed for telemetry logging
+    private settingsChangeCache: Settings | null = null
 
     // Holds additional command line arguments that are not part of the configuration
     private readonly additionalArguments: CliArguments
@@ -51,13 +65,15 @@ class ConfigurationManager {
         this.defaultConfiguration = {
             installPath: '',
             matlabConnectionTiming: ConnectionTiming.Early,
-            indexWorkspace: false
+            indexWorkspace: false,
+            telemetry: true
         }
 
         this.globalSettings = {
             installPath: cliArgs[Argument.MatlabInstallationPath] ?? this.defaultConfiguration.installPath,
             matlabConnectionTiming: cliArgs[Argument.MatlabConnectionTiming] as ConnectionTiming ?? this.defaultConfiguration.matlabConnectionTiming,
-            indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.indexWorkspace
+            indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.indexWorkspace,
+            telemetry: this.defaultConfiguration.telemetry
         }
 
         this.additionalArguments = {
@@ -114,12 +130,40 @@ class ConfigurationManager {
      * Handles a change in the configuration
      * @param params The configuration changed params
      */
-    private handleConfigurationChanged (params: DidChangeConfigurationParams): void {
+    private async handleConfigurationChanged (params: DidChangeConfigurationParams): Promise<void> {
+        let newConfig: Settings
+
         if (this.hasConfigurationCapability) {
             // Clear cached configuration
+            this.settingsChangeCache = this.configuration
             this.configuration = null
+
+            // Force load new configuration
+            newConfig = await this.getConfiguration()
         } else {
+            this.settingsChangeCache = this.globalSettings
             this.globalSettings = params.settings?.matlab ?? this.defaultConfiguration
+
+            newConfig = this.globalSettings
+        }
+
+        this.compareSettingChanges(newConfig)
+    }
+
+    private compareSettingChanges (newConfiguration: Settings): void {
+        if (this.settingsChangeCache == null) {
+            // Not yet initialized
+            return
+        }
+
+        for (let i = 0; i < SETTING_NAMES.length; i++) {
+            const settingName = SETTING_NAMES[i]
+            const oldValue = this.settingsChangeCache[settingName]
+            const newValue = newConfiguration[settingName]
+
+            if (oldValue !== newValue) {
+                reportTelemetrySettingsChange(settingName, newValue, oldValue)
+            }
         }
     }
 }

@@ -33,3 +33,11 @@ export function reportTelemetryAction(actionType: string, data = ''): void {
         result: data
     })
 }
+
+export function reportTelemetrySettingsChange(settingName: string, newValue: unknown, oldValue: unknown): void {
+    reportTelemetry(EventKeys.SettingChange, {
+        setting_name: settingName,
+        new_value: newValue,
+        old_value: oldValue
+    })
+}
