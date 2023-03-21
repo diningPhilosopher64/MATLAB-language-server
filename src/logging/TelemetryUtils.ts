@@ -53,7 +53,7 @@ export function reportTelemetryAction(actionType: string, data = ''): void {
  * @param newValue The new value
  * @param oldValue The old value
  */
-export function reportTelemetrySettingsChange(settingName: string, newValue: unknown, oldValue: unknown): void {
+export function reportTelemetrySettingsChange(settingName: string, newValue: string, oldValue: string): void {
     reportTelemetry(EventKeys.SettingChange, {
         setting_name: settingName,
         new_value: newValue,

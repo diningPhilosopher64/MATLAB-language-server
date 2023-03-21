@@ -162,7 +162,7 @@ class ConfigurationManager {
             const newValue = newConfiguration[settingName]
 
             if (oldValue !== newValue) {
-                reportTelemetrySettingsChange(settingName, newValue, oldValue)
+                reportTelemetrySettingsChange(settingName, newValue.toString(), oldValue.toString())
             }
         }
     }
