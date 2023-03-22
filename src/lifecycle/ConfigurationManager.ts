@@ -51,9 +51,6 @@ class ConfigurationManager {
     private readonly defaultConfiguration: Settings
     private globalSettings: Settings
 
-    // Cache used to detect which settings are changed for telemetry logging
-    private settingsChangeCache: Settings | null = null
-
     // Holds additional command line arguments that are not part of the configuration
     private readonly additionalArguments: CliArguments
 
@@ -131,34 +128,36 @@ class ConfigurationManager {
      * @param params The configuration changed params
      */
     private async handleConfigurationChanged (params: DidChangeConfigurationParams): Promise<void> {
+        let oldConfig: Settings | null
         let newConfig: Settings
 
         if (this.hasConfigurationCapability) {
+            oldConfig = this.configuration
+
             // Clear cached configuration
-            this.settingsChangeCache = this.configuration
             this.configuration = null
 
             // Force load new configuration
             newConfig = await this.getConfiguration()
         } else {
-            this.settingsChangeCache = this.globalSettings
+            oldConfig = this.globalSettings
             this.globalSettings = params.settings?.matlab ?? this.defaultConfiguration
 
             newConfig = this.globalSettings
         }
 
-        this.compareSettingChanges(newConfig)
+        this.compareSettingChanges(oldConfig, newConfig)
     }
 
-    private compareSettingChanges (newConfiguration: Settings): void {
-        if (this.settingsChangeCache == null) {
+    private compareSettingChanges (oldConfiguration: Settings | null, newConfiguration: Settings): void {
+        if (oldConfiguration == null) {
             // Not yet initialized
             return
         }
 
         for (let i = 0; i < SETTING_NAMES.length; i++) {
             const settingName = SETTING_NAMES[i]
-            const oldValue = this.settingsChangeCache[settingName]
+            const oldValue = oldConfiguration[settingName]
             const newValue = newConfiguration[settingName]
 
             if (oldValue !== newValue) {
