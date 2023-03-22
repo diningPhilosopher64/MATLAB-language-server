@@ -11,7 +11,10 @@ export enum Notification {
     // Errors
     MatlabLaunchFailed = 'matlab/launchfailed',
     MatlabFeatureUnavailable = 'feature/needsmatlab',
-    MatlabFeatureUnavailableNoMatlab = 'feature/needsmatlab/nomatlab'
+    MatlabFeatureUnavailableNoMatlab = 'feature/needsmatlab/nomatlab',
+
+    // Telemetry
+    LogTelemetryData = 'telemetry/logdata'
 }
 
 class NotificationService {

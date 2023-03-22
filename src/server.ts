@@ -7,6 +7,7 @@ import WorkspaceIndexer from './indexing/WorkspaceIndexer'
 import ConfigurationManager from './lifecycle/ConfigurationManager'
 import MatlabLifecycleManager, { ConnectionTiming, MatlabConnectionStatusParam } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
+import { Actions, reportTelemetryAction } from './logging/TelemetryUtils'
 import NotificationService, { Notification } from './notifications/NotificationService'
 import CompletionProvider from './providers/completion/CompletionSupportProvider'
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
@@ -107,6 +108,7 @@ NotificationService.registerNotificationListener(
 
 // Handles files opened
 documentManager.onDidOpen(params => {
+    reportFileOpened(params.document)
     void LintingSupportProvider.lintDocument(params.document, connection)
     void DocumentIndexer.indexDocument(params.document)
 })
@@ -164,3 +166,9 @@ connection.onReferences(async params => {
 
 // Start listening to open/change/close text document events
 documentManager.listen(connection)
+
+/** -------------------- Helper Functions -------------------- **/
+function reportFileOpened(document: TextDocument) {
+    const roughSize = Math.ceil(document.getText().length / 1024) // in KB
+    reportTelemetryAction(Actions.OpenFile, roughSize.toString())
+}

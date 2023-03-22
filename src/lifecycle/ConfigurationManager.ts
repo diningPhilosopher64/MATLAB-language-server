@@ -1,6 +1,7 @@
 // Copyright 2022 - 2023 The MathWorks, Inc.
 
 import { ClientCapabilities, DidChangeConfigurationNotification, DidChangeConfigurationParams } from 'vscode-languageserver'
+import { reportTelemetrySettingsChange } from '../logging/TelemetryUtils'
 import { connection } from '../server'
 import { getCliArgs } from '../utils/CliUtils'
 
@@ -33,7 +34,17 @@ interface Settings {
     installPath: string
     matlabConnectionTiming: ConnectionTiming
     indexWorkspace: boolean
+    telemetry: boolean
 }
+
+type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry'
+
+const SETTING_NAMES: SettingName[] = [ 
+    'installPath',
+    'matlabConnectionTiming',
+    'indexWorkspace',
+    'telemetry'
+]
 
 class ConfigurationManager {
     private configuration: Settings | null = null
@@ -51,13 +62,15 @@ class ConfigurationManager {
         this.defaultConfiguration = {
             installPath: '',
             matlabConnectionTiming: ConnectionTiming.Early,
-            indexWorkspace: false
+            indexWorkspace: false,
+            telemetry: true
         }
 
         this.globalSettings = {
             installPath: cliArgs[Argument.MatlabInstallationPath] ?? this.defaultConfiguration.installPath,
             matlabConnectionTiming: cliArgs[Argument.MatlabConnectionTiming] as ConnectionTiming ?? this.defaultConfiguration.matlabConnectionTiming,
-            indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.indexWorkspace
+            indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.indexWorkspace,
+            telemetry: this.defaultConfiguration.telemetry
         }
 
         this.additionalArguments = {
@@ -114,12 +127,42 @@ class ConfigurationManager {
      * Handles a change in the configuration
      * @param params The configuration changed params
      */
-    private handleConfigurationChanged (params: DidChangeConfigurationParams): void {
+    private async handleConfigurationChanged (params: DidChangeConfigurationParams): Promise<void> {
+        let oldConfig: Settings | null
+        let newConfig: Settings
+
         if (this.hasConfigurationCapability) {
+            oldConfig = this.configuration
+
             // Clear cached configuration
             this.configuration = null
+
+            // Force load new configuration
+            newConfig = await this.getConfiguration()
         } else {
+            oldConfig = this.globalSettings
             this.globalSettings = params.settings?.matlab ?? this.defaultConfiguration
+
+            newConfig = this.globalSettings
+        }
+
+        this.compareSettingChanges(oldConfig, newConfig)
+    }
+
+    private compareSettingChanges (oldConfiguration: Settings | null, newConfiguration: Settings): void {
+        if (oldConfiguration == null) {
+            // Not yet initialized
+            return
+        }
+
+        for (let i = 0; i < SETTING_NAMES.length; i++) {
+            const settingName = SETTING_NAMES[i]
+            const oldValue = oldConfiguration[settingName]
+            const newValue = newConfiguration[settingName]
+
+            if (oldValue !== newValue) {
+                reportTelemetrySettingsChange(settingName, newValue.toString(), oldValue.toString())
+            }
         }
     }
 }
