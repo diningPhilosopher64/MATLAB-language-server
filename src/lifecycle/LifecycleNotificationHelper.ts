@@ -12,7 +12,7 @@ class LifecycleNotificationHelper {
     didMatlabLaunchFail = false
 
     /**
-     * Sends notification to the language client of a change in the MATLAB connection state.
+     * Sends notification to the language client of a change in the MATLAB® connection state.
      *
      * @param connectionStatus The connection state
      */

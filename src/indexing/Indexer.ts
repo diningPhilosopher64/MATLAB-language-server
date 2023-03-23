@@ -98,7 +98,7 @@ class Indexer {
      *
      * @param code The code being parsed
      * @param uri The URI associated with the code
-     * @param matlabConnection The connection to MATLAB
+     * @param matlabConnection The connection to MATLAB®
      *
      * @returns The raw data extracted from the document
      */

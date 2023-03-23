@@ -46,7 +46,7 @@ class FormatSupportProvider {
      * @returns An array of text edits required to format the document
      */
     private async formatDocument (doc: TextDocument, options: FormattingOptions): Promise<TextEdit[]> {
-        // For format, we try to instantiate MATLAB if it is not already running
+        // For format, we try to instantiate MATLAB® if it is not already running
         const matlabConnection = await MatlabLifecycleManager.getOrCreateMatlabConnection(connection)
 
         // If MATLAB is not available, no-op

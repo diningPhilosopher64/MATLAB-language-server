@@ -72,7 +72,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
         function doParseFilesWithTimer (this, requestId, files, index)
             % This leverages a timer to achieve an "asynchronous" looping effect, allowing
-            % other operations to take place between parsing each file. This prevents the MATLAB
+            % other operations to take place between parsing each file. This prevents the MATLAB®
             % thread from becomming blocked for an extended period of time.
 
             if nargin == 3

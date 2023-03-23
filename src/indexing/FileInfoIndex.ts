@@ -4,7 +4,7 @@ import { Position, Range } from 'vscode-languageserver'
 import { isPositionGreaterThan, isPositionLessThanOrEqualTo } from '../utils/PositionUtils'
 
 /**
- * Defines the structure of the raw data retrieved from MATLAB.
+ * Defines the structure of the raw data retrieved from MATLAB®.
  */
 export interface RawCodeData {
     classInfo: CodeDataClassInfo

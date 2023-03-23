@@ -27,7 +27,7 @@ class PathResolver {
      *
      * @param names The names which should be resolved to paths
      * @param contextFileUri The file from which the context of the path resolution should be made
-     * @param matlabConnection The connection to MATLAB
+     * @param matlabConnection The connection to MATLAB®
      *
      * @returns The resolved URIs. Any URIs which could not be determiend are denoted by empty strings.
      */

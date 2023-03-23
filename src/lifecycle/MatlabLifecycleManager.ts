@@ -38,7 +38,7 @@ export interface MatlabConnectionStatusParam {
 type MatlabLifecycleCallback = (error: Error | null, evt: MatlabLifecycleEvent) => void
 
 /**
- * Manages the lifecycle of the connected MATLAB application.
+ * Manages the lifecycle of the connected MATLAB® application.
  */
 class MatlabLifecycleManager {
     private _matlabProcess: MatlabProcess | null = null

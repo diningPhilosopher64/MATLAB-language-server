@@ -44,7 +44,7 @@ const PRAGMA_END = '>'
  * Currently, this handles displaying diagnostics, providing quick-fixes,
  * and suppressing diagnostics.
  *
- * Note: When MATLAB is not connected, diagnostics are only updated when
+ * Note: When MATLAB® is not connected, diagnostics are only updated when
  * the file is saved and suppressing warnings is not available.
  */
 class LintingSupportProvider {

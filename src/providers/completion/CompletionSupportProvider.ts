@@ -38,7 +38,7 @@ interface MArgumentData {
     valueSummary?: string
 }
 
-// Maps the completion type, as returned by MATLAB, to the corresponding CompletionItemKind
+// Maps the completion type, as returned by MATLAB®, to the corresponding CompletionItemKind
 const MatlabCompletionToKind: { [index: string]: CompletionItemKind } = {
     literal: CompletionItemKind.Text,
     unknown: CompletionItemKind.Function,

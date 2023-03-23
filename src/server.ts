@@ -30,7 +30,7 @@ MatlabLifecycleManager.addMatlabLifecycleListener((error, lifecycleEvent) => {
     }
 
     if (lifecycleEvent.matlabStatus === 'connected') {
-        // Handle things after MATLAB has launched
+        // Handle things after MATLAB® has launched
 
         // Initiate workspace indexing
         void WorkspaceIndexer.indexWorkspace()

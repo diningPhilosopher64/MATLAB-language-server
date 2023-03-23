@@ -188,7 +188,7 @@ class NavigationSupportProvider {
      * @param uri The URI of the document containing the expression
      * @param position The position of the expression
      * @param expression The expression for which we are looking for the definition
-     * @param matlabConnection The connection to MATLAB
+     * @param matlabConnection The connection to MATLAB®
      * @returns The definition location(s)
      */
     private async findDefinition (uri: string, position: Position, expression: Expression, matlabConnection: MatlabConnection): Promise<Location[]> {

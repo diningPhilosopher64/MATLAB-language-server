@@ -29,7 +29,7 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
             cleanupObj3 = setTemporaryValue(s.matlab.editor.tab.IndentSize, msg.tabSize); %#ok<NASGU>
 
             % Format code
-            response.data = indentcode(codeToFormat, 'matlab'); % This will pull from the user's MATLAB settings.
+            response.data = indentcode(codeToFormat, 'matlab'); % This will pull from the user's MATLAB® settings.
 
             % Send formatted code
             this.CommManager.publish(this.ResponseChannel, response)

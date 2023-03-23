@@ -1,6 +1,6 @@
 function codeInfo = computeCodeData (code, filePath)
     %COMPUTECODEDATA Compute sub-function location information for the
-    % MATLAB code file specified by fullpath. The data is a struct:
+    % MATLAB® code file specified by fullpath. The data is a struct:
     %
     %   codeInfo.classInfo    - Information about class definitions, if applicable
     %   codeInfo.functionInfo - Information about function definitions

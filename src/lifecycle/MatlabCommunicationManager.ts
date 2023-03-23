@@ -15,7 +15,7 @@ const Faye = require('faye')
 type Client = typeof Faye.Client
 type Subscription = typeof Faye.Client.Subscription
 
-// Used to identify changes to the state of the connection with MATLAB
+// Used to identify changes to the state of the connection with MATLAB®
 export enum LifecycleEventType {
     CONNECTED,
     DISCONNECTED
