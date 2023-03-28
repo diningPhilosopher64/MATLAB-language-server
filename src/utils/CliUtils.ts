@@ -32,8 +32,8 @@ function makeParser (): yargs.Argv<CliArgs> {
     }).option(Argument.MatlabConnectionTiming, {
         description: 'When the language server should attempt to connect to MATLAB.',
         type: 'string',
-        default: 'early',
-        choices: ['early', 'late', 'never']
+        default: 'onStart',
+        choices: ['onStart', 'onDemand', 'never']
     }).option(Argument.ShouldIndexWorkspace, {
         boolean: true,
         default: false,

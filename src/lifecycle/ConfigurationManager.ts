@@ -19,8 +19,8 @@ export enum Argument {
 }
 
 export enum ConnectionTiming {
-    Early = 'early',
-    Late = 'late',
+    OnStart = 'onStart',
+    OnDemand = 'onDemand',
     Never = 'never'
 }
 
@@ -61,7 +61,7 @@ class ConfigurationManager {
 
         this.defaultConfiguration = {
             installPath: '',
-            matlabConnectionTiming: ConnectionTiming.Early,
+            matlabConnectionTiming: ConnectionTiming.OnStart,
             indexWorkspace: false,
             telemetry: true
         }
@@ -104,7 +104,7 @@ class ConfigurationManager {
     async getConfiguration (): Promise<Settings> {
         if (this.hasConfigurationCapability) {
             if (this.configuration == null) {
-                this.configuration = await connection.workspace.getConfiguration('matlab') as Settings
+                this.configuration = await connection.workspace.getConfiguration('MATLAB') as Settings
             }
 
             return this.configuration

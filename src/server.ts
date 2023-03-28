@@ -4,8 +4,8 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
 import { ClientCapabilities, createConnection, InitializeParams, InitializeResult, ProposedFeatures, TextDocuments } from 'vscode-languageserver/node'
 import DocumentIndexer from './indexing/DocumentIndexer'
 import WorkspaceIndexer from './indexing/WorkspaceIndexer'
-import ConfigurationManager from './lifecycle/ConfigurationManager'
-import MatlabLifecycleManager, { ConnectionTiming, MatlabConnectionStatusParam } from './lifecycle/MatlabLifecycleManager'
+import ConfigurationManager, { ConnectionTiming } from './lifecycle/ConfigurationManager'
+import MatlabLifecycleManager, { MatlabConnectionStatusParam } from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
 import { Actions, reportTelemetryAction } from './logging/TelemetryUtils'
 import NotificationService, { Notification } from './notifications/NotificationService'
@@ -83,13 +83,13 @@ connection.onInitialized(() => {
 
     WorkspaceIndexer.setupCallbacks(capabilities)
 
-    void startMatlabIfEarlyLaunch()
+    void startMatlabIfOnStartLaunch()
 })
 
-async function startMatlabIfEarlyLaunch (): Promise<void> {
+async function startMatlabIfOnStartLaunch (): Promise<void> {
     // Launch MATLAB if it should be launched early
     const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
-    if (connectionTiming === ConnectionTiming.Early) {
+    if (connectionTiming === ConnectionTiming.OnStart) {
         void MatlabLifecycleManager.connectToMatlab(connection)
     }
 }

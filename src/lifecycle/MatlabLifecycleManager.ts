@@ -9,17 +9,11 @@ import * as path from 'path'
 
 import MatlabCommunicationManager, { LifecycleEventType, MatlabConnection } from './MatlabCommunicationManager'
 import Logger from '../logging/Logger'
-import ConfigurationManager, { Argument } from './ConfigurationManager'
+import ConfigurationManager, { Argument, ConnectionTiming } from './ConfigurationManager'
 import { connection } from '../server'
 import LifecycleNotificationHelper from './LifecycleNotificationHelper'
 import NotificationService, { Notification } from '../notifications/NotificationService'
 import { Actions, reportTelemetryAction } from '../logging/TelemetryUtils'
-
-export enum ConnectionTiming {
-    Early = 'early',
-    Late = 'late',
-    Never = 'never'
-}
 
 enum ConnectionState {
     CONNECTING = 'connecting',
