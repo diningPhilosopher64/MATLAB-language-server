@@ -1,5 +1,6 @@
 # MATLAB language server
 MATLAB&reg; language server implements the Microsoft&reg; [Language Server Protocol](https://github.com/Microsoft/language-server-protocol) for the MATLAB language.
+
 ## Features Implemented
 MATLAB language server implements several Language Server Protocol features and their related services:
 * Code diagnostics — [publishDiagnostics](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_publishDiagnostics) 
@@ -12,4 +13,10 @@ MATLAB language server implements several Language Server Protocol features and 
 
 ## Clients
 MATLAB language server supports these editors by installing the corresponding extension:
-* Visual Studio&reg; Code — MATLAB extension for Visual Studio Code
+* Visual Studio&reg; Code — MATLAB extension for Visual Studio Code *(add link)*
+
+## Release Notes
+### 1.0.0
+Release date: *date*
+
+* Initial release.
