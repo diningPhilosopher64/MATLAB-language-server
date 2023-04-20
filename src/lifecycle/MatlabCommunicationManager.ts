@@ -38,9 +38,11 @@ class MatlabCommunicationManager {
      * @param logDirectory The directory in which MATLAB should log data
      * @param certificateDirectory The directory in which a certificate should be generated.
      * If no directory is provided, a temporary directory will be created.
+     *
      * @returns Information about the new MATLAB process and the connection to it.
+     * Returns null if the MATLAB process cannot be started.
      */
-    async connectToNewMatlab (launchCommand: string, launchArguments: string[], logDirectory: string, certificateDirectory?: string): Promise<MatlabProcessInfo> {
+    async connectToNewMatlab (launchCommand: string, launchArguments: string[], logDirectory: string, certificateDirectory?: string): Promise<MatlabProcessInfo | null> {
         const certDir = certificateDirectory ?? await fs.mkdtemp(path.join(os.tmpdir(), 'matlablsTmp-'))
         const port = await this._getAvailablePort()
         const certFile = path.join(certDir, 'cert.pem')
@@ -48,17 +50,22 @@ class MatlabCommunicationManager {
         const apiKey = this._makeApiKey()
 
         // Spawn new instance of MATLAB
-        const matlabProcess = spawn(launchCommand, launchArguments, {
-            cwd: process.env.HOME,
-            env: {
-                ...process.env,
-                MATLAB_LOG_DIR: logDirectory,
-                MW_CONNECTOR_SECURE_PORT: port,
-                MW_CERTFILE: certFile,
-                MW_PKEYFILE: pkeyFile,
-                MWAPIKEY: apiKey
-            }
-        })
+        let matlabProcess
+        try {
+            matlabProcess = spawn(launchCommand, launchArguments, {
+                cwd: process.env.HOME,
+                env: {
+                    ...process.env,
+                    MATLAB_LOG_DIR: logDirectory,
+                    MW_CONNECTOR_SECURE_PORT: port,
+                    MW_CERTFILE: certFile,
+                    MW_PKEYFILE: pkeyFile,
+                    MWAPIKEY: apiKey
+                }
+            })
+        } catch (e) {
+            return null
+        }
 
         // Clean up temp directory on close
         matlabProcess.on('close', () => {
