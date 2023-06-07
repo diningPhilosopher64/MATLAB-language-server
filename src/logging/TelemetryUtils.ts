@@ -1,6 +1,6 @@
 // Copyright 2023 The MathWorks, Inc.
 
-import NotificationService, { Notification } from '../notifications/NotificationService';
+import NotificationService, { Notification } from '../notifications/NotificationService'
 
 enum EventKeys {
     Action = 'ACTIONS',
@@ -13,7 +13,8 @@ export enum Actions {
     ShutdownMatlab = 'shutdownMATLAB',
     FormatDocument = 'formatDocument',
     GoToReference = 'goToReference',
-    GoToDefinition = 'goToDefinition'
+    GoToDefinition = 'goToDefinition',
+    DocumentSymbol = 'documentSymbol'
 }
 
 export enum ActionErrorConditions {
@@ -26,7 +27,7 @@ export enum ActionErrorConditions {
  * @param eventKey The event key
  * @param data The event's data
  */
-function reportTelemetry(eventKey: string, data: unknown): void {
+function reportTelemetry (eventKey: string, data: unknown): void {
     NotificationService.sendNotification(Notification.LogTelemetryData, {
         eventKey,
         data
@@ -39,7 +40,7 @@ function reportTelemetry(eventKey: string, data: unknown): void {
  * @param actionType The action's type
  * @param data The action's data
  */
-export function reportTelemetryAction(actionType: string, data = ''): void {
+export function reportTelemetryAction (actionType: string, data = ''): void {
     reportTelemetry(EventKeys.Action, {
         action_type: actionType,
         result: data
@@ -48,12 +49,12 @@ export function reportTelemetryAction(actionType: string, data = ''): void {
 
 /**
  * Reports telemetry about a settings change
- * 
+ *
  * @param settingName The setting's name
  * @param newValue The new value
  * @param oldValue The old value
  */
-export function reportTelemetrySettingsChange(settingName: string, newValue: string, oldValue: string): void {
+export function reportTelemetrySettingsChange (settingName: string, newValue: string, oldValue: string): void {
     reportTelemetry(EventKeys.SettingChange, {
         setting_name: settingName,
         new_value: newValue,

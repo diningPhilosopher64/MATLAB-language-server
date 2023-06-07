@@ -91,6 +91,45 @@ class MatlabLifecycleManager {
     }
 
     /**
+     * Gets the active connection to MATLAB or waits for one to be established.
+     * Does not attempt to create a connection if one does not currently exist.
+     * Immediately returns null if the user set the MATLAB connection timing to
+     * never.
+     *
+     * @returns The connection to MATLAB, or null if connection timing is never
+     * and MATLAB has not been manually launched.
+     */
+    async getMatlabConnectionAsync (): Promise<MatlabConnection | null> {
+        // If MATLAB is up and running return the connection
+        const isMatlabReady = this._matlabProcess?.isMatlabReady() ?? false
+        if (isMatlabReady) {
+            const conn = this._matlabProcess?.getConnection()
+            if (conn !== null && conn !== undefined) {
+                return conn
+            }
+        }
+        // MATLAB isn't running and the user has said we shouldn't start it
+        if (await this._isMatlabConnectionTimingNever()) {
+            return null
+        }
+        // MATLAB might start later on. Return a promise to wait for it.
+        const result = new Promise<MatlabConnection>((resolve, reject) => {
+            this.addMatlabLifecycleListener((error, evt) => {
+                if (error !== null) {
+                    reject(error)
+                }
+                if (evt.matlabStatus === 'connected') {
+                    const conn = this.getMatlabConnection()
+                    if (conn !== null) {
+                        resolve(conn)
+                    }
+                }
+            })
+        })
+        return await result
+    }
+
+    /**
      * Gets the active connection to MATLAB. If one does not currently exist, this will
      * attempt to establish a connection.
      *
@@ -105,8 +144,7 @@ class MatlabLifecycleManager {
         }
 
         // No active connection - should create a connection if desired
-        const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
-        if (connectionTiming !== ConnectionTiming.Never) {
+        if (!(await this._isMatlabConnectionTimingNever())) {
             const matlabProcess = await this.connectToMatlab(connection)
             return matlabProcess.getConnection()
         }
@@ -197,6 +235,15 @@ class MatlabLifecycleManager {
                 matlabStatus: status
             })
         })
+    }
+
+    /**
+     *
+     * @returns True if the MATLAB connection timing setting is set to never. Returns false otherwise.
+     */
+    private async _isMatlabConnectionTimingNever (): Promise<boolean> {
+        const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
+        return connectionTiming === ConnectionTiming.Never
     }
 }
 
