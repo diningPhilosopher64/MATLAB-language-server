@@ -7,15 +7,15 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
         LintingRequestChannel = '/matlabls/linting/request'
         LintingResponseChannel = '/matlabls/linting/response'
 
-        FindStatementEndRequestChannel = '/matlabls/linting/findstatementend/request'
-        FindStatementEndResponseChannel = '/matlabls/linting/findstatementend/response'
+        SuppressDiagnosticRequestChannel = '/matlabls/linting/suppressdiagnostic/request'
+        SuppressDiagnosticResponseChannel = '/matlabls/linting/suppressdiagnostic/response'
     end
 
     methods
         function this = LintingSupportHandler (commManager)
             this = this@matlabls.handlers.FeatureHandler(commManager);
             this.RequestSubscriptions(1) = this.CommManager.subscribe(this.LintingRequestChannel, @this.handleLintingRequest);
-            this.RequestSubscriptions(2) = this.CommManager.subscribe(this.FindStatementEndRequestChannel, @this.handleFindStatementEndRequest);
+            this.RequestSubscriptions(2) = this.CommManager.subscribe(this.SuppressDiagnosticRequestChannel, @this.handleDiagnosticSuppressionRequest);
         end
     end
 
@@ -33,20 +33,29 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
             this.CommManager.publish(this.LintingResponseChannel, response)
         end
 
-        function handleFindStatementEndRequest (this, msg)
-            % For the provided code, find the last line (1-based) of the
-            % statement containing the provided line number (1-based).
-            % For example, takes into account line continuations (...).
-            %
-            % This is used to determine where linting suppressions ("%#ok<...>")
-            % should be inserted.
+        function handleDiagnosticSuppressionRequest (this, msg)
+            % Gets the edit required to suppress the given linting diagnostic
 
             code = msg.code;
-            lineNumber = msg.lineNumber;
+            diagnosticId = msg.diagnosticId;
+            diagnosticLine = msg.line;
+            suppressInFile = msg.suppressInFile;
 
-            response.lineNumber = matlabls.internal.findStatementEndLine(code, lineNumber);
+            if suppressInFile
+                diagnosticId = strcat('*', diagnosticId);
+            end
 
-            this.CommManager.publish(this.FindStatementEndResponseChannel, response)
+            [suppressionText, suppressionLine, character] = matlabls.internal.getDiagnosticSuppressionText(code, diagnosticId, diagnosticLine);
+
+            suppressionEdit.range.start.line = suppressionLine;
+            suppressionEdit.range.start.character = character;
+            suppressionEdit.range.end.line = suppressionLine;
+            suppressionEdit.range.end.character = character;
+            suppressionEdit.newText = suppressionText;
+
+            response.suppressionEdits = jsonencode({suppressionEdit});
+
+            this.CommManager.publish(this.SuppressDiagnosticResponseChannel, response);
         end
     end
 end
