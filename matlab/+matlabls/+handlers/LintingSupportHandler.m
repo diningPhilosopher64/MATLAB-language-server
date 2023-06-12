@@ -53,7 +53,7 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
             suppressionEdit.range.end.character = character;
             suppressionEdit.newText = suppressionText;
 
-            response.suppressionEdits = jsonencode({suppressionEdit});
+            response.suppressionEdits = {suppressionEdit};
 
             this.CommManager.publish(this.SuppressDiagnosticResponseChannel, response);
         end

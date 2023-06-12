@@ -20,7 +20,7 @@ interface RawLintResults {
 }
 
 interface DiagnosticSuppressionResults {
-    suppressionEdits: string
+    suppressionEdits: TextEdit[]
 }
 
 const LINT_DELAY = 500 // Delay (in ms) after keystroke before attempting to lint the document
@@ -206,7 +206,7 @@ class LintingSupportProvider {
         const responseSub = matlabConnection.subscribe(this.SUPPRESS_DIAGNOSTIC_RESPONSE_CHANNEL, message => {
             matlabConnection.unsubscribe(responseSub)
 
-            const suppressionEdits: TextEdit[] = JSON.parse((message as DiagnosticSuppressionResults).suppressionEdits)
+            const suppressionEdits: TextEdit[] = (message as DiagnosticSuppressionResults).suppressionEdits
 
             const edit: WorkspaceEdit = {
                 changes: {
