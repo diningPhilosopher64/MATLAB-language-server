@@ -19,10 +19,6 @@ interface RawLintResults {
     lintData: string[]
 }
 
-interface EndLineResults {
-    lineNumber: number
-}
-
 interface DiagnosticSuppressionResults {
     suppressionEdits: string
 }
