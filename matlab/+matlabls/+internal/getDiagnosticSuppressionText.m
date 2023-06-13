@@ -12,7 +12,7 @@ function [suppressionText, suppressionLine, character] = getDiagnosticSuppressio
 
     tokens = tok.tokenize(codeLine);
 
-    if isEolToken(tokens(end))
+    if isEolToken(tokens(end).token)
         tokens = tokens(1 : end-1);
     end
  
@@ -23,11 +23,11 @@ function [suppressionText, suppressionLine, character] = getDiagnosticSuppressio
     end
 
     lastToken = tokens(end);
-    if isCommentToken(lastToken)
+    if isCommentToken(lastToken.token)
         % Case 2: comment on line -> append full pragma BEFORE comment
         [character, suppressionText] = handleSuppressionBeforeComment(lastToken, tokens, diagnosticId);
         return
-    elseif isPragmaToken(lastToken)
+    elseif isPragmaToken(lastToken.token)
         % Case 3: pragma on line -> append suppression ID to pragma contents
         [character, suppressionText] = handleSuppressionWithExistingPragma(lastToken, tokens, codeLine, diagnosticId);
     else
@@ -104,7 +104,7 @@ function [character, suppressionText] = handleAddSuppressionToLine (lastToken, l
     else
         % Case B: Non-empty line
         character = strlength(lineText);
-        if ~isWhitespaceToken(lastToken)
+        if ~isWhitespaceToken(lastToken.token)
             % Check if last token is whitespace - if not, will need to pad with additional space
             suppressionText = append(' ', suppressionText);
         end
@@ -117,7 +117,7 @@ function [character, suppressionText] = handleSuppressionBeforeComment (commentT
     if numel(lineTokens) >= 2
         % Check if previous token is whitespace - if not, will need to pad with additional space
         previousToken = lineTokens(end - 1);
-        if ~isWhitespaceToken(previousToken)
+        if ~isWhitespaceToken(previousToken.token)
             suppressionText = append(' ', suppressionText);
         end
     end
@@ -134,7 +134,7 @@ function [character, suppressionText] = handleSuppressionWithExistingPragma (pra
         if numel(lineTokens) >= 2
             % Check if previous token is whitespace - if not, will need to pad with additional space
             previousToken = lineTokens(end - 1);
-            if ~isWhitespaceToken(previousToken)
+            if ~isWhitespaceToken(previousToken.token)
                 suppressionText = append(' ', suppressionText);
             end
         end
@@ -151,19 +151,19 @@ function [character, suppressionText] = handleSuppressionWithExistingPragma (pra
     end
 end
 
-function isEol = isEolToken (tokenInfo)
+function isEol = isEolToken (token)
     eolTokens = [100 101 102 103];
-    isEol = any(eolTokens == tokenInfo.token);
+    isEol = any(eolTokens == token);
 end
 
-function isComment = isCommentToken (tokenInfo)
-    isComment = tokenInfo.token == 105;
+function isComment = isCommentToken (token)
+    isComment = token == 105;
 end
 
-function isPragma = isPragmaToken (tokenInfo)
-    isPragma = tokenInfo.token == 110;
+function isPragma = isPragmaToken (token)
+    isPragma = token == 110;
 end
 
-function isWhitespace = isWhitespaceToken (tokenInfo)
-    isWhitespace = tokenInfo.token == 116;
+function isWhitespace = isWhitespaceToken (token)
+    isWhitespace = token == 116;
 end
