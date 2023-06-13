@@ -18,7 +18,7 @@ function [suppressionText, suppressionLine, character] = getDiagnosticSuppressio
  
     % Case 1: empty line -> append full pragma
     if numel(tokens) == 0
-        [character, suppressionText] = handleSuppressionOnEmptyLine(diagnosticId);
+        [character, suppressionText] = handleAddSuppressionToLine([], codeLine, diagnosticId);
         return
     end
 
@@ -95,9 +95,20 @@ function p = isNotControlFlow (kind)
     end
 end
 
-function [character, suppressionText] = handleSuppressionOnEmptyLine (diagnosticId)
-    character = 0;
+function [character, suppressionText] = handleAddSuppressionToLine (lastToken, lineText, diagnosticId)
     suppressionText = append('%#ok<', diagnosticId, '>');
+
+    if isempty(lastToken)
+        % Case A: Empty line
+        character = 0;
+    else
+        % Case B: Non-empty line
+        character = strlength(lineText);
+        if ~isWhitespaceToken(lastToken)
+            % Check if last token is whitespace - if not, will need to pad with additional space
+            suppressionText = append(' ', suppressionText);
+        end
+    end
 end
 
 function [character, suppressionText] = handleSuppressionBeforeComment (commentToken, lineTokens, diagnosticId)
@@ -137,15 +148,6 @@ function [character, suppressionText] = handleSuppressionWithExistingPragma (pra
         % If there are existing diagnostics being filtered, add comma to separate diagnostic IDs
         suppressionText = append(suppressionText, ',');
         return
-    end
-end
-
-function [character, suppressionText] = handleAddSuppressionToLine (lastToken, lineText, diagnosticId)
-    character = strlength(lineText);
-    suppressionText = append('%#ok<', diagnosticId, '>');
-    if ~isWhitespaceToken(lastToken)
-        % Check if last token is whitespace - if not, will need to pad with additional space
-        suppressionText = append(' ', suppressionText);
     end
 end
 
