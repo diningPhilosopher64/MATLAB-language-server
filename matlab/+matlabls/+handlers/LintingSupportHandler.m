@@ -45,15 +45,7 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
                 diagnosticId = strcat('*', diagnosticId);
             end
 
-            [suppressionText, suppressionLine, character] = matlabls.internal.getDiagnosticSuppressionText(code, diagnosticId, diagnosticLine);
-
-            suppressionEdit.range.start.line = suppressionLine;
-            suppressionEdit.range.start.character = character;
-            suppressionEdit.range.end.line = suppressionLine;
-            suppressionEdit.range.end.character = character;
-            suppressionEdit.newText = suppressionText;
-
-            response.suppressionEdits = {suppressionEdit};
+            response.suppressionEdits = matlabls.internal.getDiagnosticSuppressionEdits(code, diagnosticId, diagnosticLine);
 
             this.CommManager.publish(this.SuppressDiagnosticResponseChannel, response);
         end

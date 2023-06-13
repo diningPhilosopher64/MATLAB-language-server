@@ -1,4 +1,4 @@
-function [suppressionText, suppressionLine, character] = getDiagnosticSuppressionText (code, diagnosticId, diagnosticLine)
+function suppressionEdits = getDiagnosticSuppressionEdits (code, diagnosticId, diagnosticLine)
     % Finds the text which should be inserted, and the location of the
     % insertion, to suppress the provided diagnostic on the given line.
 
@@ -19,6 +19,7 @@ function [suppressionText, suppressionLine, character] = getDiagnosticSuppressio
     % Case 1: empty line -> append full pragma
     if numel(tokens) == 0
         [character, suppressionText] = handleAddSuppressionToLine([], codeLine, diagnosticId);
+        suppressionEdits = buildInsertionEdits(suppressionLine, character, suppressionText);               
         return
     end
 
@@ -26,7 +27,6 @@ function [suppressionText, suppressionLine, character] = getDiagnosticSuppressio
     if isCommentToken(lastToken.token)
         % Case 2: comment on line -> append full pragma BEFORE comment
         [character, suppressionText] = handleSuppressionBeforeComment(lastToken, tokens, diagnosticId);
-        return
     elseif isPragmaToken(lastToken.token)
         % Case 3: pragma on line -> append suppression ID to pragma contents
         [character, suppressionText] = handleSuppressionWithExistingPragma(lastToken, tokens, codeLine, diagnosticId);
@@ -34,6 +34,8 @@ function [suppressionText, suppressionLine, character] = getDiagnosticSuppressio
         % Case 4: just code on line -> append full pragma
         [character, suppressionText] = handleAddSuppressionToLine(lastToken, codeLine, diagnosticId);
     end
+
+    suppressionEdits = buildInsertionEdits(suppressionLine, character, suppressionText);  
 end
 
 function endLineNumber = findStatementEndLine (code, lineNumber)
@@ -166,4 +168,14 @@ end
 
 function isWhitespace = isWhitespaceToken (token)
     isWhitespace = token == 116;
+end
+
+function edits = buildInsertionEdits (line, character, text)
+    edit.range.start.line = line;
+    edit.range.start.character = character;
+    edit.range.end.line = line;
+    edit.range.end.character = character;
+    edit.newText = text;
+
+    edits = {edit};
 end
