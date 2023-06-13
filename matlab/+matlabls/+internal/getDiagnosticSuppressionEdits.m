@@ -145,7 +145,8 @@ function [character, suppressionText] = handleSuppressionWithExistingPragma (pra
 
     % Case B: Pragma is suppression pragma -> append diagnostic ID within the existing pragma
     suppressionText = diagnosticId;
-    character = (pragmaToken.Offset - 1) + (ind(1) - 1) + 5; % Add 5 to offset to just after the '<'
+    angleBracketPos = strfind(match{1}, '<'); % Want to insert just after the '<'
+    character = (pragmaToken.Offset - 1) + (ind(1) - 1) + angleBracketPos(1);
     if isempty(regexp(match{1}, '%#ok< *>', 'once'))
         % If there are existing diagnostics being filtered, add comma to separate diagnostic IDs
         suppressionText = append(suppressionText, ',');
