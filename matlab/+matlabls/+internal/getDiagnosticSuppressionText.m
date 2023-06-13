@@ -1,4 +1,7 @@
 function [suppressionText, suppressionLine, character] = getDiagnosticSuppressionText (code, diagnosticId, diagnosticLine)
+    % Finds the text which should be inserted, and the location of the
+    % insertion, to suppress the provided diagnostic on the given line.
+
     % Get the statement's end line
     suppressionLine = findStatementEndLine(code, diagnosticLine) - 1; % 0-based
 
