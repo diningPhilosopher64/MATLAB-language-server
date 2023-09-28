@@ -20,13 +20,6 @@ MATLAB language server supports these editors by installing the corresponding ex
 
 ### Unreleased
 
-### 1.1.6
-
-* Add support for MATLAB sections in the documentSymbol (outline).
-
-### 1.1.3
-Release date: 2023-07-10
-
 Fixed:
 * Diagnostic suppression should be placed at correct location when '%' is contained within string
 * Improved navigation to files inside MATLAB packages within the VS Code workspace but not on the MATLAB path
