@@ -1,4 +1,6 @@
 # MATLAB language server
+[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=mathworks/MATLAB-language-server)
+
 MATLAB&reg; language server implements the Microsoft&reg; [Language Server Protocol](https://github.com/Microsoft/language-server-protocol) for the MATLAB language.
 
 ## Features Implemented
@@ -20,6 +22,11 @@ MATLAB language server supports these editors by installing the corresponding ex
 ## Release Notes
 
 ### Unreleased
+
+### 1.1.6
+Release date: 2023-10-11
+
+* Add support for MATLAB sections in the documentSymbol (outline).
 
 ### 1.1.5
 Release date: 2023-09-13

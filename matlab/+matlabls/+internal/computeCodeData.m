@@ -29,8 +29,12 @@ function codeInfo = computeCodeData (code, filePath)
     %   codeInfo.functionInfo(k).variableInfo
     %   codeInfo.functionInfo(k).globals
     %   codeInfo.functionInfo(k).isPrototype
-
-    % Copyright 2022 - 2023 The MathWorks, Inc.
+    %
+    % and codeInfo.sections is an array of struct:
+    %   codeInfo.sections(k).title
+    %   codeInfo.sections(k).range
+    
+    %   Copyright 2022 - 2023 The MathWorks, Inc.
 
     timeStart = tic;
 
@@ -56,7 +60,7 @@ function codeInfo = computeCodeData (code, filePath)
     if ismissing(codeInfo.packageName)
         codeInfo.packageName = '';
     end
-
+ 
     %% Parse code
     mt = mtree(code);
 
@@ -200,15 +204,89 @@ function codeInfo = computeCodeData (code, filePath)
         functionReferences{startIndex + k} = { functionName, ranges(k) };
     end
 
+    %% Getting Section Data
+    sections = {};
+
+    try
+        parsedCode = matlab.codeanalyzer.internal.analyzeCode(code);
+        isExplicitColumnPresent = ismember('isExplicit', parsedCode.CodeSections.Properties.VariableNames);
+        lengthOfSections = height(parsedCode.CodeSections);
+        
+        sectionIndex = 1;
+        if lengthOfSections > 0
+            % Splitting the code to lines upfront, used later to detect
+            % explicit sections and to find the character end of line
+            lines = strsplit(code, newline, CollapseDelimiters = false);
+        end
+        
+        for row = 1:lengthOfSections
+            title = parsedCode.CodeSections.titles(row);
+            startLine = parsedCode.CodeSections.startLines(row);
+            endLine = parsedCode.CodeSections.endLines(row);
+            % IsExplicit is supported from R2024a MATLAB, this information is useful to detect the empty title sections 
+            % added by user and providing custom name.
+            if isExplicitColumnPresent 
+                isExplicit = parsedCode.CodeSections.isExplicit(row);
+
+                % Filter out the sections that are not explicitly added by user
+                if isExplicit
+                    if strcmp(title, "")
+                        % Add a custom name if the section title is empty
+                        [title, sectionIndex] = generateSectionTitleForEmpty(sectionIndex);
+                    end
+                    elements = createRangeForSection(title, startLine, endLine, lines);
+                    sections = [sections, elements];
+                end
+            else 
+                % Generate section titles for empty titles if they are explicit
+                if strcmp(title, "")
+                    if ~isLineAnExplicitSection(lines, startLine)
+                        % Section is implicit continue
+                        continue;
+                    end
+                    [title, sectionIndex] = generateSectionTitleForEmpty(sectionIndex);
+                end 
+                elements = createRangeForSection(title, startLine, endLine, lines);
+                sections = [sections, elements];
+            end
+        end
+
+    catch exception
+        disp(['Error occurred while fetching sections: ', exception.message]);        
+    end
 
     %% Finalize Data
     codeInfo.functionInfo = functionMap.values;
     codeInfo.references = functionReferences;
+    codeInfo.sections = sections;
 
     %% Finalize timing
     codeInfo.timeToIndex = toc(timeStart);
 end
 
+function [title, sectionIndex] = generateSectionTitleForEmpty(sectionIndex)
+    title = "Section " + sectionIndex;
+    sectionIndex = sectionIndex + 1;
+end
+
+function isSection = isLineAnExplicitSection(lines, lineNumber)
+    isSection = false;
+    codeLine = string(lines(lineNumber));
+    pattern = "^\s*%%\s*$";    
+    % Lines that are only having "%%" are explicit sections
+    matches = regexp(codeLine, pattern, 'once');
+    if ~isempty(matches)
+        isSection = true;
+    end
+end
+
+function result = createRangeForSection (title, lineStart, lineEnd, lines)
+    % Get the character end of the line for the section from lines
+    % We have to add 1 to string length to get the column number
+    charEnd = strlength(string(lines(lineEnd))) + 1;
+    range = createRange (lineStart, 1, lineEnd, charEnd);
+    result = struct('title', title, 'range', range);
+end   
 % --------- Other Parsers ---------- %
 function functionReferences = parseFunctionData (functionNode, isPublic, isClassDef, className, functionMap, functionReferences)
     functionName = functionNode.Fname.string();
