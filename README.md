@@ -14,11 +14,27 @@ MATLAB language server implements several Language Server Protocol features and 
 
 ## Clients
 MATLAB language server supports these editors by installing the corresponding extension:
+* Neovim — [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig)
 * Visual Studio&reg; Code — [MATLAB extension for Visual Studio Code](https://github.com/mathworks/MATLAB-extension-for-vscode)
 
 ## Release Notes
 
 ### Unreleased
+
+### 1.1.5
+Release date: 2023-09-13
+
+Fixed:
+* Fixed issue connecting to MATLAB with Node.js&reg; version 18 and later.
+
+### 1.1.4
+Release date: 2023-08-14
+
+Fixed:
+* Patched CVE-2023-26136 and CVE-2022-25883
+
+### 1.1.3
+Release date: 2023-07-10
 
 Fixed:
 * Diagnostic suppression should be placed at correct location when '%' is contained within string
