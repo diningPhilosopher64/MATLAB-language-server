@@ -2,6 +2,7 @@
 
 import { ChildProcess, spawn } from 'child_process'
 import { randomInt } from 'crypto'
+import * as dns from 'dns'
 import * as fs from 'fs/promises'
 import * as net from 'net'
 import * as os from 'os'
@@ -36,14 +37,12 @@ class MatlabCommunicationManager {
      * @param launchCommand The command with which MATLAB is launched
      * @param launchArguments The arguments with which MATLAB is launched
      * @param logDirectory The directory in which MATLAB should log data
-     * @param certificateDirectory The directory in which a certificate should be generated.
-     * If no directory is provided, a temporary directory will be created.
      *
      * @returns Information about the new MATLAB process and the connection to it.
      * Returns null if the MATLAB process cannot be started.
      */
-    async connectToNewMatlab (launchCommand: string, launchArguments: string[], logDirectory: string, certificateDirectory?: string): Promise<MatlabProcessInfo | null> {
-        const certDir = certificateDirectory ?? await fs.mkdtemp(path.join(os.tmpdir(), 'matlablsTmp-'))
+    async connectToNewMatlab (launchCommand: string, launchArguments: string[], logDirectory: string): Promise<MatlabProcessInfo | null> {
+        const certDir = await fs.mkdtemp(path.join(os.tmpdir(), 'matlablsTmp-'))
         const port = await this._getAvailablePort()
         const certFile = path.join(certDir, 'cert.pem')
         const pkeyFile = path.join(certDir, 'pkey.p12')
@@ -69,10 +68,7 @@ class MatlabCommunicationManager {
 
         // Clean up temp directory on close
         matlabProcess.on('close', () => {
-            if (certificateDirectory == null) {
-                // Only remove temp directory if we create it
-                fs.rmdir(certDir)
-            }
+            fs.rmdir(certDir)
         })
 
         // Create connection to new MATLAB instance - connection will not yet be initialized
@@ -240,6 +236,7 @@ class LocalMatlabConnection extends MatlabConnection {
         const ca = await fs.readFile(this._certPath)
 
         // Create connection
+        dns.setDefaultResultOrder('ipv4first')
         this._client = new Faye.Client(this._url, { tls: { ca } })
 
         // Set API key as header
