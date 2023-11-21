@@ -171,41 +171,41 @@ end
 
 %% Helpers to handle different APIs between MATLAB releases
 function resolvedName = introspective_resolveName(name)
-	if isMATLABReleaseOlderThan('R2024a')
-		resolvedName = matlab.internal.language.introspective.resolveName(name);
-	else
-		resolvedName = matlab.lang.internal.introspective.resolveName(name);
-	end
+    if isMATLABReleaseOlderThan('R2024a')
+        resolvedName = matlab.internal.language.introspective.resolveName(name);
+    else
+        resolvedName = matlab.lang.internal.introspective.resolveName(name);
+    end
 end
 
 function resolvedName = introspective_makePackagedName(packageName, className)
-	if isMATLABReleaseOlderThan('R2024a')
-		resolvedName = matlab.internal.language.introspective.makePackagedName(packageName, className);
-	else
-		resolvedName = matlab.lang.internal.introspective.makePackagedName(packageName, className);
-	end
+    if isMATLABReleaseOlderThan('R2024a')
+        resolvedName = matlab.internal.language.introspective.makePackagedName(packageName, className);
+    else
+        resolvedName = matlab.lang.internal.introspective.makePackagedName(packageName, className);
+    end
 end
 
 function whichTopic = introspective_safeWhich(name)
-	if isMATLABReleaseOlderThan('R2024a')
-		whichTopic = matlab.internal.language.introspective.safeWhich(name, true);
-	else
-		whichTopic = matlab.lang.internal.introspective.safeWhich(name, true);
-	end
+    if isMATLABReleaseOlderThan('R2024a')
+        whichTopic = matlab.internal.language.introspective.safeWhich(name, true);
+    else
+        whichTopic = matlab.lang.internal.introspective.safeWhich(name, true);
+    end
 end
 
 function [fname, hasLocalFunction, shouldLink, qualifyingPath, fullPath] = introspective_fixLocalFunctionCase(name)
-	if isMATLABReleaseOlderThan('R2024a')
-		[fname, hasLocalFunction, shouldLink, qualifyingPath, fullPath] = matlab.internal.language.introspective.fixLocalFunctionCase(name);
-	else
-		[fname, hasLocalFunction, shouldLink, qualifyingPath, fullPath] = matlab.lang.internal.introspective.fixLocalFunctionCase(name);
-	end
+    if isMATLABReleaseOlderThan('R2024a')
+        [fname, hasLocalFunction, shouldLink, qualifyingPath, fullPath] = matlab.internal.language.introspective.fixLocalFunctionCase(name);
+    else
+        [fname, hasLocalFunction, shouldLink, qualifyingPath, fullPath] = matlab.lang.internal.introspective.fixLocalFunctionCase(name);
+    end
 end
 
 function nameResolver = makeNameResolver(name)
-	if isMATLABReleaseOlderThan('R2024a')
-		nameResolver = matlab.internal.language.introspective.NameResolver(name, '', false);
-	else
-		nameResolver = matlab.lang.internal.introspective.NameResolver(name, '', false);
-	end
+    if isMATLABReleaseOlderThan('R2024a')
+        nameResolver = matlab.internal.language.introspective.NameResolver(name, '', false);
+    else
+        nameResolver = matlab.lang.internal.introspective.NameResolver(name, '', false);
+    end
 end
