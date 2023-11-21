@@ -13,7 +13,7 @@ function path = resolvePath (name, contextFile)
     % The given identifier may be a reference within a class (e.g. 'obj.Prop')
     removeDot = count(name, '.') == 1;
     if removeDot
-        nameResolver = introspective_resolveName(name);
+        nameResolver = resolveName(name);
         if isempty(nameResolver.classInfo)
             elementName = extractAfter(name, '.');
         end
@@ -21,14 +21,14 @@ function path = resolvePath (name, contextFile)
 
     % Check for targets within the context file
     if isvarname(elementName) || iskeyword(elementName)
-        nameResolver = introspective_resolveName(contextFile);
+        nameResolver = resolveName(contextFile);
         if ~isempty(nameResolver.classInfo) && (nameResolver.classInfo.isClass || nameResolver.classInfo.isMethod)
             classInfo = nameResolver.classInfo;
-            className = introspective_makePackagedName(classInfo.packageName, classInfo.className);
+            className = makePackagedName(classInfo.packageName, classInfo.className);
             targetName = append(className, '.', elementName);
-            nameResolver = introspective_resolveName(targetName);
+            nameResolver = resolveName(targetName);
             if nameResolver.isResolved
-                if nameResolver.isCaseSensitive || isempty(introspective_safeWhich(name))
+                if nameResolver.isCaseSensitive || isempty(safeWhich(name))
                     % Target not found within file. Broaden search (e.g. look in base classes)
                     path = doEditResolve(targetName);
 
@@ -45,7 +45,7 @@ end
 function path = doEditResolve (name)
     % Attempt to resolve the name in the same way that edit.m does
 
-    [name, hasLocalFunction, result, ~, path] = introspective_fixLocalFunctionCase(name);
+    [name, hasLocalFunction, result, ~, path] = fixLocalFunctionCase(name);
 
     if hasLocalFunction
         % Handle a situation like `myFunc>localFunc`
@@ -170,7 +170,7 @@ function result = isSimpleFile(file)
 end
 
 %% Helpers to handle different APIs between MATLAB releases
-function resolvedName = introspective_resolveName(name)
+function resolvedName = resolveName(name)
     if isMATLABReleaseOlderThan('R2024a')
         resolvedName = matlab.internal.language.introspective.resolveName(name);
     else
@@ -178,7 +178,7 @@ function resolvedName = introspective_resolveName(name)
     end
 end
 
-function resolvedName = introspective_makePackagedName(packageName, className)
+function resolvedName = makePackagedName(packageName, className)
     if isMATLABReleaseOlderThan('R2024a')
         resolvedName = matlab.internal.language.introspective.makePackagedName(packageName, className);
     else
@@ -186,7 +186,7 @@ function resolvedName = introspective_makePackagedName(packageName, className)
     end
 end
 
-function whichTopic = introspective_safeWhich(name)
+function whichTopic = safeWhich(name)
     if isMATLABReleaseOlderThan('R2024a')
         whichTopic = matlab.internal.language.introspective.safeWhich(name, true);
     else
@@ -194,7 +194,7 @@ function whichTopic = introspective_safeWhich(name)
     end
 end
 
-function [fname, hasLocalFunction, shouldLink, qualifyingPath, fullPath] = introspective_fixLocalFunctionCase(name)
+function [fname, hasLocalFunction, shouldLink, qualifyingPath, fullPath] = fixLocalFunctionCase(name)
     if isMATLABReleaseOlderThan('R2024a')
         [fname, hasLocalFunction, shouldLink, qualifyingPath, fullPath] = matlab.internal.language.introspective.fixLocalFunctionCase(name);
     else
