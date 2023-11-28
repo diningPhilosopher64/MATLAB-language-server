@@ -1,4 +1,4 @@
-function path = resolvePath (name, contextFile)
+function [pathFound, path] = resolvePath (name, contextFile)
     % RESOLVEPATH Attempt to determine the file which most likely contains
     % the provided identifier from the perspective of the context file.
     %
@@ -31,7 +31,7 @@ function path = resolvePath (name, contextFile)
                 if nameResolver.isCaseSensitive || isempty(matlab.internal.language.introspective.safeWhich(name, true))
                     % Target not found within file. Broaden search (e.g. look in base classes)
                     path = doEditResolve(targetName);
-
+                    pathFound = ~strcmp(path, '');
                     return;
                 end
             end
@@ -40,6 +40,7 @@ function path = resolvePath (name, contextFile)
 
     % Check for targets elsewhere
     path = doEditResolve(name);
+    pathFound = ~strcmp(path, '');
 end
 
 function path = doEditResolve (name)

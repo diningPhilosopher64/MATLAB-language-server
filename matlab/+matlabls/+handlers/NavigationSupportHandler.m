@@ -54,19 +54,17 @@ end
 function path = resolvePath (name, contextFile)
     if isMATLABReleaseOlderThan('R2023b')
         % For usage in R2023b and earlier
-        path = matlabls.internal.resolvePath(name, contextFile);
+        [isFound, path] = matlabls.internal.resolvePath(name, contextFile);
     elseif isMATLABReleaseOlderThan('R2024a')
         % For usage in R2023b only
         [isFound, path] = matlab.internal.language.introspective.resolveFile(name, []);
-		if ~isFound
-			path = '';
-		end
     else
         % For usage in R2024a and later
         [isFound, path] = matlab.lang.internal.introspective.resolveFile(name, []);
-		if ~isFound
-			path = '';
-		end
+    end
+
+    if ~isFound
+        path = '';
     end
 end
 
