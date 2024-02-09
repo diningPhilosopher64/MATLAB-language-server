@@ -502,11 +502,11 @@ class MatlabProcess {
             '-nosplash', // Hide splash screen
             '-r', `addpath(fullfile('${__dirname}', '..', 'matlab')); initmatlabls('${outFile}')`, // Startup command
             '-useStartupFolderPref', // Startup folder flag
-            // '-nodesktop' // Hide the MATLAB desktop
+            '-nodesktop' // Hide the MATLAB desktop
         ]
 
         if (os.platform() === 'win32') {
-            // args.push('-noDisplayDesktop') // Workaround for '-nodesktop' on Windows until a better solution is implemented
+            args.push('-noDisplayDesktop') // Workaround for '-nodesktop' on Windows until a better solution is implemented
             args.push('-wait')
         }
 
