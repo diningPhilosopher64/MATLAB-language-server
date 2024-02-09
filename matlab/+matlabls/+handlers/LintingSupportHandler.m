@@ -1,7 +1,7 @@
 classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
     % LINTINGSUPPORTHANDLER The feature handler for linting MATLAB® code.
 
-    % Copyright 2022 - 2023 The MathWorks, Inc.
+    % Copyright 2022 - 2024 The MathWorks, Inc.
 
     properties (Access = private)
         LintingRequestChannel = '/matlabls/linting/request'
@@ -12,10 +12,9 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
     end
 
     methods
-        function this = LintingSupportHandler (commManager)
-            this = this@matlabls.handlers.FeatureHandler(commManager);
-            this.RequestSubscriptions(1) = this.CommManager.subscribe(this.LintingRequestChannel, @this.handleLintingRequest);
-            this.RequestSubscriptions(2) = this.CommManager.subscribe(this.SuppressDiagnosticRequestChannel, @this.handleDiagnosticSuppressionRequest);
+        function this = LintingSupportHandler ()
+            this.RequestSubscriptions(1) = matlabls.internal.CommunicationManager.subscribe(this.LintingRequestChannel, @this.handleLintingRequest);
+            this.RequestSubscriptions(2) = matlabls.internal.CommunicationManager.subscribe(this.SuppressDiagnosticRequestChannel, @this.handleDiagnosticSuppressionRequest);
         end
     end
 
@@ -30,7 +29,7 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
             response.lintData = split(deblank(response.lintData), newline);
             response.lintData(cellfun(@isempty, response.lintData)) = [];
 
-            this.CommManager.publish(this.LintingResponseChannel, response)
+            matlabls.internal.CommunicationManager.publish(this.LintingResponseChannel, response)
         end
 
         function handleDiagnosticSuppressionRequest (this, msg)
@@ -47,7 +46,7 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
 
             response.suppressionEdits = matlabls.internal.getDiagnosticSuppressionEdits(code, diagnosticId, diagnosticLine);
 
-            this.CommManager.publish(this.SuppressDiagnosticResponseChannel, response);
+            matlabls.internal.CommunicationManager.publish(this.SuppressDiagnosticResponseChannel, response);
         end
     end
 end

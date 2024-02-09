@@ -2,7 +2,7 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
     % FORMATSUPPORTHANDLER The feature handler for the "Format Document" feature.
     % In the future, this may be expanded to include the "Format Selection" feature as well.
 
-    % Copyright 2022 - 2023 The MathWorks, Inc.
+    % Copyright 2022 - 2024 The MathWorks, Inc.
 
     properties (Access = private)
         RequestChannel = "/matlabls/formatDocument/request"
@@ -10,9 +10,8 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
     end
 
     methods
-        function this = FormatSupportHandler (commManager)
-            this = this@matlabls.handlers.FeatureHandler(commManager);
-            this.RequestSubscriptions = this.CommManager.subscribe(this.RequestChannel, @this.handleFormatRequest);
+        function this = FormatSupportHandler ()
+            this.RequestSubscriptions = matlabls.internal.CommunicationManager.subscribe(this.RequestChannel, @this.handleFormatRequest);
         end
     end
 
@@ -32,7 +31,7 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
             response.data = indentcode(codeToFormat, 'matlab'); % This will pull from the user's MATLAB® settings.
 
             % Send formatted code
-            this.CommManager.publish(this.ResponseChannel, response)
+            matlabls.internal.CommunicationManager.publish(this.ResponseChannel, response)
         end
     end
 end

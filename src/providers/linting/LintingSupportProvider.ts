@@ -55,7 +55,7 @@ class LintingSupportProvider {
         4: DiagnosticSeverity.Error
     }
 
-    private readonly _pendingFilesToLint = new Map<string, NodeJS.Timer>()
+    private readonly _pendingFilesToLint = new Map<string, NodeJS.Timeout>()
     private readonly _availableCodeActions = new Map<string, CodeAction[]>()
 
     /**
