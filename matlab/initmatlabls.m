@@ -54,10 +54,6 @@ function logConnectionData (outFile)
     fprintf(fid, "%s\n", connectionData);
     fclose(fid);
 
-    disp('Moving file from')
-    disp(tmpFileName)
-    disp('to file')
-    disp(outFile)
     status = movefile(tmpFileName, outFile);
     if ~status
         error("Failed to rename connection file.")
