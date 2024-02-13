@@ -1,4 +1,4 @@
-// Copyright 2022 - 2023 The MathWorks, Inc.
+// Copyright 2022 - 2024 The MathWorks, Inc.
 
 import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, ParameterInformation, Position, SignatureHelp, SignatureHelpParams, SignatureInformation, TextDocuments } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
@@ -141,17 +141,18 @@ class CompletionProvider {
         }
 
         return await new Promise(resolve => {
+            const channelId = matlabConnection.getChannelId()
             const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
                 matlabConnection.unsubscribe(responseSub)
 
                 resolve(message as MCompletionData)
-            })
+            }, channelId)
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
                 code,
                 fileName,
                 cursorPosition
-            })
+            }, channelId)
         })
     }
 

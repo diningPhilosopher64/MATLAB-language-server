@@ -1,4 +1,4 @@
-// Copyright 2022 - 2023 The MathWorks, Inc.
+// Copyright 2022 - 2024 The MathWorks, Inc.
 
 import { URI } from 'vscode-uri'
 import { MatlabConnection } from '../../lifecycle/MatlabCommunicationManager'
@@ -35,6 +35,7 @@ class PathResolver {
         const contextFile = URI.parse(contextFileUri).fsPath
 
         return await new Promise(resolve => {
+            const channelId = matlabConnection.getChannelId()
             const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
                 matlabConnection.unsubscribe(responseSub)
 
@@ -51,12 +52,12 @@ class PathResolver {
                 })
 
                 resolve(resolvedUris)
-            })
+            }, channelId)
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
                 names,
                 contextFile
-            })
+            }, channelId)
         })
     }
 }

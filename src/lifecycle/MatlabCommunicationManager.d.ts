@@ -46,6 +46,9 @@ declare class MatlabCommunicationManager {
      */
     private _makeApiKey;
 }
+declare type MessageData = {
+    [key: string]: unknown;
+};
 declare type LifecycleListenerCallback = (eventType: LifecycleEventType) => void;
 /**
  * Abstract class representing a connection with the MATLAB application.
@@ -54,6 +57,7 @@ export declare abstract class MatlabConnection {
     protected _client?: Client;
     protected _url?: string;
     protected _lifecycleCallback: LifecycleListenerCallback | null;
+    protected _channelIdCt: number;
     /**
      * Initializes the connection with MATLAB
      */
@@ -64,21 +68,33 @@ export declare abstract class MatlabConnection {
      */
     close(): void;
     /**
-     * Publishes a message to the given channel.
+     * Gets a unique channel ID which can be provided to `publish` and `subscribe`.
+     *
+     * @returns A unique channel ID
+     */
+    getChannelId(): string;
+    /**
+     * Publishes data to the given channel.
+     *
+     * If provided, the channel ID is included with the data as a `channelId_` property.
      *
      * @param channel The channel to which the message is being published
-     * @param message The message being published
+     * @param data The data being published
+     * @param channelId An optional indentifier
      */
-    publish(channel: string, message: unknown): void;
+    publish(channel: string, data: MessageData, channelId?: string): void;
     /**
-     * Subscribe to messages published on the given channel. The messages will
-     * be passed to hte given calback function.
+     * Subscribe to data published on the given channel. The data will
+     * be passed to the given calback function.
+     *
+     * If a channelId is provided, it will be appended to the channel to
+     * create a unique channel.
      *
      * @param channel The channel for which to subscribe
      * @param callback The callback function
      * @returns The subscription object
      */
-    subscribe(channel: string, callback: (message: unknown) => void): Subscription;
+    subscribe(channel: string, callback: (data: unknown) => void, channelId?: string): Subscription;
     /**
      * Unsubscribe from the given subscription.
      *
@@ -95,13 +111,6 @@ export declare abstract class MatlabConnection {
     protected onConnectionSuccess(): void;
     protected onConnectionFailure(): void;
     protected setupConnectionCallbacks(): void;
-    /**
-     * Prepends a channel name with '/matlab' as expected by MATLAB
-     *
-     * @param channel A channel name, in the format '/message/channel'
-     * @returns A channel prepended with '/matlab', such as '/matlab/message/channel'
-     */
-    private _prependChannel;
 }
 declare const _default: MatlabCommunicationManager;
 export default _default;

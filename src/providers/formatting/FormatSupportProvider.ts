@@ -1,4 +1,4 @@
-// Copyright 2022 - 2023 The MathWorks, Inc.
+// Copyright 2022 - 2024 The MathWorks, Inc.
 
 import { DocumentFormattingParams, FormattingOptions, HandlerResult, Position, Range, TextDocuments, TextEdit } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
@@ -57,6 +57,7 @@ class FormatSupportProvider {
         }
 
         return await new Promise<TextEdit[]>(resolve => {
+            const channelId = matlabConnection.getChannelId()
             const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
                 matlabConnection.unsubscribe(responseSub)
                 const newCode = (message as FormatDocumentResponse).data
@@ -67,13 +68,13 @@ class FormatSupportProvider {
                 ), newCode)
                 reportTelemetryAction(Actions.FormatDocument)
                 resolve([edit])
-            })
+            }, channelId)
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
                 data: doc.getText(),
                 insertSpaces: options.insertSpaces,
                 tabSize: options.tabSize
-            })
+            }, channelId)
         })
     }
 }
