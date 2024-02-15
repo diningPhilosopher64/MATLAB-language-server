@@ -68,33 +68,29 @@ export declare abstract class MatlabConnection {
      */
     close(): void;
     /**
-     * Gets a unique channel ID which can be provided to `publish` and `subscribe`.
+     * Gets a unique channel ID which can be appended to channel names to
+     * make them unique if necessary. For example:
+     * /matlabls/formatDocument/response/132
      *
      * @returns A unique channel ID
      */
     getChannelId(): string;
     /**
-     * Publishes data to the given channel.
-     *
-     * If provided, the channel ID is included with the data as a `channelId_` property.
+     * Publishes a message to the given channel.
      *
      * @param channel The channel to which the message is being published
-     * @param data The data being published
-     * @param channelId An optional indentifier
+     * @param message The message being published
      */
-    publish(channel: string, data: MessageData, channelId?: string): void;
+    publish(channel: string, message: MessageData): void;
     /**
-     * Subscribe to data published on the given channel. The data will
-     * be passed to the given calback function.
-     *
-     * If a channelId is provided, it will be appended to the channel to
-     * create a unique channel.
+     * Subscribe to messages published on the given channel. The messages will
+     * be passed to hte given calback function.
      *
      * @param channel The channel for which to subscribe
      * @param callback The callback function
      * @returns The subscription object
      */
-    subscribe(channel: string, callback: (data: unknown) => void, channelId?: string): Subscription;
+    subscribe(channel: string, callback: (message: unknown) => void): Subscription;
     /**
      * Unsubscribe from the given subscription.
      *
@@ -111,6 +107,13 @@ export declare abstract class MatlabConnection {
     protected onConnectionSuccess(): void;
     protected onConnectionFailure(): void;
     protected setupConnectionCallbacks(): void;
+    /**
+     * Prepends a channel name with '/matlab' as expected by MATLAB
+     *
+     * @param channel A channel name, in the format '/message/channel'
+     * @returns A channel prepended with '/matlab', such as '/matlab/message/channel'
+     */
+    private _prependChannel;
 }
 declare const _default: MatlabCommunicationManager;
 export default _default;

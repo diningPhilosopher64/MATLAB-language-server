@@ -58,7 +58,8 @@ class FormatSupportProvider {
 
         return await new Promise<TextEdit[]>(resolve => {
             const channelId = matlabConnection.getChannelId()
-            const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
+            const channel = `${this.RESPONSE_CHANNEL}/${channelId}`
+            const responseSub = matlabConnection.subscribe(channel, message => {
                 matlabConnection.unsubscribe(responseSub)
                 const newCode = (message as FormatDocumentResponse).data
                 const endRange = TextDocumentUtils.getRangeUntilLineEnd(doc, doc.lineCount - 1, 0)
@@ -68,13 +69,14 @@ class FormatSupportProvider {
                 ), newCode)
                 reportTelemetryAction(Actions.FormatDocument)
                 resolve([edit])
-            }, channelId)
+            })
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
                 data: doc.getText(),
                 insertSpaces: options.insertSpaces,
-                tabSize: options.tabSize
-            }, channelId)
+                tabSize: options.tabSize,
+                channelId
+            })
         })
     }
 }

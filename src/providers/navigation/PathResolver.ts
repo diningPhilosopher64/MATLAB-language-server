@@ -36,7 +36,8 @@ class PathResolver {
 
         return await new Promise(resolve => {
             const channelId = matlabConnection.getChannelId()
-            const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
+            const channel = `${this.RESPONSE_CHANNEL}/${channelId}`
+            const responseSub = matlabConnection.subscribe(channel, message => {
                 matlabConnection.unsubscribe(responseSub)
 
                 const resolvedPaths = (message as ResolvePathResponse).data
@@ -52,12 +53,13 @@ class PathResolver {
                 })
 
                 resolve(resolvedUris)
-            }, channelId)
+            })
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
                 names,
-                contextFile
-            }, channelId)
+                contextFile,
+                channelId
+            })
         })
     }
 }

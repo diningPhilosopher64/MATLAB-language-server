@@ -205,7 +205,8 @@ class LintingSupportProvider {
         }
 
         const channelId = matlabConnection.getChannelId()
-        const responseSub = matlabConnection.subscribe(this.SUPPRESS_DIAGNOSTIC_RESPONSE_CHANNEL, message => {
+        const channel = `${this.SUPPRESS_DIAGNOSTIC_RESPONSE_CHANNEL}/${channelId}`
+        const responseSub = matlabConnection.subscribe(channel, message => {
             matlabConnection.unsubscribe(responseSub)
 
             const suppressionEdits: TextEdit[] = (message as DiagnosticSuppressionResults).suppressionEdits
@@ -223,14 +224,15 @@ class LintingSupportProvider {
             }
 
             void connection.workspace.applyEdit(edit)
-        }, channelId)
+        })
 
         matlabConnection.publish(this.SUPPRESS_DIAGNOSTIC_REQUEST_CHANNEL, {
             code: textDocument.getText(),
             diagnosticId: id,
             line: range.start.line + 1,
-            suppressInFile: shouldSuppressThroughoutFile
-        }, channelId)
+            suppressInFile: shouldSuppressThroughoutFile,
+            channelId
+        })
     }
 
     /**
@@ -266,16 +268,18 @@ class LintingSupportProvider {
     private async getLintResultsFromMatlab (code: string, fileName: string, matlabConnection: MatlabConnection): Promise<string[]> {
         return await new Promise<string[]>(resolve => {
             const channelId = matlabConnection.getChannelId()
-            const responseSub = matlabConnection.subscribe(this.LINTING_RESPONSE_CHANNEL, message => {
+            const channel = `${this.LINTING_RESPONSE_CHANNEL}/${channelId}`
+            const responseSub = matlabConnection.subscribe(channel, message => {
                 matlabConnection.unsubscribe(responseSub)
 
                 resolve((message as RawLintResults).lintData)
-            }, channelId)
+            })
 
             matlabConnection.publish(this.LINTING_REQUEST_CHANNEL, {
                 code,
-                fileName
-            }, channelId)
+                fileName,
+                channelId
+            })
         })
     }
 

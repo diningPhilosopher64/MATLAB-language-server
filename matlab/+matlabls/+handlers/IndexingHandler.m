@@ -29,7 +29,8 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
             codeData = matlabls.internal.computeCodeData(code, filePath);
 
-            this.CommManager.publish(responseChannel, codeData, msg.channelId_)
+            responseChannel = strcat(this.DocumentIndexingResponseChannel, '/', msg.channelId);
+            this.CommManager.publish(responseChannel, codeData)
         end
 
         function handleFolderIndexRequest (this, msg)
@@ -38,7 +39,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
             folders = msg.folders;
 
             files = this.getAllMFilesToIndex(folders);
-            this.parseFiles(msg.channelId_, files)
+            this.parseFiles(msg.channelId, files)
         end
 
         function filesToIndex = getAllMFilesToIndex (~, folders)
@@ -124,7 +125,8 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
                 msg.isDone = false;
             end
 
-            this.CommManager.publish(responseChannel, msg, requestId);
+            responseChannel = strcat(this.FolderIndexingResponseChannel, '/', requestId);
+            this.CommManager.publish(responseChannel, msg);
         end
     end
 end

@@ -53,7 +53,8 @@ class Indexer {
         }
 
         const channelId = matlabConnection.getChannelId()
-        const responseSub = matlabConnection.subscribe(this.INDEX_FOLDERS_RESPONSE_CHANNEL, message => {
+        const channel = `${this.INDEX_FOLDERS_RESPONSE_CHANNEL}/${channelId}`
+        const responseSub = matlabConnection.subscribe(channel, message => {
             const fileResults = message as WorkspaceFileIndexedResponse
 
             if (fileResults.isDone) {
@@ -64,11 +65,12 @@ class Indexer {
             // Convert file path to URI, which is used as an index when storing the code data
             const fileUri = URI.file(fileResults.filePath).toString()
             FileInfoIndex.parseAndStoreCodeData(fileUri, fileResults.codeData)
-        }, channelId)
+        })
 
         matlabConnection.publish(this.INDEX_FOLDERS_REQUEST_CHANNEL, {
-            folders
-        }, channelId)
+            folders,
+            channelId
+        })
     }
 
     /**
@@ -104,16 +106,18 @@ class Indexer {
 
         return await new Promise(resolve => {
             const channelId = matlabConnection.getChannelId()
-            const responseSub = matlabConnection.subscribe(this.INDEX_DOCUMENT_RESPONSE_CHANNEL, message => {
+            const channel = `${this.INDEX_DOCUMENT_RESPONSE_CHANNEL}/${channelId}`
+            const responseSub = matlabConnection.subscribe(channel, message => {
                 matlabConnection.unsubscribe(responseSub)
 
                 resolve(message as RawCodeData)
-            }, channelId)
+            })
 
             matlabConnection.publish(this.INDEX_DOCUMENT_REQUEST_CHANNEL, {
                 code,
-                filePath
-            }, channelId)
+                filePath,
+                channelId
+            })
         })
     }
 

@@ -142,17 +142,19 @@ class CompletionProvider {
 
         return await new Promise(resolve => {
             const channelId = matlabConnection.getChannelId()
-            const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
+            const channel = `${this.RESPONSE_CHANNEL}/${channelId}`
+            const responseSub = matlabConnection.subscribe(channel, message => {
                 matlabConnection.unsubscribe(responseSub)
 
                 resolve(message as MCompletionData)
-            }, channelId)
+            })
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
                 code,
                 fileName,
-                cursorPosition
-            }, channelId)
+                cursorPosition,
+                channelId
+            })
         })
     }
 
