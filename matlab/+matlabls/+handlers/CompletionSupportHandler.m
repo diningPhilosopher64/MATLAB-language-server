@@ -28,7 +28,8 @@ classdef (Hidden) CompletionSupportHandler < matlabls.handlers.FeatureHandler
             completionResultsStr = matlabls.internal.getCompletionsData(code, fileName, cursorPosition);
             filteredResults = this.filterCompletionResults(completionResultsStr);
 
-            matlabls.internal.CommunicationManager.publish(this.ResponseChannel, filteredResults)
+            responseChannel = strcat(this.ResponseChannel, '/', msg.channelId);
+            matlabls.internal.CommunicationManager.publish(responseChannel, filteredResults)
         end
 
         function compResultsStruct = filterCompletionResults (this, completionResultsStr)

@@ -31,7 +31,8 @@ classdef (Hidden) FormatSupportHandler < matlabls.handlers.FeatureHandler
             response.data = indentcode(codeToFormat, 'matlab'); % This will pull from the user's MATLAB® settings.
 
             % Send formatted code
-            matlabls.internal.CommunicationManager.publish(this.ResponseChannel, response)
+            responseChannel = strcat(this.ResponseChannel, '/', msg.channelId);
+            matlabls.internal.CommunicationManager.publish(responseChannel, response)
         end
     end
 end

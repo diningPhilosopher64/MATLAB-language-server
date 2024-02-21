@@ -6,10 +6,10 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
     properties (Access = private)
         DocumentIndexingRequestChannel = '/matlabls/indexDocument/request'
-        DocumentIndexingResponseChannel = '/matlabls/indexDocument/response/' % Needs to be appended with requestId
+        DocumentIndexingResponseChannel = '/matlabls/indexDocument/response'
 
         FolderIndexingRequestChannel = '/matlabls/indexFolders/request'
-        FolderIndexingResponseChannel = '/matlabls/indexFolders/response/' % Needs to be appended with requestId
+        FolderIndexingResponseChannel = '/matlabls/indexFolders/response'
     end
 
     methods
@@ -25,11 +25,10 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
 
             code = msg.code;
             filePath = msg.filePath;
-            requestId = num2str(msg.requestId);
 
             codeData = matlabls.internal.computeCodeData(code, filePath);
 
-            responseChannel = strcat(this.DocumentIndexingResponseChannel, requestId);
+            responseChannel = strcat(this.DocumentIndexingResponseChannel, '/', msg.channelId);
             matlabls.internal.CommunicationManager.publish(responseChannel, codeData)
         end
 
@@ -37,10 +36,9 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
             % Indexes M-files the provided folders
 
             folders = msg.folders;
-            requestId = num2str(msg.requestId);
 
             files = this.getAllMFilesToIndex(folders);
-            this.parseFiles(requestId, files)
+            this.parseFiles(msg.channelId, files)
         end
 
         function filesToIndex = getAllMFilesToIndex (~, folders)
@@ -126,7 +124,7 @@ classdef (Hidden) IndexingHandler < matlabls.handlers.FeatureHandler
                 msg.isDone = false;
             end
 
-            responseChannel = strcat(this.FolderIndexingResponseChannel, requestId);
+            responseChannel = strcat(this.FolderIndexingResponseChannel, '/', requestId);
             matlabls.internal.CommunicationManager.publish(responseChannel, msg);
         end
     end

@@ -45,7 +45,8 @@ classdef (Hidden) NavigationSupportHandler < matlabls.handlers.FeatureHandler
                 cd(returnDir);
             end
 
-            matlabls.internal.CommunicationManager.publish(this.ResolvePathResponseChannel, response);
+            responseChannel = strcat(this.ResolvePathResponseChannel, '/', msg.channelId);
+            matlabls.internal.CommunicationManager.publish(responseChannel, response);
         end
     end
 end

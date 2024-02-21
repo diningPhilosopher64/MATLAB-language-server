@@ -29,7 +29,8 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
             response.lintData = split(deblank(response.lintData), newline);
             response.lintData(cellfun(@isempty, response.lintData)) = [];
 
-            matlabls.internal.CommunicationManager.publish(this.LintingResponseChannel, response)
+            responseChannel = strcat(this.LintingResponseChannel, '/', msg.channelId);
+            matlabls.internal.CommunicationManager.publish(responseChannel, response)
         end
 
         function handleDiagnosticSuppressionRequest (this, msg)
@@ -46,7 +47,8 @@ classdef (Hidden) LintingSupportHandler < matlabls.handlers.FeatureHandler
 
             response.suppressionEdits = matlabls.internal.getDiagnosticSuppressionEdits(code, diagnosticId, diagnosticLine);
 
-            matlabls.internal.CommunicationManager.publish(this.SuppressDiagnosticResponseChannel, response);
+            responseChannel = strcat(this.SuppressDiagnosticResponseChannel, '/', msg.channelId);
+            matlabls.internal.CommunicationManager.publish(responseChannel, response);
         end
     end
 end
