@@ -125,7 +125,7 @@ NotificationService.registerNotificationListener(
         }
         hasMatlabBeenRequested = true;
         const matlabConnection = await MatlabLifecycleManager.getOrCreateMatlabConnection(connection);
-        if (matlabConnection !== null) {
+        if (matlabConnection === null) {
             LifecycleNotificationHelper.notifyMatlabRequirement()
         }
     }
