@@ -6,7 +6,7 @@ function suppressionEdits = getDiagnosticSuppressionEdits (code, diagnosticId, d
     suppressionLine = findStatementEndLine(code, diagnosticLine) - 1; % 0-based
 
     % Tokenize the code to find where we need to insert the suppression pragma
-    tok = matlab.internal.language.Tokenizer;
+    tok = getTokenizer();
     splitCode = split(code, newline);
     codeLine = splitCode{suppressionLine + 1};
 
@@ -179,4 +179,12 @@ function edits = buildInsertionEdits (line, character, text)
     edit.newText = text;
 
     edits = {edit};
+end
+
+function tok = getTokenizer ()
+    if isMATLABReleaseOlderThan('R2024a')
+        tok = matlab.internal.language.Tokenizer();
+    else
+        tok = matlab.lang.internal.Tokenizer();
+    end
 end
