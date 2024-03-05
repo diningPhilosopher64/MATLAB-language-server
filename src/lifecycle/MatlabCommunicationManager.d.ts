@@ -25,7 +25,7 @@ declare class MatlabCommunicationManager {
      * @returns Information about the new MATLAB process and the connection to it.
      * Returns null if the MATLAB process cannot be started.
      */
-    connectToNewMatlab(launchCommand: string, launchArguments: string[], logDirectory: string): Promise<MatlabProcessInfo | null>;
+    launchNewMatlab(launchCommand: string, launchArguments: string[], logDirectory: string): MatlabProcessInfo | null;
     /**
      * Attempts to connect to an existing instance of MATLAB at the given URL.
      *

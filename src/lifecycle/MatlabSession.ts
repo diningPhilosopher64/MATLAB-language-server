@@ -47,6 +47,7 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
             persistent: true
         })
 
+        // This callback will be triggered when MATLAB has launched and writes the watched file.
         watcher.on('add', async () => {
             Logger.log(`Started MATLAB (session ${matlabSession.sessionId})`)
 
@@ -75,11 +76,9 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
         })
 
         // Launch MATLAB process
-        const { command, args } = await getMatlabLaunchCommand(outFile)
-
         Logger.log('Launching MATLAB...')
-
-        const matlabProcessInfo = await MatlabCommunicationManager.connectToNewMatlab(command, args, Logger.logDir)
+        const { command, args } = await getMatlabLaunchCommand(outFile)
+        const matlabProcessInfo = MatlabCommunicationManager.launchNewMatlab(command, args, Logger.logDir)
 
         if (matlabProcessInfo == null) {
             // Failed to launch MATLAB
