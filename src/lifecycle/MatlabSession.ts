@@ -81,11 +81,15 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
         const matlabProcessInfo = MatlabCommunicationManager.launchNewMatlab(command, args, Logger.logDir)
 
         if (matlabProcessInfo == null) {
-            // Failed to launch MATLAB
+            // Error occurred while spawning MATLAB process
+            matlabSession.shutdown('Error spawning MATLAB process')
+            watcher.close()
+
             Logger.error(`Error launching MATLAB with command: ${command}`)
+
             LifecycleNotificationHelper.didMatlabLaunchFail = true
-            LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.DISCONNECTED)
             NotificationService.sendNotification(Notification.MatlabLaunchFailed)
+
             reject('Failed to launch local MATLAB')
             return
         }
@@ -96,6 +100,10 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
 
         // Handles additional errors with launching the MATLAB process
         matlabProcess?.on('error', error => {
+            // Error occurred in child process
+            matlabSession.shutdown('Error launching MATLAB')
+            watcher.close()
+
             Logger.error(`Error launching MATLAB: (${error.name}) ${error.message}`)
             if (error.stack != null) {
                 Logger.error(`Error stack:\n${error.stack}`)
