@@ -32,6 +32,7 @@ classdef (Hidden) MatlabLanguageServerHelper < handle
             this.FeatureHandlers(end + 1) = matlabls.handlers.IndexingHandler(this.CommManager);
             this.FeatureHandlers(end + 1) = matlabls.handlers.LintingSupportHandler(this.CommManager);
             this.FeatureHandlers(end + 1) = matlabls.handlers.NavigationSupportHandler(this.CommManager);
+            this.FeatureHandlers(end + 1) = matlabls.handlers.FoldingSupportHandler(this.CommManager);
         end
     end
 end

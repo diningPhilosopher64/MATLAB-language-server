@@ -1,0 +1,79 @@
+// Copyright 2024 The MathWorks, Inc.
+
+import { FoldingRangeParams, _Connection, TextDocuments, FoldingRange} from 'vscode-languageserver'
+import { TextDocument } from 'vscode-languageserver-textdocument'
+import { URI } from 'vscode-uri'
+import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
+import { MatlabConnection } from '../../lifecycle/MatlabCommunicationManager'
+
+
+class FoldingSupportProvider {
+    private readonly REQUEST_CHANNEL = '/matlabls/foldDocument/request'
+    private readonly RESPONSE_CHANNEL = '/matlabls/foldDocument/response'
+
+    async handleFoldingRequest (params: FoldingRangeParams, documentManager: TextDocuments<TextDocument>): Promise<FoldingRange[]> {
+        const docToFold = documentManager.get(params.textDocument.uri)
+        if (docToFold == null) {
+            return []
+        }
+
+        const matlabConnection = await MatlabLifecycleManager.getMatlabConnectionAsync()
+        const isMatlabAvailable = (matlabConnection != null) && MatlabLifecycleManager.isMatlabReady()
+        
+        // check for connection and release
+        if (!isMatlabAvailable || (MatlabLifecycleManager.getMatlabRelease() != 'R2024b')) {
+            return []
+        }
+
+        const fileName = URI.parse(docToFold.uri).fsPath
+        const code = docToFold.getText()
+
+        let frArray = await this.getFoldingRangesFromMatlab(code, fileName, matlabConnection)
+
+        let foldingRanges = this.processFoldingRanges(frArray)
+
+        return foldingRanges;
+    }
+
+    /**
+     * Gets folding ranges from MATLAB.
+     *
+     * @param code 
+     * @param fileName The file's name
+     * @param matlabConnection The connection to MATLAB
+     * @returns An array of line numbers
+     */
+    private async getFoldingRangesFromMatlab (code: string, fileName: string, matlabConnection: MatlabConnection): Promise<Array<number>> {
+        return await new Promise<Array<number>>(resolve => {
+            const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
+                matlabConnection.unsubscribe(responseSub)
+                resolve(message as Array<number>)
+            })
+
+            matlabConnection.publish(this.REQUEST_CHANNEL, {
+                code,
+                fileName
+            })
+        })
+    }
+
+    /**
+     * Processes folding range data from MATLAB.
+     *
+     * @param frArray An array of line numbers from MATLAB
+     * @returns An array of FoldingRanges
+     */
+    private processFoldingRanges (frArray: Array<number>): FoldingRange[] {
+        let fRangeArray: FoldingRange[] = []
+
+        for(let i = 0; i < frArray.length; i = i+2) {
+            let fRange = FoldingRange.create(frArray[i] - 1, frArray[i+1] - 1)
+            fRangeArray.push(fRange)
+        }
+
+        return fRangeArray
+    }
+
+}
+
+export default new FoldingSupportProvider()
