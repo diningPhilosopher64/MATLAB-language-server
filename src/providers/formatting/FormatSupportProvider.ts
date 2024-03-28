@@ -1,4 +1,4 @@
-// Copyright 2022 - 2023 The MathWorks, Inc.
+// Copyright 2022 - 2024 The MathWorks, Inc.
 
 import { DocumentFormattingParams, FormattingOptions, HandlerResult, Position, Range, TextDocuments, TextEdit } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
@@ -47,17 +47,19 @@ class FormatSupportProvider {
      */
     private async formatDocument (doc: TextDocument, options: FormattingOptions): Promise<TextEdit[]> {
         // For format, we try to instantiate MATLAB® if it is not already running
-        const matlabConnection = await MatlabLifecycleManager.getOrCreateMatlabConnection(connection)
+        const matlabConnection = await MatlabLifecycleManager.getMatlabConnection(true)
 
         // If MATLAB is not available, no-op
-        if (matlabConnection == null || !MatlabLifecycleManager.isMatlabReady()) {
+        if (matlabConnection == null) {
             LifecycleNotificationHelper.notifyMatlabRequirement()
             reportTelemetryAction(Actions.FormatDocument, ActionErrorConditions.MatlabUnavailable)
             return []
         }
 
         return await new Promise<TextEdit[]>(resolve => {
-            const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
+            const channelId = matlabConnection.getChannelId()
+            const channel = `${this.RESPONSE_CHANNEL}/${channelId}`
+            const responseSub = matlabConnection.subscribe(channel, message => {
                 matlabConnection.unsubscribe(responseSub)
                 const newCode = (message as FormatDocumentResponse).data
                 const endRange = TextDocumentUtils.getRangeUntilLineEnd(doc, doc.lineCount - 1, 0)
@@ -72,7 +74,8 @@ class FormatSupportProvider {
             matlabConnection.publish(this.REQUEST_CHANNEL, {
                 data: doc.getText(),
                 insertSpaces: options.insertSpaces,
-                tabSize: options.tabSize
+                tabSize: options.tabSize,
+                channelId
             })
         })
     }

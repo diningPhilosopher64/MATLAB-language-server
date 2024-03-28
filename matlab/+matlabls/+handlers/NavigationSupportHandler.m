@@ -9,9 +9,8 @@ classdef (Hidden) NavigationSupportHandler < matlabls.handlers.FeatureHandler
     end
 
     methods
-        function this = NavigationSupportHandler (commManager)
-            this = this@matlabls.handlers.FeatureHandler(commManager);
-            this.RequestSubscriptions = this.CommManager.subscribe(this.ResolvePathRequestChannel, @this.handleResolvePathRequest);
+        function this = NavigationSupportHandler ()
+            this.RequestSubscriptions = matlabls.internal.CommunicationManager.subscribe(this.ResolvePathRequestChannel, @this.handleResolvePathRequest);
         end
     end
 
@@ -46,7 +45,8 @@ classdef (Hidden) NavigationSupportHandler < matlabls.handlers.FeatureHandler
                 cd(returnDir);
             end
 
-            this.CommManager.publish(this.ResolvePathResponseChannel, response);
+            responseChannel = strcat(this.ResolvePathResponseChannel, '/', msg.channelId);
+            matlabls.internal.CommunicationManager.publish(responseChannel, response);
         end
     end
 end

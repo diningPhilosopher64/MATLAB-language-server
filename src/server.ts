@@ -1,11 +1,11 @@
-// Copyright 2022 - 2023 The MathWorks, Inc.
+// Copyright 2022 - 2024 The MathWorks, Inc.
 
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { ClientCapabilities, createConnection, InitializeParams, InitializeResult, ProposedFeatures, TextDocuments } from 'vscode-languageserver/node'
 import DocumentIndexer from './indexing/DocumentIndexer'
 import WorkspaceIndexer from './indexing/WorkspaceIndexer'
 import ConfigurationManager, { ConnectionTiming } from './lifecycle/ConfigurationManager'
-import MatlabLifecycleManager, { MatlabConnectionStatusParam } from './lifecycle/MatlabLifecycleManager'
+import MatlabLifecycleManager from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
 import { Actions, reportTelemetryAction } from './logging/TelemetryUtils'
 import NotificationService, { Notification } from './notifications/NotificationService'
@@ -14,6 +14,8 @@ import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
 import NavigationSupportProvider, { RequestType } from './providers/navigation/NavigationSupportProvider'
+import LifecycleNotificationHelper from './lifecycle/LifecycleNotificationHelper'
+import MVM from './mvm/MVM'
 import FoldingSupportProvider from './providers/folding/FoldingSupportProvider'
 import { FoldingRange } from 'vscode-languageserver'
 
@@ -26,22 +28,21 @@ Logger.initialize(connection.console)
 // Create basic text document manager
 const documentManager: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
 
-MatlabLifecycleManager.addMatlabLifecycleListener((error, lifecycleEvent) => {
-    if (error != null) {
-        Logger.error(`MATLAB Lifecycle Error: ${error.message}\n${error.stack ?? ''}`)
-    }
+let mvm: MVM | null
 
-    if (lifecycleEvent.matlabStatus === 'connected') {
-        // Handle things after MATLAB® has launched
+MatlabLifecycleManager.eventEmitter.on('connected', () => {
+    // Handle things after MATLAB® has launched
 
-        // Initiate workspace indexing
-        void WorkspaceIndexer.indexWorkspace()
+    // Initiate workspace indexing
+    void WorkspaceIndexer.indexWorkspace()
 
-        documentManager.all().forEach(textDocument => {
-            void LintingSupportProvider.lintDocument(textDocument, connection)
-            void DocumentIndexer.indexDocument(textDocument)
-        })
-    }
+    documentManager.all().forEach(textDocument => {
+        // Lint the open documents
+        void LintingSupportProvider.lintDocument(textDocument)
+
+        // Index the open document
+        void DocumentIndexer.indexDocument(textDocument)
+    })
 })
 
 let capabilities: ClientCapabilities
@@ -87,6 +88,8 @@ connection.onInitialized(() => {
 
     WorkspaceIndexer.setupCallbacks(capabilities)
 
+    mvm = new MVM(NotificationService, MatlabLifecycleManager);
+
     void startMatlabIfOnStartLaunch()
 })
 
@@ -94,7 +97,9 @@ async function startMatlabIfOnStartLaunch (): Promise<void> {
     // Launch MATLAB if it should be launched early
     const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
     if (connectionTiming === ConnectionTiming.OnStart) {
-        void MatlabLifecycleManager.connectToMatlab(connection)
+        void MatlabLifecycleManager.connectToMatlab().catch(reason => {
+            Logger.error(`MATLAB onStart connection failed: ${reason}`)
+        })
     }
 }
 
@@ -104,16 +109,41 @@ connection.onShutdown(() => {
     MatlabLifecycleManager.disconnectFromMatlab()
 })
 
+interface MatlabConnectionStatusParam {
+    connectionAction: 'connect' | 'disconnect'
+}
+
 // Set up connection notification listeners
 NotificationService.registerNotificationListener(
     Notification.MatlabConnectionClientUpdate,
-    data => MatlabLifecycleManager.handleConnectionStatusChange(data as MatlabConnectionStatusParam)
+    (data: MatlabConnectionStatusParam) => {
+        switch (data.connectionAction) {
+            case 'connect':
+                void MatlabLifecycleManager.connectToMatlab().catch(reason => {
+                    Logger.error(`Connection request failed: ${reason}`)
+                })
+                break
+            case 'disconnect':
+                MatlabLifecycleManager.disconnectFromMatlab()
+        }
+    }
+)
+
+// Set up MATLAB startup request listener
+NotificationService.registerNotificationListener(
+    Notification.MatlabRequestInstance,
+    async () => { // eslint-disable-line @typescript-eslint/no-misused-promises
+        const matlabConnection = await MatlabLifecycleManager.getMatlabConnection(true);
+        if (matlabConnection === null) {
+            LifecycleNotificationHelper.notifyMatlabRequirement()
+        }
+    }
 )
 
 // Handles files opened
 documentManager.onDidOpen(params => {
     reportFileOpened(params.document)
-    void LintingSupportProvider.lintDocument(params.document, connection)
+    void LintingSupportProvider.lintDocument(params.document)
     void DocumentIndexer.indexDocument(params.document)
 })
 
@@ -123,21 +153,21 @@ documentManager.onDidClose(params => {
 
 // Handles files saved
 documentManager.onDidSave(params => {
-    void LintingSupportProvider.lintDocument(params.document, connection)
+    void LintingSupportProvider.lintDocument(params.document)
 })
 
 // Handles changes to the text document
 documentManager.onDidChangeContent(params => {
-    if (MatlabLifecycleManager.isMatlabReady()) {
+    if (MatlabLifecycleManager.isMatlabConnected()) {
         // Only want to lint on content changes when linting is being backed by MATLAB
-        LintingSupportProvider.queueLintingForDocument(params.document, connection)
+        LintingSupportProvider.queueLintingForDocument(params.document)
         DocumentIndexer.queueIndexingForDocument(params.document)
     }
 })
 
 // Handle execute command requests
 connection.onExecuteCommand(params => {
-    void ExecuteCommandProvider.handleExecuteCommand(params, documentManager, connection)
+    void ExecuteCommandProvider.handleExecuteCommand(params, documentManager)
 })
 
 /** -------------------- COMPLETION SUPPORT -------------------- **/

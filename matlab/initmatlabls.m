@@ -11,7 +11,12 @@ function initmatlabls (outFile)
     fprintf("matlabls: matlabroot is \n%s\n", matlabroot)
 
     % Ensure the language server code is on the path
-    addpath(fileparts(mfilename("fullpath")))
+    folder = fileparts(mfilename("fullpath"));
+    addpath(folder)
+
+    if isMATLABReleaseOlderThan('R2023a')
+        addpath(fullfile(folder, 'shadows', 'clc'));
+    end
 
     % Create matlabls helper for calculating language server operations
     persistent matlablsHelper %#ok<PUSE>
@@ -25,15 +30,32 @@ function initmatlabls (outFile)
 end
 
 function logConnectionData (outFile)
-    c.matlabPid = feature("getpid");
-    c.matlabRelease = ['R' version('-release')];
-    c.sessionKey = dduxinternal.getSessionKey();
+    releaseInfo = matlabRelease;
 
-    connectionData = jsonencode(c);
+    data.pid = feature("getpid");
+    data.release = releaseInfo.Release;
+    data.port = matlabls.internal.CommunicationManager.getSecurePort();
+    data.certFile = matlabls.internal.CommunicationManager.getCertificateLocation();
+    data.sessionKey = dduxinternal.getSessionKey();
+
+    connectionData = jsonencode(data);
 
     disp(strcat("Printing connection data to file: ", newline, "    ", outFile))
 
-    f = fopen(outFile, "w");
-    fprintf(f, "%s\n", connectionData);
-    fclose(f);
+    % Write data to a temporary file first, then move to the expected filename to
+    % avoid a timing issue where partial data may be read from the Node.js layer.
+    tmpFileName = strcat(outFile, '-tmp');
+
+    fid = fopen(tmpFileName, "w");
+    if (fid == -1)
+        error("Failed to create temporary connection file.")
+    end
+
+    fprintf(fid, "%s\n", connectionData);
+    fclose(fid);
+
+    status = movefile(tmpFileName, outFile);
+    if ~status
+        error("Failed to rename connection file.")
+    end
 end
