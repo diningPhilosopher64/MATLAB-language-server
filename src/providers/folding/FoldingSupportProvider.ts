@@ -17,8 +17,8 @@ class FoldingSupportProvider {
             return []
         }
 
-        const matlabConnection = await MatlabLifecycleManager.getMatlabConnectionAsync()
-        const isMatlabAvailable = (matlabConnection != null) && MatlabLifecycleManager.isMatlabReady()
+        const matlabConnection = await MatlabLifecycleManager.getMatlabConnection()
+        const isMatlabAvailable = (matlabConnection != null) && MatlabLifecycleManager.isMatlabConnected()
         
         // check for connection and release
         if (!isMatlabAvailable || (MatlabLifecycleManager.getMatlabRelease() != 'R2024b')) {
@@ -45,14 +45,17 @@ class FoldingSupportProvider {
      */
     private async getFoldingRangesFromMatlab (code: string, fileName: string, matlabConnection: MatlabConnection): Promise<Array<number>> {
         return await new Promise<Array<number>>(resolve => {
-            const responseSub = matlabConnection.subscribe(this.RESPONSE_CHANNEL, message => {
+            const channelId = matlabConnection.getChannelId()
+            const channel = `${this.RESPONSE_CHANNEL}/${channelId}`
+            const responseSub = matlabConnection.subscribe(channel, message => {
                 matlabConnection.unsubscribe(responseSub)
                 resolve(message as Array<number>)
             })
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
                 code,
-                fileName
+                fileName,
+                channelId
             })
         })
     }

@@ -7,9 +7,9 @@ classdef (Hidden) FoldingSupportHandler < matlabls.handlers.FeatureHandler
     end
 
     methods
-        function this = FoldingSupportHandler (commManager)
-            this = this@matlabls.handlers.FeatureHandler(commManager);
-            this.RequestSubscriptions = this.CommManager.subscribe(this.RequestChannel, @this.handleFoldingRequest);
+        function this = FoldingSupportHandler ()
+            this = this@matlabls.handlers.FeatureHandler();
+            this.RequestSubscriptions = matlabls.internal.CommunicationManager.subscribe(this.RequestChannel, @this.handleFoldingRequest);
         end
     end
 
@@ -25,7 +25,8 @@ classdef (Hidden) FoldingSupportHandler < matlabls.handlers.FeatureHandler
             response.data = fRangesArray;
 
             % Send folding ranges
-            this.CommManager.publish(this.ResponseChannel, response.data)
+            responseChannel = strcat(this.ResponseChannel, '/', msg.channelId);
+            matlabls.internal.CommunicationManager.publish(responseChannel, response.data)
         end
 
 
