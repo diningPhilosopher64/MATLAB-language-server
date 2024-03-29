@@ -1,6 +1,6 @@
 // Copyright 2024 The MathWorks, Inc.
 
-import { FoldingRangeParams, _Connection, TextDocuments, FoldingRange} from 'vscode-languageserver'
+import { FoldingRangeParams, TextDocuments, FoldingRange} from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
@@ -11,18 +11,18 @@ class FoldingSupportProvider {
     private readonly REQUEST_CHANNEL = '/matlabls/foldDocument/request'
     private readonly RESPONSE_CHANNEL = '/matlabls/foldDocument/response'
 
-    async handleFoldingRequest (params: FoldingRangeParams, documentManager: TextDocuments<TextDocument>): Promise<FoldingRange[]> {
+    async handleFoldingRangeRequest (params: FoldingRangeParams, documentManager: TextDocuments<TextDocument>): Promise<FoldingRange[] | null> {
         const docToFold = documentManager.get(params.textDocument.uri)
         if (docToFold == null) {
-            return []
+            return null
         }
 
         const matlabConnection = await MatlabLifecycleManager.getMatlabConnection()
-        const isMatlabAvailable = (matlabConnection != null) && MatlabLifecycleManager.isMatlabConnected()
+        const isMatlabAvailable = (matlabConnection != null)
         
         // check for connection and release
         if (!isMatlabAvailable || (MatlabLifecycleManager.getMatlabRelease() != 'R2024b')) {
-            return []
+            return null
         }
 
         const fileName = URI.parse(docToFold.uri).fsPath
@@ -43,13 +43,13 @@ class FoldingSupportProvider {
      * @param matlabConnection The connection to MATLAB
      * @returns An array of line numbers
      */
-    private async getFoldingRangesFromMatlab (code: string, fileName: string, matlabConnection: MatlabConnection): Promise<Array<number>> {
-        return await new Promise<Array<number>>(resolve => {
+    private async getFoldingRangesFromMatlab (code: string, fileName: string, matlabConnection: MatlabConnection): Promise<number[]> {
+        return await new Promise<number[]>(resolve => {
             const channelId = matlabConnection.getChannelId()
             const channel = `${this.RESPONSE_CHANNEL}/${channelId}`
             const responseSub = matlabConnection.subscribe(channel, message => {
                 matlabConnection.unsubscribe(responseSub)
-                resolve(message as Array<number>)
+                resolve(message as number[])
             })
 
             matlabConnection.publish(this.REQUEST_CHANNEL, {
@@ -66,7 +66,7 @@ class FoldingSupportProvider {
      * @param frArray An array of line numbers from MATLAB
      * @returns An array of FoldingRanges
      */
-    private processFoldingRanges (frArray: Array<number>): FoldingRange[] {
+    private processFoldingRanges (frArray: number[]): FoldingRange[] {
         let fRangeArray: FoldingRange[] = []
 
         for(let i = 0; i < frArray.length; i = i+2) {
@@ -76,7 +76,6 @@ class FoldingSupportProvider {
 
         return fRangeArray
     }
-
 }
 
 export default new FoldingSupportProvider()

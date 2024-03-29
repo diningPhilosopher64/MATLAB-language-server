@@ -184,11 +184,11 @@ connection.onSignatureHelp(async params => {
 /** -------------------- FOLDING SUPPORT -------------------- **/
 connection.onFoldingRanges(async params => {
     // Retrieve the folding ranges
-    let fRanges: FoldingRange[] = await FoldingSupportProvider.handleFoldingRequest(params, documentManager)
+    let fRanges: FoldingRange[] | null = await FoldingSupportProvider.handleFoldingRangeRequest(params, documentManager)
 
     // If there are valid folding ranges, hand them back to VS Code
     // Else, let VS Code fall back to indent-based folding
-    if (fRanges.length == 0) {
+    if (fRanges == null) {
         return null
     } else {
         return fRanges
