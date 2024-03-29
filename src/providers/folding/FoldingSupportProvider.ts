@@ -19,9 +19,10 @@ class FoldingSupportProvider {
 
         const matlabConnection = await MatlabLifecycleManager.getMatlabConnection()
         const isMatlabAvailable = (matlabConnection != null)
+        const matlabRelease = MatlabLifecycleManager.getMatlabRelease()
         
         // check for connection and release
-        if (!isMatlabAvailable || (MatlabLifecycleManager.getMatlabRelease() != 'R2024b')) {
+        if (!isMatlabAvailable || (matlabRelease == null) || (matlabRelease < 'R2024b')) {
             return null
         }
 
@@ -38,7 +39,7 @@ class FoldingSupportProvider {
     /**
      * Gets folding ranges from MATLAB.
      *
-     * @param code 
+     * @param code The code in the file
      * @param fileName The file's name
      * @param matlabConnection The connection to MATLAB
      * @returns An array of line numbers
