@@ -20,7 +20,7 @@ class FoldingSupportProvider {
         const matlabConnection = await MatlabLifecycleManager.getMatlabConnection()
         const isMatlabAvailable = (matlabConnection != null)
         const matlabRelease = MatlabLifecycleManager.getMatlabRelease()
-        
+
         // check for connection and release
         if (!isMatlabAvailable || (matlabRelease == null) || (matlabRelease < 'R2024b')) {
             return null
@@ -29,9 +29,9 @@ class FoldingSupportProvider {
         const fileName = URI.parse(docToFold.uri).fsPath
         const code = docToFold.getText()
 
-        let frArray = await this.getFoldingRangesFromMatlab(code, fileName, matlabConnection)
+        const frArray = await this.getFoldingRangesFromMatlab(code, fileName, matlabConnection)
 
-        let foldingRanges = this.processFoldingRanges(frArray)
+        const foldingRanges = this.processFoldingRanges(frArray)
 
         return foldingRanges;
     }
