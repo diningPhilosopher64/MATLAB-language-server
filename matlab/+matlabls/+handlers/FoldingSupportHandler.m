@@ -21,31 +21,13 @@ classdef (Hidden) FoldingSupportHandler < matlabls.handlers.FeatureHandler
         function handleFoldingRangeRequest (this, msg)
             % Handles folding range requests
             codeToFold = msg.code;
-            fRangesArray = [];
 
-            analysisObj = matlabls.internal.analyzeCode(codeToFold);
-
-            fRangesArray = this.getFoldingRanges(analysisObj.CodeStructures, fRangesArray);
+            fRangesArray = matlabls.internal.analyzeCode(codeToFold);
             response.data = fRangesArray;
 
             % Send folding ranges
             responseChannel = strcat(this.ResponseChannel, '/', msg.channelId);
             matlabls.internal.CommunicationManager.publish(responseChannel, response.data)
-        end
-
-
-        function fRangesArray = getFoldingRanges(this, codeStructs, fRangesArray)
-            % Handle codeStructs array (multiple code structures)
-            for i=1:length(codeStructs)
-                % Do not get folding ranges for blocks that are not foldable in MATLAB
-                if(~ismember(codeStructs(i).Type, {'argumentsBlock', 'elseifBlock', 'elseBlock', 'caseSelection', 'otherwiseBlock', 'catchBlock'})) 
-                    fRangesArray = [fRangesArray, codeStructs(i).StartLine, codeStructs(i).EndLine];
-                end
-                % Get folding ranges for nested structures
-                if(~isempty(codeStructs(i).NestedStructures))
-                    fRangesArray = this.getFoldingRanges(codeStructs(i).NestedStructures, fRangesArray);
-                end
-            end
         end
     end
 end
