@@ -1,5 +1,5 @@
-function foldingRanges = analyzeCode(codeToFold)
-    % ANALYZECODE Parses MATLAB® code to extract folding ranges.
+function foldingRanges = getFoldingRanges(codeToFold)
+    % GETFOLDINGRANGES Parses MATLAB® code to extract folding ranges.
     % The data is an array of line numbers. Each consecutive pair of
     % numbers represents the start and end lines of a folding ranges.
 
@@ -9,11 +9,11 @@ function foldingRanges = analyzeCode(codeToFold)
 
     % Get folding ranges
     foldingRanges = [];
-    foldingRanges = getFoldingRanges(analysisObject.CodeStructures, foldingRanges);
+    foldingRanges = extractRanges(analysisObject.CodeStructures, foldingRanges);
 
 end
 
-function fRangesArray = getFoldingRanges(codeStructs, fRangesArray)
+function fRangesArray = extractRanges(codeStructs, fRangesArray)
     % Handle codeStructs array (multiple code structures)
     for i=1:length(codeStructs)
         % Do not get folding ranges for blocks that are not foldable in MATLAB
@@ -22,7 +22,7 @@ function fRangesArray = getFoldingRanges(codeStructs, fRangesArray)
         end
         % Get folding ranges for nested structures
         if(~isempty(codeStructs(i).NestedStructures))
-            fRangesArray = getFoldingRanges(codeStructs(i).NestedStructures, fRangesArray);
+            fRangesArray = extractRanges(codeStructs(i).NestedStructures, fRangesArray);
         end
     end
 end

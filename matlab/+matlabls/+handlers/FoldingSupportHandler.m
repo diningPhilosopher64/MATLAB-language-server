@@ -22,7 +22,7 @@ classdef (Hidden) FoldingSupportHandler < matlabls.handlers.FeatureHandler
             % Handles folding range requests
             codeToFold = msg.code;
 
-            fRangesArray = matlabls.internal.analyzeCode(codeToFold);
+            fRangesArray = matlabls.internal.getFoldingRanges(codeToFold);
             response.data = fRangesArray;
 
             % Send folding ranges
