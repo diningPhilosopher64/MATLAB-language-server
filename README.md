@@ -24,6 +24,10 @@ MATLAB language server supports these editors by installing the corresponding ex
 ## Release Notes
 
 ### Unreleased
+Release date: TBD
+
+Fixed:
+* Resolved issue with connecting to Intel MATLAB installation on Apple Silicon machines
 
 ### 1.2.2
 Release date: 2024-05-17
