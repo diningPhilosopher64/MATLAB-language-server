@@ -13,6 +13,7 @@ import * as fsPromises from 'fs/promises'
 import * as os from 'os'
 import * as path from 'path'
 import { EventEmitter } from 'events'
+import { checkIfMatlabDeprecated } from "../utils/DeprecationUtils";
 
 interface MatlabStartupInfo {
     pid: number
@@ -58,6 +59,10 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
             // Read startup info from file
             const connectionInfo = await readStartupInfo(outFile)
             const { pid, release, port, certFile, sessionKey } = connectionInfo
+
+            // Check if the launched MATLAB is supported. We do not abort the connection, as this may
+            // be the user's desire and some functionality may work (althought it is not guaranteed).
+            checkIfMatlabDeprecated(release)
 
             matlabSession.startConnection(port, certFile, pid, release).then(() => {
                 LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.CONNECTED)
