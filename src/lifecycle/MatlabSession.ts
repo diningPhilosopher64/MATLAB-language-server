@@ -13,6 +13,11 @@ import * as fsPromises from 'fs/promises'
 import * as os from 'os'
 import * as path from 'path'
 import { EventEmitter } from 'events'
+import { sleep } from "../utils/TimeUtils";
+import Licensing from "../licensing";
+import MatlabLifecycleManager from "./MatlabLifecycleManager";
+import { startServer } from "../licensing/server";
+import { staticFolderPath } from "../licensing/config";
 
 interface MatlabStartupInfo {
     pid: number
@@ -37,11 +42,56 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
     LifecycleNotificationHelper.didMatlabLaunchFail = false
     LifecycleNotificationHelper.notifyConnectionStatusChange(ConnectionState.CONNECTING)
 
-    const matlabSession = new LocalMatlabSession()
+    let environmentVariables : NodeJS.ProcessEnv = {}
 
-    return await new Promise<MatlabSession>(async (resolve, reject) => {
+    // Trigger licensing workflows if required
+    const configuration = await ConfigurationManager.getConfiguration()            
+    if(configuration.triggerLicensingWorkflows){
+        const licensing = new Licensing()
+        
+        if(!licensing.isLicensed()){
+            const url = startServer(staticFolderPath);
+            await sleep(1000)
+            
+            // If there's no cached licensing, start licensing server and send the url to the client
+            NotificationService.sendNotification(Notification.LicensingServerUrl, url) 
+            NotificationService.sendNotification(Notification.LicensingData, licensing.getMinimalLicensingInfo())
+            
+            return new Promise<MatlabSession>((resolve) => {
+                // Setup a onetime event listener for starting matlab session with licensing environment variables.
+                // The 'StartLicensedMatlab' event will be fired by the licensing server after licensing is successful. 
+                MatlabLifecycleManager.eventEmitter.once('StartLicensedMatlab', async () => {
+                    NotificationService.sendNotification(Notification.LicensingData, licensing.getMinimalLicensingInfo())
+                    // Gather the environment variables specific to licensing and pass it on for MATLAB launch.
+                    environmentVariables = await licensing.setupEnvironmentVariables()
+                    resolve(await startMatlabSession(environmentVariables))
+                })
+            })
+        } else {
+            // Found cached licensing, so just marshal environment variables and pass it on for MATLAB launch.
+            NotificationService.sendNotification(Notification.LicensingData, licensing.getMinimalLicensingInfo())
+            environmentVariables = await licensing.setupEnvironmentVariables()
+            return await startMatlabSession(environmentVariables)
+        }
+       
+    } else {
+        // Licensing workflows are not enabled, so start MATLAB as before.
+        return await startMatlabSession(environmentVariables)
+    }
+}
+
+/**
+ * Starts a MATLAB session with the given environment variables.
+ *
+ * @param {NodeJS.ProcessEnv} environmentVariables - The environment variables to be used when launching MATLAB.
+ * @returns {Promise<MatlabSession>} A promise that resolves to a MatlabSession object when MATLAB is successfully started and connected.
+ * @throws Will reject the promise if there is an error in launching MATLAB or establishing the connection.
+ */
+async function startMatlabSession(environmentVariables: NodeJS.ProcessEnv): Promise<MatlabSession> {
+    return new Promise<MatlabSession>(async (resolve, reject) => {
         // Setup file watch for MATLAB starting
         const outFile = path.join(Logger.logDir, 'matlabls_conn.json')
+        const matlabSession = new LocalMatlabSession()
 
         const watcher = chokidar.watch(outFile, {
             persistent: true,
@@ -79,8 +129,7 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
         // Launch MATLAB process
         Logger.log('Launching MATLAB...')
         const { command, args } = await getMatlabLaunchCommand(outFile)
-        const matlabProcessInfo = MatlabCommunicationManager.launchNewMatlab(command, args, Logger.logDir)
-
+        const matlabProcessInfo = MatlabCommunicationManager.launchNewMatlab(command, args, Logger.logDir, environmentVariables)        
         if (matlabProcessInfo == null) {
             // Error occurred while spawning MATLAB process
             matlabSession.shutdown('Error spawning MATLAB process')

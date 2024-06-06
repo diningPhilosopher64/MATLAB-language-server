@@ -1,6 +1,6 @@
 // Copyright 2022 - 2024 The MathWorks, Inc.
 
-import { GenericNotificationHandler } from 'vscode-languageserver'
+import { Disposable, GenericNotificationHandler } from 'vscode-languageserver'
 import { connection } from '../server'
 
 export enum Notification {
@@ -29,7 +29,13 @@ export enum Notification {
     MatlabFeatureUnavailableNoMatlab = 'feature/needsmatlab/nomatlab',
 
     // Telemetry
-    LogTelemetryData = 'telemetry/logdata'
+    LogTelemetryData = 'telemetry/logdata',
+
+    // Licensing
+    LicensingServerUrl = 'licensing/server/url',
+    LicensingData = 'licensing/data',
+    LicensingDelete = 'licensing/delete',
+    LicensingError = 'licensing/error',
 }
 
 class NotificationService {
@@ -51,6 +57,17 @@ class NotificationService {
      */
     registerNotificationListener (name: string, callback: GenericNotificationHandler): void {
         connection.onNotification(name, callback)
+    }
+
+    /**
+     * Sets up a listener for notifications from the language client
+     *
+     * @param name The name of the notification
+     * @param callback The callback
+     * @returns {Disposable} A disposable object that can be used to dispose/unregister the listener.
+     */
+    registerDisposableNotificationListener(name: string, callback: GenericNotificationHandler ): Disposable {
+        return connection.onNotification(name, callback)
     }
 }
 

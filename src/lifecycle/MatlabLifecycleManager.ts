@@ -64,7 +64,7 @@ class MatlabLifecycleManager {
         }
 
         // If MATLAB is actively connecting, wait and return that session
-        if (this.connectionPromise != null) {
+        if (this.connectionPromise !== null) {
             // MATLAB is actively connecting
             return new Promise<MatlabSession>((resolve, reject) => {
                 this.connectionPromise!.then(matlabSession => {

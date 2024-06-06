@@ -1,0 +1,118 @@
+// Copyright 2020-2024 The MathWorks, Inc.
+
+import React, { useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { useInterval } from 'react-use';
+import './App.css';
+import Overlay from '../Overlay';
+import LicensingGatherer from '../LicensingGatherer';
+
+import Error from '../Error';
+import {
+    selectOverlayVisible,
+    selectFetchStatusPeriod,
+    selectHasFetchedServerStatus,
+    selectLicensingProvided,
+    selectIsConnectionError,
+    selectHasFetchedEnvConfig,
+    selectLicensingMhlmHasEntitlements,
+    selectIsEntitled,
+    selectLicensingInfo,
+    selectError,
+
+} from "../../selectors";
+
+import {
+    fetchServerStatus,
+    fetchEnvConfig,
+    fetchUnsetLicensing,
+} from '../../actionCreators';
+import EntitlementSelector from "../EntitlementSelector";
+
+function App() {
+    const dispatch = useDispatch();
+
+    const overlayVisible = useSelector(selectOverlayVisible);
+    const fetchStatusPeriod = useSelector(selectFetchStatusPeriod);
+    const hasFetchedServerStatus = useSelector(selectHasFetchedServerStatus);
+    const hasFetchedEnvConfig = useSelector(selectHasFetchedEnvConfig);
+    const licensingProvided = useSelector(selectLicensingProvided);
+    const hasEntitlements = useSelector(selectLicensingMhlmHasEntitlements);
+    const isEntitled = useSelector(selectIsEntitled);
+    const isConnectionError = useSelector(selectIsConnectionError);
+    const licensingInfo = useSelector(selectLicensingInfo);
+    let error = useSelector(selectError)
+    
+    function handleClick(e) {
+        e.preventDefault();
+        dispatch(fetchUnsetLicensing())
+    }
+
+    
+    let dialog;    
+    if (isConnectionError ) {
+        dialog = (
+            <Error message="Server unreachable"> </Error>
+        );
+    } else if(error){
+        dialog = (
+            <Error message={error.message}> 
+                Try other <span onClick={handleClick} style={{ color: 'blue', cursor: 'pointer' }}> Licensing method </span>            
+            </Error>
+        );
+    }
+
+    useEffect(() => {
+        // Initial fetch environment configuration
+        if (!hasFetchedEnvConfig) {
+            dispatch(fetchEnvConfig());
+        }
+
+    }, [dispatch, hasFetchedEnvConfig]);
+
+    useEffect(() => {
+        // Initial fetch server status
+        if (hasFetchedEnvConfig && !hasFetchedServerStatus) {
+            dispatch(fetchServerStatus());
+        }
+
+    }, [dispatch, hasFetchedServerStatus, hasFetchedEnvConfig]);
+
+    // Periodic fetch server status
+    useInterval(() => {
+        if(hasFetchedServerStatus)
+        {
+            dispatch(fetchServerStatus());
+        }
+    }, fetchStatusPeriod);
+
+    let overlayContent;
+
+    if(dialog){
+        overlayContent = dialog;
+    }else if ((!licensingProvided) && hasFetchedServerStatus ) {
+        overlayContent = <LicensingGatherer role="licensing" aria-describedby="license-window" />;
+    }
+    else if (hasEntitlements && !isEntitled) {
+        overlayContent = <EntitlementSelector options={licensingInfo.entitlements} />;
+    } else {
+        overlayContent = <div> <h1>You have successfully signed in. Please feel free to close this window</h1> </div>
+    }
+
+    const overlay = overlayVisible ? (
+        <Overlay>
+            {overlayContent}
+        </Overlay>
+    ) : null;
+
+
+    return (
+         <React.Fragment>
+                <div data-testid="app" className="main">
+                    {overlay}
+                </div>
+        </React.Fragment>
+    );
+}
+
+export default App;

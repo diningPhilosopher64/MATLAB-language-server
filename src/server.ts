@@ -4,7 +4,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
 import { ClientCapabilities, createConnection, InitializeParams, InitializeResult, ProposedFeatures, TextDocuments } from 'vscode-languageserver/node'
 import DocumentIndexer from './indexing/DocumentIndexer'
 import WorkspaceIndexer from './indexing/WorkspaceIndexer'
-import ConfigurationManager, { ConnectionTiming } from './lifecycle/ConfigurationManager'
+import ConfigurationManager, { ConnectionTiming, Settings } from './lifecycle/ConfigurationManager'
 import MatlabLifecycleManager from './lifecycle/MatlabLifecycleManager'
 import Logger from './logging/Logger'
 import { Actions, reportTelemetryAction } from './logging/TelemetryUtils'
@@ -17,7 +17,13 @@ import NavigationSupportProvider, { RequestType } from './providers/navigation/N
 import LifecycleNotificationHelper from './lifecycle/LifecycleNotificationHelper'
 import MVM from './mvm/MVM'
 import FoldingSupportProvider from './providers/folding/FoldingSupportProvider'
-import { FoldingRange } from 'vscode-languageserver'
+
+import { stopServer} from './licensing/server'
+import { handleInstallPathSettingChanged, handleTriggerLicensingWorkflowSettingChanged } from './utils/LicensingUtils'
+import Licensing from './licensing'
+import { staticFolderPath } from './licensing/config'
+
+let licensing: Licensing
 
 // Create a connection for the server
 export const connection = createConnection(ProposedFeatures.all)
@@ -83,8 +89,12 @@ connection.onInitialize((params: InitializeParams) => {
 })
 
 // Handles the initialized notification
-connection.onInitialized(() => {
+connection.onInitialized(async () => {
     ConfigurationManager.setup(capabilities)
+
+    // Add callbacks when settings change.
+    await ConfigurationManager.addSettingCallback("triggerLicensingWorkflows", handleTriggerLicensingWorkflowSettingChanged)
+    await ConfigurationManager.addSettingCallback("installPath", handleInstallPathSettingChanged)
 
     WorkspaceIndexer.setupCallbacks(capabilities)
 
@@ -93,6 +103,11 @@ connection.onInitialized(() => {
     void startMatlabIfOnStartLaunch()
 })
 
+
+/**
+ * Starts MATLAB if the configuration specifies that it should be launched at the start.
+ * @returns {Promise<void>} A Promise that resolves when MATLAB is started or the licensing workflows are triggered.
+ */
 async function startMatlabIfOnStartLaunch (): Promise<void> {
     // Launch MATLAB if it should be launched early
     const connectionTiming = (await ConfigurationManager.getConfiguration()).matlabConnectionTiming
@@ -104,9 +119,13 @@ async function startMatlabIfOnStartLaunch (): Promise<void> {
 }
 
 // Handles a shutdown request
-connection.onShutdown(() => {
+connection.onShutdown(async () => {
     // Shut down MATLAB
     MatlabLifecycleManager.disconnectFromMatlab()
+    // If licensing workflows are enabled, shutdown the licensing server too.
+    if((await ConfigurationManager.getConfiguration()).triggerLicensingWorkflows) {
+        stopServer();
+    }
 })
 
 interface MatlabConnectionStatusParam {
@@ -116,11 +135,11 @@ interface MatlabConnectionStatusParam {
 // Set up connection notification listeners
 NotificationService.registerNotificationListener(
     Notification.MatlabConnectionClientUpdate,
-    (data: MatlabConnectionStatusParam) => {
+    async (data: MatlabConnectionStatusParam) => {
         switch (data.connectionAction) {
             case 'connect':
                 void MatlabLifecycleManager.connectToMatlab().catch(reason => {
-                    Logger.error(`Connection request failed: ${reason}`)
+                        Logger.error(`Connection request failed: ${reason}`)
                 })
                 break
             case 'disconnect':

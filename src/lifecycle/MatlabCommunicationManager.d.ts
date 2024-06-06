@@ -1,4 +1,5 @@
 /// <reference types="node" />
+/// <reference types="node" />
 import { ChildProcess } from 'child_process';
 declare const Faye: any;
 declare type Client = typeof Faye.Client;
@@ -25,7 +26,7 @@ declare class MatlabCommunicationManager {
      * @returns Information about the new MATLAB process and the connection to it.
      * Returns null if the MATLAB process cannot be started.
      */
-    launchNewMatlab(launchCommand: string, launchArguments: string[], logDirectory: string): MatlabProcessInfo | null;
+    launchNewMatlab(launchCommand: string, launchArguments: string[], logDirectory: string, environmentVariables?: NodeJS.ProcessEnv): MatlabProcessInfo | null;
     /**
      * Attempts to connect to an existing instance of MATLAB at the given URL.
      *
