@@ -35,17 +35,17 @@ export interface Settings {
     matlabConnectionTiming: ConnectionTiming
     indexWorkspace: boolean
     telemetry: boolean
-    triggerLicensingWorkflows: boolean
+    enableOnlineLicensing: boolean
 }
 
-type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry' | 'triggerLicensingWorkflows'
+type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry' | 'enableOnlineLicensing'
 
 const SETTING_NAMES: SettingName[] = [
     'installPath',
     'matlabConnectionTiming',
     'indexWorkspace',
     'telemetry',
-    'triggerLicensingWorkflows'
+    'enableOnlineLicensing'
 ]
 
 class ConfigurationManager {
@@ -69,7 +69,7 @@ class ConfigurationManager {
             matlabConnectionTiming: ConnectionTiming.OnStart,
             indexWorkspace: false,
             telemetry: true,
-            triggerLicensingWorkflows: false
+            enableOnlineLicensing: false
         }
 
         this.globalSettings = {
@@ -77,7 +77,7 @@ class ConfigurationManager {
             matlabConnectionTiming: cliArgs[Argument.MatlabConnectionTiming] as ConnectionTiming ?? this.defaultConfiguration.matlabConnectionTiming,
             indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.indexWorkspace,
             telemetry: this.defaultConfiguration.telemetry,
-            triggerLicensingWorkflows: this.defaultConfiguration.triggerLicensingWorkflows
+            enableOnlineLicensing: this.defaultConfiguration.enableOnlineLicensing
         }
 
         this.additionalArguments = {

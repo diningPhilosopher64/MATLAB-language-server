@@ -46,7 +46,7 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
 
     // Trigger licensing workflows if required
     const configuration = await ConfigurationManager.getConfiguration()            
-    if(configuration.triggerLicensingWorkflows){
+    if(configuration.enableOnlineLicensing){
         const licensing = new Licensing()
         
         if(!licensing.isLicensed()){

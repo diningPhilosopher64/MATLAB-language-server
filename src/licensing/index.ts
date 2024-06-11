@@ -285,15 +285,6 @@ export default class Licensing {
                 environmentVariables.MLM_WEB_LICENSE = "true"
                 environmentVariables.MLM_WEB_USER_CRED = accessTokenData.token
                 environmentVariables.MLM_WEB_ID = mhlmData.entitlement_id as string
-                environmentVariables.MW_LOGIN_EMAIL_ADDRESS = mhlmData.email_addr
-                environmentVariables.MW_LOGIN_FIRST_NAME = mhlmData.first_name
-                environmentVariables.MW_LOGIN_LAST_NAME = mhlmData.last_name
-                environmentVariables.MW_LOGIN_DISPLAY_NAME = mhlmData.display_name
-                environmentVariables.MW_LOGIN_USER_ID = mhlmData.user_id
-                environmentVariables.MW_LOGIN_PROFILE_ID = mhlmData.profile_id
-
-                // TODO: Check and update MHLM_CONTEXT accordingly
-                environmentVariables.MHLM_CONTEXT = 'MATLAB_JAVASCRIPT_DESKTOP'
             }
 
         } else if (this.isNLMLicensing()) {
@@ -302,31 +293,6 @@ export default class Licensing {
         }
 
         Logger.log("Successfully marshaled environment variables for MATLAB")
-
-
-        // TODO: Change these generic environment variables accordingly.
-        // environmentVariables.MW_CRASH_MODE = "native"
-        // environmentVariables.MATLAB_WORKER_CONFIG_ENABLE_LOCAL_PARCLUSTER = "true"
-        // environmentVariables.PCT_ENABLED = "true"
-        // environmentVariables.HTTP_MATLAB_CLIENT_GATEWAY_PUBLIC_PORT = "1"
-        // environmentVariables.MW_DOCROOT = path.join("ui", "webgui", "src")
-
-
-        // // TODO: Are these required for MATLAB launched by the extension ? 
-        // environmentVariables.MW_CD_ANYWHERE_ENABLED = "true"
-        // environmentVariables.MW_CD_ANYWHERE_DISABLED = "false"
-
-        // TODO: DDUX values are being set in CommunicationManager.js ?
-        // environmentVariables.MW_CONTEXT_TAGS = ""
-
-        // TODO: What about XVFB's display number ?
-        // environmentVariables.DISPLAY = ""
-
-        //TODO: Does the extension have a log directory for the MATLAB process 
-        // environmentVariables.MATLAB_LOG_DIR = ""
-
-        //TODO: Add environment variables specific to verbose logging / file logging etc.
-
 
         return environmentVariables
     }

@@ -19,7 +19,7 @@ import MVM from './mvm/MVM'
 import FoldingSupportProvider from './providers/folding/FoldingSupportProvider'
 
 import { stopServer} from './licensing/server'
-import { handleInstallPathSettingChanged, handleTriggerLicensingWorkflowSettingChanged } from './utils/LicensingUtils'
+import { handleInstallPathSettingChanged, handleEnableOnlineLicensingSettingChanged } from './utils/LicensingUtils'
 import Licensing from './licensing'
 import { staticFolderPath } from './licensing/config'
 
@@ -93,7 +93,7 @@ connection.onInitialized(async () => {
     ConfigurationManager.setup(capabilities)
 
     // Add callbacks when settings change.
-    await ConfigurationManager.addSettingCallback("triggerLicensingWorkflows", handleTriggerLicensingWorkflowSettingChanged)
+    await ConfigurationManager.addSettingCallback("enableOnlineLicensing", handleEnableOnlineLicensingSettingChanged)
     await ConfigurationManager.addSettingCallback("installPath", handleInstallPathSettingChanged)
 
     WorkspaceIndexer.setupCallbacks(capabilities)
@@ -123,7 +123,7 @@ connection.onShutdown(async () => {
     // Shut down MATLAB
     MatlabLifecycleManager.disconnectFromMatlab()
     // If licensing workflows are enabled, shutdown the licensing server too.
-    if((await ConfigurationManager.getConfiguration()).triggerLicensingWorkflows) {
+    if((await ConfigurationManager.getConfiguration()).enableOnlineLicensing) {
         stopServer();
     }
 })

@@ -104,13 +104,13 @@ let licensingDeleteNotificationListener : Disposable | null = null;
 let licensingServerUrlNotificationListener : Disposable | null = null;
 
 /**
- * Handles the changes to the "triggerLicensingWorkflows" setting in the configuration.
+ * Handles the changes to the "enableOnlineLicensing" setting in the configuration.
  * 
  * @param {Settings} configuration - The configuration object.
  * @returns {Promise<void>} A Promise that resolves when the handling is complete.
  */
-export async function handleTriggerLicensingWorkflowSettingChanged(configuration: Settings): Promise<void> {
-    if(configuration.triggerLicensingWorkflows){
+export async function handleEnableOnlineLicensingSettingChanged(configuration: Settings): Promise<void> {
+    if(configuration.enableOnlineLicensing){
         const licensing = new Licensing()
         if(!licensingDeleteNotificationListener){
             licensingDeleteNotificationListener = NotificationService.registerDisposableNotificationListener(
