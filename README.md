@@ -38,6 +38,8 @@ Added:
 
 Fixed:
 * Resolved issue with connecting to Intel MATLAB installation on Apple Silicon machines
+* Resolved error if MATLAB process is killed unexpectedly
+* Fixed bug where "never" startup timing was ignored
 
 ### 1.2.2
 Release date: 2024-05-17
