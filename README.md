@@ -26,13 +26,20 @@ MATLAB language server supports these editors by installing the corresponding ex
 ## Release Notes
 
 ### Unreleased
-Release date: TBD
+
+### 1.2.3
+Release date: 2024-06-11
 
 Notice:
 * The MATLAB language server will no longer support MATLAB R2021a in a future release. To make use of the advanced features of the extension or run MATLAB code, you will need to have MATLAB R2021b or later installed.
 
+Added:
+* Added a system to detect if the connected MATLAB release is supported by the language server. This will inform the client, which may display a notification to the user about this.
+
 Fixed:
 * Resolved issue with connecting to Intel MATLAB installation on Apple Silicon machines
+* Resolved error if MATLAB process is killed unexpectedly
+* Fixed bug where "never" startup timing was ignored
 
 ### 1.2.2
 Release date: 2024-05-17

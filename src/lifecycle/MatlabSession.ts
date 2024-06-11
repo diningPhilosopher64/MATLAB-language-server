@@ -105,8 +105,10 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
         matlabSession.initialize(matlabConnection, matlabProcess)
 
         // Handles additional errors with launching the MATLAB process
-        matlabProcess?.on('error', error => {
+        matlabProcess.on('error', error => {
             // Error occurred in child process
+            reject('Error from MATLAB child process')
+
             matlabSession.shutdown('Error launching MATLAB')
             watcher.close()
 
@@ -117,8 +119,16 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
 
             LifecycleNotificationHelper.didMatlabLaunchFail = true
             NotificationService.sendNotification(Notification.MatlabLaunchFailed)
+        })
 
-            reject('Error from MATLAB child process')
+        // Handles the MATLAB process being terminated unexpectedly/externally.
+        // This could include the user killing the process.
+        matlabProcess.on('close', () => {
+            // Close connection
+            reject('MATLAB process terminated unexpectedly')
+
+            Logger.log(`MATLAB proces (session ${matlabSession.sessionId}) terminated`)
+            matlabSession.shutdown()
         })
     })
 }
@@ -272,10 +282,18 @@ class LocalMatlabSession extends AbstractMatlabSession {
         // Close the connection and kill MATLAB process
         if (os.platform() === 'win32' && this.matlabPid != null) {
             // Need to kill MATLAB's child process which is launched on Windows
-            process.kill(this.matlabPid, 'SIGTERM')
+            try {
+                process.kill(this.matlabPid, 'SIGTERM')
+            } catch {
+                Logger.warn('Unable to kill MATLAB child process - child process already killed')
+            }
         }
         this.matlabConnection?.close()
-        this.matlabProcess?.kill('SIGTERM')
+        try {
+            this.matlabProcess?.kill('SIGTERM')
+        } catch {
+            Logger.warn('Unable to kill MATLAB process - process already killed')
+        }
     }
 
     private setupListeners (): void {
@@ -285,14 +303,6 @@ class LocalMatlabSession extends AbstractMatlabSession {
         this.matlabProcess?.stderr?.on('data', data => {
             const stderrStr: string = data.toString().trim()
             Logger.writeMatlabLog(stderrStr)
-        })
-        
-        // Handles the MATLAB process being terminated unexpectedly/externally.
-        // This could include the user killing the process.
-        this.matlabProcess?.on('close', () => {
-            // Close connection
-            Logger.log(`MATLAB process (session ${this.sessionId}) terminated`)
-            this.shutdown()
         })
 
         // Set up lifecycle listener
