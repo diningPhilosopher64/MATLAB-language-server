@@ -6,7 +6,7 @@ import { Express } from 'express';
 
 /**
  * Adds routes to the express application 
- * @param {Express} app - The Express application object.
+ * @param app - The Express application object.
  */
 export function addRoutes(app: Express) {
     app.get('/get_env_config', getEnvConfig);

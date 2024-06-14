@@ -9,14 +9,14 @@ import NotificationService, { Notification } from '../notifications/Notification
 import { Settings } from '../lifecycle/ConfigurationManager';
 import Logger from '../logging/Logger';
 
-import {startServer} from '../licensing/server'
+import {startLicensingServer} from '../licensing/server'
 import { staticFolderPath } from '../licensing/config';
 import { sleep } from './TimeUtils';
 
 /**
  * Recursively finds all occurrences of the "entitlement" key in the given object and its nested objects.
  * 
- * @param {any} obj - The object to search.
+ * @param obj - The object to search.
  * @returns {Entitlement[][]} An array of arrays containing the entitlement values found.
  */
 export function findAllEntitlements(obj: any): Entitlement[][] {
@@ -46,7 +46,7 @@ export function findAllEntitlements(obj: any): Entitlement[][] {
 /**
  * Marshals the licensing data into a standardized format based on the license type.
  * 
- * @param {LicensingData} data - The licensing data to be marshaled.
+ * @param data - The licensing data to be marshaled.
  * @returns {Object} The marshaled licensing information.
  */
 export function marshalLicensingInfo(data: LicensingData){
@@ -79,7 +79,7 @@ export function marshalLicensingInfo(data: LicensingData){
 /**
  * Marshals the error information into a standardized format.
  * 
- * @param {Error | null} error - The error object to be marshaled.
+ * @param error - The error object to be marshaled.
  * @returns {Object | null} The marshaled error information, or null if no error is provided.
  */
 export function marshalErrorInfo(error: Error | null) : {"message": string, logs: string | null, type: string} | null {
@@ -104,16 +104,13 @@ let licensingDeleteNotificationListener : Disposable | null = null;
 let licensingServerUrlNotificationListener : Disposable | null = null;
 
 /**
- * Handles the changes to the "enableOnlineLicensing" setting in the configuration.
+ * Sets up notification listeners required for licensing and updates languageserver client
  * 
- * @param {Settings} configuration - The configuration object.
- * @returns {Promise<void>} A Promise that resolves when the handling is complete.
  */
-export async function handleEnableOnlineLicensingSettingChanged(configuration: Settings): Promise<void> {
-    if(configuration.enableOnlineLicensing){
-        const licensing = new Licensing()
+export async function setupLicensingNotificationListenersAndUpdateClient(): Promise<void> {
+    const licensing = new Licensing()
         if(!licensingDeleteNotificationListener){
-            licensingDeleteNotificationListener = NotificationService.registerDisposableNotificationListener(
+            licensingDeleteNotificationListener = NotificationService.registerNotificationListener(
                 Notification.LicensingDelete,
                 async () => {
                     Logger.log("Received notification to delete licensing from the extension")
@@ -123,12 +120,11 @@ export async function handleEnableOnlineLicensingSettingChanged(configuration: S
             ) 
         }
 
-
         if(!licensingServerUrlNotificationListener){
-            licensingServerUrlNotificationListener = NotificationService.registerDisposableNotificationListener(
+            licensingServerUrlNotificationListener = NotificationService.registerNotificationListener(
                 Notification.LicensingServerUrl,
                 async () => {
-                    const url = startServer(staticFolderPath);
+                    const url = startLicensingServer(staticFolderPath);
                     Logger.log(`Received Notification requesting for licensing server url: ${url}`)
                     await sleep(1000)
                     NotificationService.sendNotification(Notification.LicensingServerUrl, url)
@@ -136,26 +132,45 @@ export async function handleEnableOnlineLicensingSettingChanged(configuration: S
             )
         }
 
-        NotificationService.sendNotification(Notification.LicensingData, licensing.getMinimalLicensingInfo())    
+        NotificationService.sendNotification(Notification.LicensingData, licensing.getMinimalLicensingInfo())
+}
+
+/**
+ * Removes notification listeners required for licensing and updates languageserver client
+ * 
+ */
+export function removeLicensingNotificationListenersAndUpdateClient(): void {
+    if(licensingDeleteNotificationListener){
+        licensingDeleteNotificationListener.dispose()
+        licensingDeleteNotificationListener = null
+    }
+
+
+    if(licensingServerUrlNotificationListener){
+        licensingServerUrlNotificationListener.dispose()
+        licensingServerUrlNotificationListener = null
+    }
+}
+
+/**
+ * Handles the changes to the "useOnlineLicensing" setting in the configuration.
+ * 
+ * @param configuration - The configuration object.
+ * @returns {Promise<void>} A Promise that resolves when the handling is complete.
+ */
+export async function handleUseOnlineLicensingSettingChanged(configuration: Settings): Promise<void> {
+    if(configuration.useOnlineLicensing){
+        await setupLicensingNotificationListenersAndUpdateClient()  
 
     } else {
-        if(licensingDeleteNotificationListener){
-            licensingDeleteNotificationListener.dispose()
-            licensingDeleteNotificationListener = null
-        }
-
-
-        if(licensingServerUrlNotificationListener){
-            licensingServerUrlNotificationListener.dispose()
-            licensingServerUrlNotificationListener = null
-        }
+        removeLicensingNotificationListenersAndUpdateClient()
     }
 }
 
 /**
  * Handles the changes to the "installPath" setting in the configuration.
  * 
- * @param {Settings} configuration - The configuration object.
+ * @param configuration - The configuration object.
  */
 export function handleInstallPathSettingChanged(configuration: Settings): void {
     setInstallPath(configuration.installPath)        

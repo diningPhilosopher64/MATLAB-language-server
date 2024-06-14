@@ -1,11 +1,9 @@
 // Copyright 2022 - 2024 The MathWorks, Inc.
 
-import { ClientCapabilities, DidChangeConfigurationNotification, DidChangeConfigurationParams, Disposable } from 'vscode-languageserver'
+import { ClientCapabilities, DidChangeConfigurationNotification, DidChangeConfigurationParams } from 'vscode-languageserver'
 import { reportTelemetrySettingsChange } from '../logging/TelemetryUtils'
 import { connection } from '../server'
 import { getCliArgs } from '../utils/CliUtils'
-import NotificationService, { Notification } from '../notifications/NotificationService'
-import Licensing from '../licensing'
 
 export enum Argument {
     // Basic arguments
@@ -35,17 +33,17 @@ export interface Settings {
     matlabConnectionTiming: ConnectionTiming
     indexWorkspace: boolean
     telemetry: boolean
-    enableOnlineLicensing: boolean
+    useOnlineLicensing: boolean
 }
 
-type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry' | 'enableOnlineLicensing'
+type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry' | 'useOnlineLicensing'
 
 const SETTING_NAMES: SettingName[] = [
     'installPath',
     'matlabConnectionTiming',
     'indexWorkspace',
     'telemetry',
-    'enableOnlineLicensing'
+    'useOnlineLicensing'
 ]
 
 class ConfigurationManager {
@@ -69,7 +67,7 @@ class ConfigurationManager {
             matlabConnectionTiming: ConnectionTiming.OnStart,
             indexWorkspace: false,
             telemetry: true,
-            enableOnlineLicensing: false
+            useOnlineLicensing: false
         }
 
         this.globalSettings = {
@@ -77,7 +75,7 @@ class ConfigurationManager {
             matlabConnectionTiming: cliArgs[Argument.MatlabConnectionTiming] as ConnectionTiming ?? this.defaultConfiguration.matlabConnectionTiming,
             indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.indexWorkspace,
             telemetry: this.defaultConfiguration.telemetry,
-            enableOnlineLicensing: this.defaultConfiguration.enableOnlineLicensing
+            useOnlineLicensing: this.defaultConfiguration.useOnlineLicensing
         }
 
         this.additionalArguments = {
@@ -105,19 +103,14 @@ class ConfigurationManager {
     /**
      * Registers a callback for setting changes.
      * 
-     * @param {SettingName} settingName - The setting to listen for.
-     * @param {(configuration: Settings) => void | Promise<void>} onSettingChangeCallback - The callback invoked on setting change.
-     * @returns {Promise<void>} Resolves when the callback is registered.
+     * @param settingName - The setting to listen for.
+     * @param onSettingChangeCallback - The callback invoked on setting change.
      * @throws {Error} For invalid setting names.
      */
-    async addSettingCallback(settingName: SettingName, onSettingChangeCallback: (configuration: Settings) => void | Promise<void>): Promise<void> {
+    addSettingCallback(settingName: SettingName, onSettingChangeCallback: (configuration: Settings) => void | Promise<void>): void {
         if(!this.settingChangeCallbacks.get(settingName)){
             this.settingChangeCallbacks.set(settingName, onSettingChangeCallback)
-        }
-    
-        const configuration = await this.getConfiguration()
-
-        await onSettingChangeCallback(configuration)        
+        }   
      }
 
     /**
@@ -162,7 +155,7 @@ class ConfigurationManager {
             this.configuration = null
 
             // Force load new configuration
-            newConfig = await this.getConfiguration()           
+            newConfig = await this.getConfiguration()
         } else {
             oldConfig = this.globalSettings
             this.globalSettings = params.settings?.matlab ?? this.defaultConfiguration

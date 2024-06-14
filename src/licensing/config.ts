@@ -5,6 +5,7 @@ import { findExecutableOnPath, resolveSymlink } from '../utils/FsUtils';
 import * as path from 'path';
 import * as xml2js from 'xml2js';
 import { VersionInfoXML } from './types';
+import Logger from '../logging/Logger';
 
 
 const VERSION_INFO_FILENAME = "VersionInfo.xml";
@@ -18,7 +19,7 @@ export const staticFolderPath : string = path.join(__dirname, "licensing", "gui"
 
 /**
  * Sets the MATLAB install path
- * @param {string} path - The MATLAB install path
+ * @param path - The MATLAB install path
  */
 export function setInstallPath(path: string): void {
     installPath = path;
@@ -57,7 +58,7 @@ export async function getMatlabVersion(): Promise<string | null> {
         const versionInfo = xmlData.MathWorks_version_info.release
         return versionInfo
     } catch (error) {
-        console.error(`Failed to read version info file at path:${versionInfoPath} with error:${error}`)
+        Logger.error(`Failed to read version info file at path:${versionInfoPath} with error:${error}`)
         return null;
     }
 }

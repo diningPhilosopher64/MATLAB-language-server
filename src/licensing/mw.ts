@@ -6,9 +6,9 @@ import { Entitlement } from './types';
 
 /**
  * Fetches an expand token from the MathWorks Access (MWA) service.
- * @param {string} mwaUrl - The URL of the MathWorks Access service.
- * @param {string} identityToken - The identity token to use for authentication.
- * @param {string} sourceId - The source ID for the request.
+ * @param mwaUrl - The URL of the MathWorks Access service.
+ * @param identityToken - The identity token to use for authentication.
+ * @param sourceId - The source ID for the request.
  * @returns {Promise<{expiry: string, first_name: string, last_name: string, display_name: string, user_id: string, profile_id: string}>} A Promise that resolves with an object containing the expiry date, first name, last name, display name, user ID, and profile ID.
  * @throws {OnlineLicensingError} If there is an error fetching the access token
 */
@@ -21,22 +21,22 @@ export async function fetchExpandToken(mwaUrl: string, identityToken: string, so
     profile_id: string;
 }> {
     const accessTokenUrl = mwaUrl + "/tokens";  
-    let data  =  {
-            "tokenString": identityToken,
-            "tokenPolicyName": "R2",
-            "sourceId": sourceId,
-        }
+    let data = {
+        tokenString: identityToken,
+        tokenPolicyName: "R2",
+        sourceId: sourceId,
+    }
 
     const formData = new URLSearchParams(data).toString();
 
     const options = {
-        "method":  "POST", 
-        "headers": {
+        method:  "POST", 
+        headers: {
             "content-type":  "application/x-www-form-urlencoded", 
             "accept": "application/json",
             "X_MW_WS_callerId": "desktop-jupyter"
         },
-        "body": formData
+        body: formData
     }
 
     const response =  await sendRequest(accessTokenUrl, options)
@@ -58,31 +58,31 @@ export async function fetchExpandToken(mwaUrl: string, identityToken: string, so
 
 /**
  * Fetches an access token from the MathWorks Access (MWA) service.
- * @param {string} mwaUrl - The URL of the MathWorks Access service.
- * @param {string} identityToken - The identity token to use for authentication.
- * @param {string} sourceId - The source ID for the request.
+ * @param mwaUrl - The URL of the MathWorks Access service.
+ * @param identityToken - The identity token to use for authentication.
+ * @param sourceId - The source ID for the request.
  * @returns {Promise<{token: string}>} A Promise that resolves with an object containing the access token.
  * @throws {OnlineLicensingError} If there is an error fetching the access token
  */
 export async function fetchAccessToken(mwaUrl: string, identityToken: string, sourceId: string): Promise<{token: string;}> {
     const accessTokenUrl: string = mwaUrl + "/tokens/access";  
     
-    let data  =  {
-            "tokenString": identityToken,
-            "type": "MWAS",
-            "sourceId": sourceId,
-        }
+    let data = {
+        tokenString: identityToken,
+        type: "MWAS",
+        sourceId: sourceId,
+    }
 
     const formData = new URLSearchParams(data).toString();
 
     const options = {
-        "method":  "POST", 
-        "headers": {
+        method:  "POST", 
+        headers: {
             "content-type":  "application/x-www-form-urlencoded", 
             "accept": "application/json",
             "X_MW_WS_callerId": "desktop-jupyter"
         },
-        "body": formData
+        body: formData
     }
 
     const response = await sendRequest(accessTokenUrl, options)
@@ -92,33 +92,33 @@ export async function fetchAccessToken(mwaUrl: string, identityToken: string, so
 
     const jsonData: any = await response.json()
     return {
-        "token": jsonData.accessTokenString,
+        token: jsonData.accessTokenString,
     }
 }
 
 /**
  * Fetches entitlements from the MathWorks Hosted License Manager (MHLM) service.
- * @param {string} mhlmUrl - The URL of the MathWorks Hosted License Manager service.
- * @param {string} accessToken - The access token to use for authentication.
- * @param {string} matlabVersion - The version of MATLAB for which to fetch entitlements.
+ * @param mhlmUrl - The URL of the MathWorks Hosted License Manager service.
+ * @param accessToken - The access token to use for authentication.
+ * @param matlabVersion - The version of MATLAB for which to fetch entitlements.
  * @returns {Promise<Entitlement[]>} A Promise that resolves with an array of Entitlement objects.
  * @throws {EntitlementError} If there is an error fetching or parsing the entitlements.
  */
 export async function fetchEntitlements(mhlmUrl: string, accessToken: string, matlabVersion: string): Promise<Entitlement[]> {
     const data = {
-        "token": accessToken,
-        "release": matlabVersion,
-        "coreProduct": "ML",
-        "context": "jupyter",
-        "excludeExpired": "true",
+        token: accessToken,
+        release: matlabVersion,
+        coreProduct: "ML",
+        context: "jupyter",
+        excludeExpired: "true",
     }
     const formData = new URLSearchParams(data).toString();
     const options = {
-        "method":  "POST", 
-        "headers": {
+        method:  "POST", 
+        headers: {
             "content-type":  "application/x-www-form-urlencoded", 
         },
-        "body": formData
+        body: formData
     }
 
    

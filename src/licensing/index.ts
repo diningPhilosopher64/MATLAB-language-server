@@ -91,7 +91,7 @@ export default class Licensing {
 
                 if (cachedLicensingData.type === NLMLicenseType) {
                     this.data = {
-                        "type": NLMLicenseType,
+                        type: NLMLicenseType,
                         conn_str: cachedLicensingData.conn_str
                     }
                 } else if (cachedLicensingData.type === MHLMLicenseType) {
@@ -110,8 +110,8 @@ export default class Licensing {
                         entitlement_id: cachedLicensingData.entitlement_id
                     }
 
-                    const expiry: Date = new Date(this.data.expiry)
-                    const expiryWindow: Date = new Date(expiry.getTime() - 3600000); // subtract 1 hour
+                    const expiry = new Date(this.data.expiry)
+                    const expiryWindow = new Date(expiry.getTime() - 3600000); // subtract 1 hour
 
                     if (expiryWindow.getTime() > (new Date()).getTime()) {
                         const successfulUpdate = await this.updateAndPersistLicensing();
@@ -242,7 +242,7 @@ export default class Licensing {
 
     /**
      * Sets the licensing information based on the provided data.
-     * @param {any} licenseData - The licensing data to be set.
+     * @param licenseData - The licensing data to be set.
      */
     async setLicensingInfo(licenseData: any) {
         if (!licenseData.hasOwnProperty('type') || ![MHLMLicenseType, NLMLicenseType, ExistingLicenseType].includes(licenseData.type)) {
@@ -275,7 +275,7 @@ export default class Licensing {
         if (this.isMHLMLicensing()) {
             const mhlmData = this.data as MHLMLicensingData;
 
-            const accessTokenData: { "token": string } | null = await fetchAccessToken(
+            const accessTokenData: { token: string } | null = await fetchAccessToken(
                 Licensing.mwaApiEndpoint,
                 mhlmData.identity_token,
                 mhlmData.source_id
@@ -299,7 +299,7 @@ export default class Licensing {
 
     /**
      * Sets the licensing information to MHLM (Online License Manager).
-     * @param {any} licenseData - The MHLM licensing data.
+     * @param licenseData - The MHLM licensing data.
      * @private
      */
     private async setLicensingToMHLM(licenseData: any) {
@@ -346,7 +346,7 @@ export default class Licensing {
 
     /**
      * Sets the licensing information to NLM (Network License Manager).
-     * @param {string} connectionStr - The NLM connection string.
+     * @param connectionStr - The NLM connection string.
      * @private
      */
     private setLicensingToNLM(connectionStr: string): void {
@@ -372,7 +372,7 @@ export default class Licensing {
 
     /**
      * Updates the user-selected entitlement information for MHLM licensing.
-     * @param {string} entitlementId - The entitlement ID.
+     * @param entitlementId - The entitlement ID.
      */
     async updateUserSelectedEntitlementInfo(entitlementId: string): Promise<void> {
         if (this.isMHLMLicensing()) {
@@ -408,7 +408,7 @@ export default class Licensing {
 
         try {
 
-            const accessTokenData: { "token": string } = await fetchAccessToken(
+            const accessTokenData: { token: string } = await fetchAccessToken(
                 Licensing.mwaApiEndpoint,
                 mhlmData.identity_token,
                 mhlmData.source_id

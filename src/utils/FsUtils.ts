@@ -10,7 +10,7 @@ const execPromise = promisify(exec);
 
 /**
  * Creates a directory if it does not exist.
- * @param {string} directoryPath - The path of the directory to create.
+ * @param directoryPath - The path of the directory to create.
  * @returns {Promise<void>}
  */
 export async function createDirectoryIfNotExist(directoryPath: string): Promise<void> {
@@ -24,8 +24,8 @@ export async function createDirectoryIfNotExist(directoryPath: string): Promise<
 
 /**
  * Writes JSON data to a file.
- * @param {string} filePath - The path of the file to write to.
- * @param {any} data - The data to write to the file.
+ * @param filePath - The path of the file to write to.
+ * @param data - The data to write to the file.
  * @returns {Promise<void>}
  */
 export async function writeJSONDataToFile(filePath: string, data: any): Promise<void> {
@@ -40,7 +40,7 @@ export async function writeJSONDataToFile(filePath: string, data: any): Promise<
 
 /**
  * Deletes a file.
- * @param {string} filePath - The path of the file to delete.
+ * @param filePath - The path of the file to delete.
  * @returns {Promise<void>}
  */
 export async function deleteFile(filePath:string ) : Promise<void> {
@@ -57,7 +57,7 @@ export async function deleteFile(filePath:string ) : Promise<void> {
 
 /**
  * Resolves a symbolic link to its target path.
- * @param {string | null} executablePath - The path of the symbolic link.
+ * @param executablePath - The path of the symbolic link.
  * @returns {Promise<string>} The resolved target path.
  */
 export async function resolveSymlink(executablePath: string | null): Promise<string> {
@@ -76,14 +76,14 @@ export async function resolveSymlink(executablePath: string | null): Promise<str
 /**
  * Asynchronously finds the path of an executable on the system's PATH.
  *
- * @param {string} executable - The name of the executable to find.
+ * @param executable - The name of the executable to find.
  * @returns {Promise<string|null>} A promise that resolves to the path of the executable if found, or null if not found.
  */
 export async function findExecutableOnPath(executable: string): Promise<string | null> {
     try {
-      const { stdout } = await execPromise(`which ${executable}`);
-      return stdout.trim();
+        const { stdout } = await execPromise(`which ${executable}`);
+        return stdout.trim();
     } catch (err) {
-      return null;
+        return null;
     }
 }

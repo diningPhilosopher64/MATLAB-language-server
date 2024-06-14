@@ -16,7 +16,7 @@ import { EventEmitter } from 'events'
 import { sleep } from "../utils/TimeUtils";
 import Licensing from "../licensing";
 import MatlabLifecycleManager from "./MatlabLifecycleManager";
-import { startServer } from "../licensing/server";
+import { startLicensingServer } from "../licensing/server";
 import { staticFolderPath } from "../licensing/config";
 
 interface MatlabStartupInfo {
@@ -46,11 +46,11 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
 
     // Trigger licensing workflows if required
     const configuration = await ConfigurationManager.getConfiguration()            
-    if(configuration.enableOnlineLicensing){
+    if(configuration.useOnlineLicensing){
         const licensing = new Licensing()
         
         if(!licensing.isLicensed()){
-            const url = startServer(staticFolderPath);
+            const url = startLicensingServer(staticFolderPath);
             await sleep(1000)
             
             // If there's no cached licensing, start licensing server and send the url to the client
@@ -83,7 +83,7 @@ export async function launchNewMatlab (): Promise<MatlabSession> {
 /**
  * Starts a MATLAB session with the given environment variables.
  *
- * @param {NodeJS.ProcessEnv} environmentVariables - The environment variables to be used when launching MATLAB.
+ * @param environmentVariables - The environment variables to be used when launching MATLAB.
  * @returns {Promise<MatlabSession>} A promise that resolves to a MatlabSession object when MATLAB is successfully started and connected.
  * @throws Will reject the promise if there is an error in launching MATLAB or establishing the connection.
  */

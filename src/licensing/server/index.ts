@@ -18,10 +18,10 @@ export let url: string | null = null;
 /**
  * Starts the server and returns its URL.
  *
- * @param {string} buildPath - The path to the build directory.
+ * @param buildPath - The path to the build directory.
  * @returns {string} The URL of the running server.
  */
-export function startServer(buildPath: string) : string {  
+export function startLicensingServer(buildPath: string) : string {  
     if(url) {
       return url;
     }
@@ -45,7 +45,7 @@ export function startServer(buildPath: string) : string {
 /**
  * Stops the running server.
  */
-export function stopServer() : void {    
+export function stopLicensingServer() : void {    
     if (server) {
         (server as HttpServer).close(() => {
           console.log('Server stopped successfully');

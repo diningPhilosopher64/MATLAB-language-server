@@ -6,9 +6,9 @@ export class AppError extends Error {
      * A Generic Parent class which inherits the Error class.
      * This class will be inherited by other classes representing specific exceptions.
      * 
-     * @param {string} message - Error message.
-     * @param {string|null} logs - Logs associated with the error.
-     * @param {string|null} stacktrace - Stacktrace associated with the error.
+     * @param message - Error message.
+     * @param logs - Logs associated with the error.
+     * @param stacktrace - Stacktrace associated with the error.
      */
     logs: string | null;
     stacktrace: string | null;

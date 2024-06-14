@@ -11,8 +11,8 @@ let matlabVersion: string | null = null;
 
 /**
  * Retrieves the environment configuration including the MATLAB version and supported versions.
- * @param {Request} _req - The Express request object (not used).
- * @param {Response} res - The Express response object.
+ * @param _req - The Express request object (not used).
+ * @param res - The Express response object.
  */
 export async function getEnvConfig (_req : Request, res : Response)  {
     matlabVersion = await getMatlabVersion();    
@@ -21,8 +21,8 @@ export async function getEnvConfig (_req : Request, res : Response)  {
 
 /**
  * Retrieves the licensing status, including MATLAB version, licensing information, error information, and warnings.
- * @param {Request} _req - The Express request object (not used).
- * @param {Response} res - The Express response object.
+ * @param _req - The Express request object (not used).
+ * @param res - The Express response object.
  */
 export async function getStatus(_req : Request, res : Response) {    
     const licensing = new Licensing();
@@ -42,8 +42,8 @@ export async function getStatus(_req : Request, res : Response) {
 
 /**
  * Sets the licensing information for MATLAB.
- * @param {Request} req - The Express request object containing the licensing information in the request body.
- * @param {Response} res - The Express response object.
+ * @param req - The Express request object containing the licensing information in the request body.
+ * @param res - The Express response object.
  */
 export async function setLicensingInfo(req : Request, res : Response) { 
     const licensing = new Licensing();   
@@ -67,8 +67,8 @@ export async function setLicensingInfo(req : Request, res : Response) {
 
 /**
  * Deletes the licensing information for MATLAB.
- * @param {Request} _req - The Express request object (not used).
- * @param {Response} res - The Express response object.
+ * @param _req - The Express request object (not used).
+ * @param res - The Express response object.
  */
 export async function deleteLicensingInfo(_req : Request, res : Response) {    
     const licensing = new Licensing();
@@ -89,8 +89,8 @@ export async function deleteLicensingInfo(_req : Request, res : Response) {
 
 /**
  * Updates the user-selected entitlement information for MATLAB.
- * @param {Request} req - The Express request object containing the entitlement ID in the request body.
- * @param {Response} res - The Express response object.
+ * @param req - The Express request object containing the entitlement ID in the request body.
+ * @param res - The Express response object.
  */
 export async function updateEntitlement(req: Request, res: Response) {
     const licensing = new Licensing();   
@@ -116,8 +116,8 @@ export async function updateEntitlement(req: Request, res: Response) {
 /**
  * Fallback endpoint for handling requests coming from the React application.
  * Serves the index.html file from the build directory.
- * @param {Request} _req - The Express request object (not used).
- * @param {Response} res - The Express response object.
+ * @param _req - The Express request object (not used).
+ * @param res - The Express response object.
  */
 export async function fallbackEndpoint(_req : Request, res : Response) {
     res.sendFile(path.join(__dirname + '/build/index.html'));

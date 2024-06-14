@@ -18,10 +18,10 @@ import LifecycleNotificationHelper from './lifecycle/LifecycleNotificationHelper
 import MVM from './mvm/MVM'
 import FoldingSupportProvider from './providers/folding/FoldingSupportProvider'
 
-import { stopServer} from './licensing/server'
-import { handleInstallPathSettingChanged, handleEnableOnlineLicensingSettingChanged } from './utils/LicensingUtils'
+import { stopLicensingServer} from './licensing/server'
+import { setInstallPath } from './licensing/config'
+import { handleInstallPathSettingChanged, handleUseOnlineLicensingSettingChanged, setupLicensingNotificationListenersAndUpdateClient} from './utils/LicensingUtils'
 import Licensing from './licensing'
-import { staticFolderPath } from './licensing/config'
 
 let licensing: Licensing
 
@@ -93,8 +93,20 @@ connection.onInitialized(async () => {
     ConfigurationManager.setup(capabilities)
 
     // Add callbacks when settings change.
-    await ConfigurationManager.addSettingCallback("enableOnlineLicensing", handleEnableOnlineLicensingSettingChanged)
-    await ConfigurationManager.addSettingCallback("installPath", handleInstallPathSettingChanged)
+    ConfigurationManager.addSettingCallback("useOnlineLicensing", handleUseOnlineLicensingSettingChanged)
+    ConfigurationManager.addSettingCallback("installPath", handleInstallPathSettingChanged)
+
+    let configuration = await ConfigurationManager.getConfiguration()
+
+    // If "useOnlineLicensing" setting is enabled, setup notification listeners for it.
+    if(configuration.useOnlineLicensing){
+        await setupLicensingNotificationListenersAndUpdateClient()
+
+        // If installPath setting is not empty, update installPath in licensing config required for its workflows.
+        if(configuration.installPath) {
+            setInstallPath(configuration.installPath)
+        }
+    }    
 
     WorkspaceIndexer.setupCallbacks(capabilities)
 
@@ -123,8 +135,8 @@ connection.onShutdown(async () => {
     // Shut down MATLAB
     MatlabLifecycleManager.disconnectFromMatlab()
     // If licensing workflows are enabled, shutdown the licensing server too.
-    if((await ConfigurationManager.getConfiguration()).enableOnlineLicensing) {
-        stopServer();
+    if((await ConfigurationManager.getConfiguration()).useOnlineLicensing) {
+        stopLicensingServer();
     }
 })
 
@@ -135,11 +147,11 @@ interface MatlabConnectionStatusParam {
 // Set up connection notification listeners
 NotificationService.registerNotificationListener(
     Notification.MatlabConnectionClientUpdate,
-    async (data: MatlabConnectionStatusParam) => {
+    (data: MatlabConnectionStatusParam) => {
         switch (data.connectionAction) {
             case 'connect':
                 void MatlabLifecycleManager.connectToMatlab().catch(reason => {
-                        Logger.error(`Connection request failed: ${reason}`)
+                    Logger.error(`Connection request failed: ${reason}`)
                 })
                 break
             case 'disconnect':

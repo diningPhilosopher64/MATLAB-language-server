@@ -55,18 +55,7 @@ class NotificationService {
      * @param name The name of the notification
      * @param callback The callback
      */
-    registerNotificationListener (name: string, callback: GenericNotificationHandler): void {
-        connection.onNotification(name, callback)
-    }
-
-    /**
-     * Sets up a listener for notifications from the language client
-     *
-     * @param name The name of the notification
-     * @param callback The callback
-     * @returns {Disposable} A disposable object that can be used to dispose/unregister the listener.
-     */
-    registerDisposableNotificationListener(name: string, callback: GenericNotificationHandler ): Disposable {
+    registerNotificationListener (name: string, callback: GenericNotificationHandler): Disposable {
         return connection.onNotification(name, callback)
     }
 }
