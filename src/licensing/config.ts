@@ -15,7 +15,7 @@ export const supportedVersions= ["R2021a", "R2021b","R2022a", "R2022b", "R2023a"
 
 let matlabRootFromExecOnPath: string | null = null;
 let installPath : string | null = null;
-export const staticFolderPath : string = path.join(__dirname, "licensing", "gui", "build")
+export const staticFolderPath : string = path.join(__dirname, "licensing", "static")
 
 /**
  * Sets the MATLAB install path

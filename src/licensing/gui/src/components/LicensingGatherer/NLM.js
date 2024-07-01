@@ -74,6 +74,10 @@ function NLM() {
                 </div>
                 <input type="submit" id="submit" value="Submit" className="btn btn_color_blue" disabled={!valid} />
             </form>
+            <br></br>
+            <p id="ExistingLicenseNote">
+            <b>Note</b>: If the MATLAB on PATH is already activated, you can skip this step by clicking on the <b>Existing License</b> tab                                        
+            </p>
         </div>
     );
 }

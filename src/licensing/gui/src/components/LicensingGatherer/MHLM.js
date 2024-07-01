@@ -159,6 +159,10 @@ function MHLM({mhlmLicensingInfo = null}) {
             >
                 Sorry your browser does not support inline frames.
             </iframe>
+
+            <p id="ExistingLicenseNote">
+                <b>Note</b>: If the MATLAB on PATH is already activated, you can skip this step by clicking on the <b>Existing License</b> tab                                        
+            </p>
         </div>
     )
 

@@ -87,7 +87,7 @@ function LicensingGatherer() {
                                         >
                                             MATLAB Licensing information
                                         </a>
-                                    </p>
+                                    </p>                                    
                                 </div>
                             </div>                            
                         </div>

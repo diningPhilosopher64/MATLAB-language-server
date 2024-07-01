@@ -6,7 +6,7 @@
   "bin": "./out/index.js",
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "compile": "webpack --mode development && cd src/licensing/gui && npm run build && cd ../../.. && cp -R src/licensing/gui/build/* ./out/licensing/gui/build/ && rm -rf ./out/licensing/gui/src",
+    "compile": "webpack --mode development && mkdir -p ./out/licensing/static && cd src/licensing/gui && npm run build && cd ../../.. && cp -R src/licensing/gui/build/* ./out/licensing/static",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
     "test-compile": "tsc -p ./",
