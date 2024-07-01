@@ -27,6 +27,9 @@ MATLAB language server supports these editors by installing the corresponding ex
 
 ### Unreleased
 
+Fixed:
+* Allow connection to MATLAB when a single quote appears in the file path
+
 ### 1.2.3
 Release date: 2024-06-14
 
