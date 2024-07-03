@@ -32,6 +32,7 @@ Added:
 
 Fixed:
 * Allow connection to MATLAB when a single quote appears in the extension installation path
+* Resolve error with code navigation when using with MATLAB R2024b
 
 ### 1.2.3
 Release date: 2024-06-14
