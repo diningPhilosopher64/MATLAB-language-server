@@ -32,7 +32,9 @@ export enum Notification {
     MatlabVersionDeprecation = 'matlab/version/deprecation',
 
     // Telemetry
-    LogTelemetryData = 'telemetry/logdata'
+    LogTelemetryData = 'telemetry/logdata',
+
+    MatlabSections = 'matlab/sections'
 }
 
 class NotificationService {

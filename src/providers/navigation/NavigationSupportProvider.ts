@@ -13,6 +13,7 @@ import PathResolver from './PathResolver'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 import { ActionErrorConditions, Actions, reportTelemetryAction } from '../../logging/TelemetryUtils'
 import DocumentIndexer from '../../indexing/DocumentIndexer'
+import NotificationService, { Notification } from '../../notifications/NotificationService'
 
 /**
  * Represents a code expression, either a single identifier or a dotted expression.
@@ -207,11 +208,15 @@ class NavigationSupportProvider {
             classInfo.properties.forEach((info, name) => pushSymbol(name, SymbolKind.Property, info.range))
         }
         codeData.functions.forEach((info, name) => pushSymbol(name, info.isClassMethod ? SymbolKind.Method : SymbolKind.Function, info.range))
+        let sectionRanges : Range[] = [];
+        
         codeData.sections.forEach((range, title) => {
             range.forEach(range => {
                 pushSymbol(title, SymbolKind.Module, range)
+                sectionRanges.push(range)
             })
         })
+        NotificationService.sendNotification(Notification.MatlabSections, sectionRanges)       
 
         /**
          * Handle a case when the indexer fails due to the user being in the middle of an edit.
