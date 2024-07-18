@@ -1,0 +1,360 @@
+// Copyright 2022 - 2024 The MathWorks, Inc.
+
+import { WorkspaceEdit, RenameParams, DocumentSymbolParams, Location, Position, Range, SymbolInformation, SymbolKind, TextDocuments } from 'vscode-languageserver'
+import { TextDocument } from 'vscode-languageserver-textdocument'
+import { URI } from 'vscode-uri'
+import * as fs from 'fs/promises'
+import FileInfoIndex, { FunctionVisibility, MatlabClassMemberInfo, MatlabCodeData, MatlabFunctionInfo } from '../../indexing/FileInfoIndex'
+import Indexer from '../../indexing/Indexer'
+import { MatlabConnection } from '../../lifecycle/MatlabCommunicationManager'
+import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
+import { getTextOnLine } from '../../utils/TextDocumentUtils'
+import PathResolver from '../navigation/PathResolver'
+import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
+import { ActionErrorConditions, Actions, reportTelemetryAction } from '../../logging/TelemetryUtils'
+import DocumentIndexer from '../../indexing/DocumentIndexer'
+
+/**
+ * Represents a code expression, either a single identifier or a dotted expression.
+ * For example, "plot" or "pkg.Class.func".
+ */
+class Expression {
+    constructor (public components: string[], public selectedComponent: number) {}
+
+    /**
+     * The full, dotted expression
+     */
+    get fullExpression (): string {
+        return this.components.join('.')
+    }
+
+    /**
+     * The dotted expression up to and including the selected component
+     */
+    get targetExpression (): string {
+        return this.components.slice(0, this.selectedComponent + 1).join('.')
+    }
+
+    /**
+     * Only the selected component of the expression
+     */
+    get unqualifiedTarget (): string {
+        return this.components[this.selectedComponent]
+    }
+
+    /**
+     * The first component of the expression
+     */
+    get first (): string {
+        return this.components[0]
+    }
+
+    /**
+     * The last component of the expression
+     */
+    get last (): string {
+        return this.components[this.components.length - 1]
+    }
+}
+
+interface TextEdit {
+    range: Range;
+    newText: string;
+}
+
+interface EditJson {
+    changes: {
+        [uri: string]: TextEdit[];
+    };
+}
+
+export enum RequestType {
+    Definition,
+    References,
+    DocumentSymbol
+}
+
+function reportTelemetry (type: RequestType, errorCondition = ''): void {
+    let action: Actions
+    switch (type) {
+        case RequestType.Definition:
+            action = Actions.GoToDefinition
+            break
+        case RequestType.References:
+            action = Actions.GoToReference
+            break
+        case RequestType.DocumentSymbol:
+            action = Actions.DocumentSymbol
+            break
+    }
+    reportTelemetryAction(action, errorCondition)
+}
+
+/**
+ * Handles requests for symbol renaming.
+ */
+class RenameSymbolProvider {
+    private readonly DOTTED_IDENTIFIER_REGEX = /[\w.]+/
+
+    constructor (
+        private matlabLifecycleManager: MatlabLifecycleManager,
+        private indexer: Indexer,
+        private documentIndexer: DocumentIndexer,
+        private pathResolver: PathResolver
+    ) {}
+
+
+    /**
+     * Handles requests for renaming.
+     *
+     * @param params Parameters for the rename request
+     * @param documentManager The text document manager
+     * @returns An array of locations
+     */
+    async handleRenameRequest (params: RenameParams, documentManager: TextDocuments<TextDocument>): Promise<WorkspaceEdit | null | undefined> {
+        const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection(true)
+        if (matlabConnection == null) {
+            LifecycleNotificationHelper.notifyMatlabRequirement()
+            // report telemetry here
+            return null
+        }
+
+        const uri = params.textDocument.uri
+        const textDocument = documentManager.get(uri)
+
+        if (textDocument == null) {
+            // report telemetry here
+            return null
+        }
+
+        // Find ID for which to find the definition or references
+        const expression = this.getTarget(textDocument, params.position)
+
+        if (expression == null) {
+            // No target found
+            // report telemetry here
+            return null
+        }
+
+        const refs = this.findReferences(uri, params.position, expression)
+        console.log(refs)
+        const editJson: EditJson = {
+            changes: {
+                [uri]: []
+            }
+        }
+
+        refs.forEach(location => {
+            const range: Range = {
+                start: {
+                    line: location.range.start.line,
+                    character: location.range.start.character
+                },
+                end: {
+                    line: location.range.end.line,
+                    character: location.range.end.character
+                }
+            }
+            const newEdit: TextEdit = {
+                range: range,
+                newText: params.newName
+            }
+            
+            if (!editJson.changes[location.uri]) {
+                editJson.changes[location.uri] = []
+            }
+            editJson.changes[location.uri].push(newEdit)
+        })
+
+        // const edit: WorkspaceEdit = editJson as unknown as WorkspaceEdit;
+        const edit: WorkspaceEdit = editJson
+
+        // console.log(JSON.stringify(edit, null, 2))
+
+        return edit
+    }
+
+    /**
+     * Gets the definition/references request target expression.
+     *
+     * @param textDocument The text document
+     * @param position The position in the document
+     * @returns The expression at the given position, or null if no expression is found
+     */
+    private getTarget (textDocument: TextDocument, position: Position): Expression | null {
+        const idAtPosition = this.getIdentifierAtPosition(textDocument, position)
+
+        if (idAtPosition.identifier === '') {
+            return null
+        }
+
+        const idComponents = idAtPosition.identifier.split('.')
+
+        // Determine what component was targeted
+        let length = 0
+        let i = 0
+        while (i < idComponents.length && length <= position.character - idAtPosition.start) {
+            length += idComponents[i].length + 1 // +1 for '.'
+            i++
+        }
+
+        return new Expression(idComponents, i - 1) // Compensate for extra increment in loop
+    }
+
+    /**
+     * Determines the identifier (or dotted expression) at the given position in the document.
+     *
+     * @param textDocument The text document
+     * @param position The position in the document
+     * @returns An object containing the string identifier at the position, as well as the column number at which the identifier starts.
+     */
+    private getIdentifierAtPosition (textDocument: TextDocument, position: Position): { identifier: string, start: number } {
+        let lineText = getTextOnLine(textDocument, position.line)
+
+        const result = {
+            identifier: '',
+            start: -1
+        }
+
+        let matchResults = lineText.match(this.DOTTED_IDENTIFIER_REGEX)
+        let offset = 0
+
+        while (matchResults != null) {
+            if (matchResults.index == null || matchResults.index > position.character) {
+                // Already passed the cursor - no match found
+                break
+            }
+
+            const startChar = offset + matchResults.index
+            if (startChar + matchResults[0].length >= position.character) {
+                // Found overlapping identifier
+                result.identifier = matchResults[0]
+                result.start = startChar
+                break
+            }
+
+            // Match found too early in line - check for following matches
+            lineText = lineText.substring(matchResults.index + matchResults[0].length)
+            offset = startChar + matchResults[0].length
+
+            matchResults = lineText.match(this.DOTTED_IDENTIFIER_REGEX)
+        }
+
+        return result
+    }
+
+    /**
+     * Finds references of an expression.
+     *
+     * @param uri The URI of the document containing the expression
+     * @param position The position of the expression
+     * @param expression The expression for which we are looking for references
+     * @returns The references' locations
+     */
+    private findReferences (uri: string, position: Position, expression: Expression): Location[] {
+        // Get code data for current file
+        const codeData = FileInfoIndex.codeDataCache.get(uri)
+
+        if (codeData == null) {
+            // File not indexed - unable to look for references
+            reportTelemetry(RequestType.References, 'File not indexed')
+            return []
+        }
+
+        const referencesInCodeData = this.findReferencesInCodeData(uri, position, expression, codeData)
+
+        reportTelemetry(RequestType.References)
+
+        if (referencesInCodeData != null) {
+            return referencesInCodeData
+        }
+
+        return []
+    }
+
+    /**
+     * Searches for references, starting within the given code data. If the expression does not correspond to a local variable,
+     *  the search is broadened to other indexed files in the user's workspace.
+     *
+     * @param uri The URI corresponding to the provided code data
+     * @param position The position of the expression
+     * @param expression The expression for which we are looking for references
+     * @param codeData The code data which is being searched
+     * @returns The references' locations, or null if no reference was found
+     */
+    private findReferencesInCodeData (uri: string, position: Position, expression: Expression, codeData: MatlabCodeData): Location[] | null {
+        // If first part of expression is targeted - look for a local variable
+        if (expression.selectedComponent === 0) {
+            const containingFunction = codeData.findContainingFunction(position)
+            if (containingFunction != null) {
+                const varRefs = this.getVariableDefsOrRefs(containingFunction, expression.unqualifiedTarget, uri, RequestType.References)
+                if (varRefs != null) {
+                    return varRefs
+                }
+            }
+        }
+
+        // Check for functions in file
+        const functionDeclaration = this.getFunctionDeclaration(codeData, expression.fullExpression)
+        if (functionDeclaration != null && functionDeclaration.visibility === FunctionVisibility.Private) {
+            // Found a local function. Look through this file's references
+            return codeData.references.get(functionDeclaration.name)?.map(range => Location.create(uri, range)) ?? []
+        }
+
+        // Check other files
+        const refs: Location[] = []
+        for (const [, fileCodeData] of FileInfoIndex.codeDataCache) {
+            if (fileCodeData.functions.get(expression.fullExpression)?.visibility === FunctionVisibility.Private) {
+                // Skip files with other local functions
+                continue
+            }
+            const varRefs = fileCodeData.references.get(expression.fullExpression)
+            if (varRefs != null) {
+                varRefs.forEach(range => refs.push(Location.create(fileCodeData.uri, range)))
+            }
+        }
+        return refs
+    }
+
+    /**
+     * Gets the definition/references of a variable within a function.
+     *
+     * @param containingFunction Info about a function
+     * @param variableName The variable name for which we are looking for definitions or references
+     * @param uri The URI of the file
+     * @param requestType The type of request (definition or references)
+     * @returns The locations of the definition(s) or references of the given variable name within the given function info, or null if none can be found
+     */
+    private getVariableDefsOrRefs (containingFunction: MatlabFunctionInfo, variableName: string, uri: string, requestType: RequestType): Location[] | null {
+        const variableInfo = containingFunction.variableInfo.get(variableName)
+
+        if (variableInfo == null) {
+            return null
+        }
+
+        const varInfoRanges = requestType === RequestType.Definition ? variableInfo.definitions : variableInfo.references
+
+        return varInfoRanges.map(range => {
+            return Location.create(uri, range)
+        })
+    }
+
+    /**
+     * Searches for info about a function within the given code data.
+     *
+     * @param codeData The code data being searched
+     * @param functionName The name of the function being searched for
+     * @returns The info about the desired function, or null if it cannot be found
+     */
+    private getFunctionDeclaration (codeData: MatlabCodeData, functionName: string): MatlabFunctionInfo | null {
+        let functionDecl = codeData.functions.get(functionName)
+        if (codeData.isClassDef && (functionDecl == null || functionDecl.isPrototype)) {
+            // For classes, look in the methods list to better handle @folders
+            functionDecl = codeData.classInfo?.methods.get(functionName) ?? functionDecl
+        }
+
+        return functionDecl ?? null
+    }
+}
+
+export default RenameSymbolProvider
