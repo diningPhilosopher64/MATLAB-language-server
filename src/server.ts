@@ -40,7 +40,7 @@ export async function startServer () {
     const executeCommandProvider = new ExecuteCommandProvider(lintingSupportProvider)
     const completionSupportProvider = new CompletionSupportProvider(matlabLifecycleManager)
     const navigationSupportProvider = new NavigationSupportProvider(matlabLifecycleManager, indexer, documentIndexer, pathResolver)
-    const renameSymbolProvider = new RenameSymbolProvider(matlabLifecycleManager, indexer, documentIndexer, pathResolver)
+    const renameSymbolProvider = new RenameSymbolProvider(matlabLifecycleManager)
 
     // Create basic text document manager
     const documentManager: TextDocuments<TextDocument> = new TextDocuments(TextDocument)

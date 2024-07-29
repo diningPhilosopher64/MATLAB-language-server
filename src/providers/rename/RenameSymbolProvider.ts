@@ -98,9 +98,6 @@ class RenameSymbolProvider {
 
     constructor (
         private matlabLifecycleManager: MatlabLifecycleManager,
-        private indexer: Indexer,
-        private documentIndexer: DocumentIndexer,
-        private pathResolver: PathResolver
     ) {}
 
 
@@ -115,7 +112,6 @@ class RenameSymbolProvider {
         const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection(true)
         if (matlabConnection == null) {
             LifecycleNotificationHelper.notifyMatlabRequirement()
-            // report telemetry here
             return null
         }
 
@@ -123,21 +119,16 @@ class RenameSymbolProvider {
         const textDocument = documentManager.get(uri)
 
         if (textDocument == null) {
-            // report telemetry here
             return null
         }
 
         // Find ID for which to find the definition or references
         const expression = this.getTarget(textDocument, params.position)
-
         if (expression == null) {
-            // No target found
-            // report telemetry here
             return null
         }
 
         const refs = this.findReferences(uri, params.position, expression)
-        console.log(refs)
         const editJson: EditJson = {
             changes: {
                 [uri]: []
@@ -159,18 +150,41 @@ class RenameSymbolProvider {
                 range: range,
                 newText: params.newName
             }
-            
-            if (!editJson.changes[location.uri]) {
-                editJson.changes[location.uri] = []
+
+            if (location.uri === uri) {
+                editJson.changes[uri].push(newEdit)
             }
-            editJson.changes[location.uri].push(newEdit)
         })
 
-        // const edit: WorkspaceEdit = editJson as unknown as WorkspaceEdit;
+        // Check if there is a class definition and rename as necessary
+        const text = textDocument.getText()
+        let pos = 0
+        for (let i = 0; i < text.length; i++) {
+            if (text.charAt(i) === '\r') {
+                pos = i
+                break
+            }
+        }
+        const firstLine = text.substring(0, pos)
+        if (firstLine.includes('classdef ') && firstLine.substring(9, firstLine.length - 1) === expression.fullExpression) {
+            const range: Range = {
+                start: {
+                    line: 0,
+                    character: 9
+                },
+                end: {
+                    line: 0,
+                    character: firstLine.length - 1
+                }
+            }
+            const newEdit: TextEdit = {
+                range: range,
+                newText: params.newName
+            }
+            editJson.changes[uri].push(newEdit)
+        }
+
         const edit: WorkspaceEdit = editJson
-
-        // console.log(JSON.stringify(edit, null, 2))
-
         return edit
     }
 
@@ -303,6 +317,21 @@ class RenameSymbolProvider {
 
         // Check other files
         const refs: Location[] = []
+
+        if (codeData.isClassDef && codeData.classInfo != null) {
+            // Look for possible properties
+            if (expression.selectedComponent === 1) {
+                const propertyDeclaration = this.getPropertyDeclaration(codeData, expression.last)
+                if (propertyDeclaration != null) {
+                    const propertyRange = Range.create(propertyDeclaration.range.start, propertyDeclaration.range.end)
+                    const uri = codeData.classInfo.uri
+                    if (uri != null) {
+                        refs.push(Location.create(uri, propertyRange))
+                    }
+                }
+            }
+        }
+
         for (const [, fileCodeData] of FileInfoIndex.codeDataCache) {
             if (fileCodeData.functions.get(expression.fullExpression)?.visibility === FunctionVisibility.Private) {
                 // Skip files with other local functions
@@ -354,6 +383,21 @@ class RenameSymbolProvider {
         }
 
         return functionDecl ?? null
+    }
+
+    /**
+     * Searches for info about a property within the given code data.
+     *
+     * @param codeData The code data being searched
+     * @param propertyName The name of the property being searched for
+     * @returns The info about the desired property, or null if it cannot be found
+     */
+    private getPropertyDeclaration (codeData: MatlabCodeData, propertyName: string): MatlabClassMemberInfo | null {
+        if (codeData.classInfo == null) {
+            return null
+        }
+
+        return codeData.classInfo.properties.get(propertyName) ?? null
     }
 }
 

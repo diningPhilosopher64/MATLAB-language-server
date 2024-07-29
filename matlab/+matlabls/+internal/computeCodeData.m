@@ -196,12 +196,23 @@ function codeInfo = computeCodeData (code, filePath)
     ranges = getRangeForNodes(functionCalls);
     functions = functionCalls.strings();
 
+    %% Get variable info from script
+    functionAndClassSubtree = mt.mtfind('Kind', {'FUNCTION', 'CLASSDEF'}).subtree;
+    script = mt - functionAndClassSubtree;
+    vars = script.mtfind('Isvar', true);
+    var_ranges = getRangeForNodes(vars);
+    var_names = vars.strings();
+
     % Pre-allocate some space in the references array to improve performance
     startIndex = numel(functionReferences);
-    functionReferences = [functionReferences cell(1, numel(functions))];
+    functionReferences = [functionReferences cell(1, numel(functions)+numel(var_names))];
     for k = 1:numel(functions)
         functionName = functions{k};
         functionReferences{startIndex + k} = { functionName, ranges(k) };
+    end
+    for k = 1:numel(var_names)
+        varName = var_names{k};
+        functionReferences{startIndex + numel(functions) + k} = { varName, var_ranges(k) };
     end
 
     %% Getting Section Data
