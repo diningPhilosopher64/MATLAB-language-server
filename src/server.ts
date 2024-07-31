@@ -13,7 +13,7 @@ import CompletionSupportProvider from './providers/completion/CompletionSupportP
 import FormatSupportProvider from './providers/formatting/FormatSupportProvider'
 import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
-import NavigationSupportProvider, { RequestType } from './providers/navigation/NavigationSupportProvider'
+import NavigationSupportProvider from './providers/navigation/NavigationSupportProvider'
 import LifecycleNotificationHelper from './lifecycle/LifecycleNotificationHelper'
 import MVM from './mvm/MVM'
 import FoldingSupportProvider from './providers/folding/FoldingSupportProvider'
@@ -21,6 +21,7 @@ import ClientConnection from './ClientConnection'
 import PathResolver from './providers/navigation/PathResolver'
 import Indexer from './indexing/Indexer'
 import RenameSymbolProvider from './providers/rename/RenameSymbolProvider'
+import { RequestType } from './providers/helper-classes/NavigationBase'
 
 export async function startServer () {
     // Create a connection for the server
@@ -40,7 +41,7 @@ export async function startServer () {
     const executeCommandProvider = new ExecuteCommandProvider(lintingSupportProvider)
     const completionSupportProvider = new CompletionSupportProvider(matlabLifecycleManager)
     const navigationSupportProvider = new NavigationSupportProvider(matlabLifecycleManager, indexer, documentIndexer, pathResolver)
-    const renameSymbolProvider = new RenameSymbolProvider(matlabLifecycleManager)
+    const renameSymbolProvider = new RenameSymbolProvider(matlabLifecycleManager, indexer, documentIndexer, pathResolver)
 
     // Create basic text document manager
     const documentManager: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
