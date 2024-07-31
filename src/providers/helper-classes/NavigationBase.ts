@@ -1,3 +1,5 @@
+// Copyright 2022 - 2024 The MathWorks, Inc.
+
 import { Location, Position } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import FileInfoIndex, { FunctionVisibility, MatlabClassMemberInfo, MatlabCodeData, MatlabFunctionInfo } from '../../indexing/FileInfoIndex'
@@ -6,7 +8,6 @@ import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import { getTextOnLine } from '../../utils/TextDocumentUtils'
 import PathResolver from '../navigation/PathResolver'
 import DocumentIndexer from '../../indexing/DocumentIndexer'
-// import { Expression, RequestType, reportTelemetry } from './Expression'
 import { Actions, reportTelemetryAction } from '../../logging/TelemetryUtils'
 
 /**

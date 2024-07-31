@@ -4,7 +4,8 @@ import { WorkspaceEdit, RenameParams, Range, TextDocuments } from 'vscode-langua
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 import NavigationBase from '../helper-classes/NavigationBase'
-
+import { getTextOnLine } from '../../utils/TextDocumentUtils'
+import FileInfoIndex from '../../indexing/FileInfoIndex'
 
 interface TextEdit {
     range: Range;
@@ -18,6 +19,7 @@ interface EditJson {
 }
 
 class RenameSymbolProvider extends NavigationBase {
+
     /**
      * Handles requests for renaming.
      *
@@ -45,6 +47,12 @@ class RenameSymbolProvider extends NavigationBase {
             return null
         }
 
+        const codeData = FileInfoIndex.codeDataCache.get(uri)
+        if (codeData == null) {
+            return null
+        }
+        console.log(codeData)
+
         const refs = this.findReferences(uri, params.position, expression)
         const editJson: EditJson = {
             changes: {
@@ -63,39 +71,55 @@ class RenameSymbolProvider extends NavigationBase {
                     character: location.range.end.character
                 }
             }
-            const newEdit: TextEdit = {
-                range: range,
-                newText: params.newName
-            }
 
-            if (location.uri === uri) {
-                editJson.changes[uri].push(newEdit)
+            if (expression.components.length > 1 && expression.selectedComponent != 0) {
+                let newName = expression.components.slice()
+                newName[expression.selectedComponent] = params.newName
+                const newEdit: TextEdit = {
+                    range: range,
+                    newText: newName.join('.')
+                }
+                if (location.uri === uri) {
+                    editJson.changes[uri].push(newEdit)
+                }
+            } else {
+                const newEdit: TextEdit = {
+                    range: range,
+                    newText: params.newName
+                }
+                if (location.uri === uri) {
+                    editJson.changes[uri].push(newEdit)
+                }
             }
         })
 
         // Check if there is a class definition and rename as necessary
-        const text = textDocument.getText()
-        let pos = 0
-        for (let i = 0; i < text.length; i++) {
-            if (text.charAt(i) === '\r') {
-                pos = i
-                break
+        if (codeData.isClassDef && codeData.classInfo && codeData.classInfo.declaration) {
+            const lineNumber = codeData.classInfo.declaration.start.line
+            const declaration = getTextOnLine(textDocument, lineNumber)
+            if (declaration.substring(9, declaration.length - 2) === expression.fullExpression) {
+                const range: Range = {
+                    start: {
+                        line: lineNumber,
+                        character: 9
+                    },
+                    end: {
+                        line: lineNumber,
+                        character: declaration.length - 1
+                    }
+                }
+                const newEdit: TextEdit = {
+                    range: range,
+                    newText: params.newName
+                }
+                editJson.changes[uri].push(newEdit)
             }
         }
-        const firstLine = text.substring(0, pos)
-        if (firstLine.includes('classdef ') && firstLine.substring(9, firstLine.length - 1) === expression.fullExpression) {
-            const range: Range = {
-                start: {
-                    line: 0,
-                    character: 9
-                },
-                end: {
-                    line: 0,
-                    character: firstLine.length - 1
-                }
-            }
+
+        let propertyInfo = this.getPropertyDeclaration(codeData, expression.unqualifiedTarget)
+        if (propertyInfo != null && expression.components.length > 1) {
             const newEdit: TextEdit = {
-                range: range,
+                range: propertyInfo.range,
                 newText: params.newName
             }
             editJson.changes[uri].push(newEdit)
