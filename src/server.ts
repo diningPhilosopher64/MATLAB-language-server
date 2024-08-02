@@ -21,7 +21,7 @@ import ClientConnection from './ClientConnection'
 import PathResolver from './providers/navigation/PathResolver'
 import Indexer from './indexing/Indexer'
 import RenameSymbolProvider from './providers/rename/RenameSymbolProvider'
-import { RequestType } from './providers/helper-classes/NavigationBase'
+import { RequestType } from './providers/base/BaseSymbolSearcher'
 
 export async function startServer () {
     // Create a connection for the server

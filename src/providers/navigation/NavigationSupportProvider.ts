@@ -8,10 +8,11 @@ import FileInfoIndex, { FunctionVisibility, MatlabClassMemberInfo, MatlabCodeDat
 import { MatlabConnection } from '../../lifecycle/MatlabCommunicationManager'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 import { ActionErrorConditions } from '../../logging/TelemetryUtils'
-import NavigationBase, { Expression, RequestType, reportTelemetry } from '../helper-classes/NavigationBase'
+import BaseSymbolSearcher, { RequestType, reportTelemetry } from '../base/BaseSymbolSearcher'
+import Expression, { getTarget } from '../../utils/ExpressionUtils'
 
 
-class NavigationSupportProvider extends NavigationBase {
+class NavigationSupportProvider extends BaseSymbolSearcher {
     /**
      * Handles requests for definitions or references.
      *
@@ -37,7 +38,7 @@ class NavigationSupportProvider extends NavigationBase {
         }
 
         // Find ID for which to find the definition or references
-        const expression = this.getTarget(textDocument, params.position)
+        const expression = getTarget(textDocument, params.position)
 
         if (expression == null) {
             // No target found
@@ -48,7 +49,7 @@ class NavigationSupportProvider extends NavigationBase {
         if (requestType === RequestType.Definition) {
             return await this.findDefinition(uri, params.position, expression, matlabConnection)
         } else {
-            return this.findReferences(uri, params.position, expression)
+            return this.findReferences(uri, params.position, expression, 'navigation')
         }
     }
 

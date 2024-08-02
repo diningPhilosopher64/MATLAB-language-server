@@ -1,24 +1,16 @@
-// Copyright 2022 - 2024 The MathWorks, Inc.
+// Copyright 2024 The MathWorks, Inc.
 
-import { WorkspaceEdit, RenameParams, Range, TextDocuments } from 'vscode-languageserver'
+import { WorkspaceEdit, RenameParams, Range, TextDocuments, TextEdit } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
-import NavigationBase from '../helper-classes/NavigationBase'
+import BaseSymbolSearcher from '../base/BaseSymbolSearcher'
 import { getTextOnLine } from '../../utils/TextDocumentUtils'
 import FileInfoIndex from '../../indexing/FileInfoIndex'
+import { RequestType, reportTelemetry } from '../base/BaseSymbolSearcher'
+import { ActionErrorConditions } from '../../logging/TelemetryUtils'
+import { getTarget } from '../../utils/ExpressionUtils'
 
-interface TextEdit {
-    range: Range;
-    newText: string;
-}
-
-interface EditJson {
-    changes: {
-        [uri: string]: TextEdit[];
-    };
-}
-
-class RenameSymbolProvider extends NavigationBase {
+class RenameSymbolProvider extends BaseSymbolSearcher {
 
     /**
      * Handles requests for renaming.
@@ -27,10 +19,11 @@ class RenameSymbolProvider extends NavigationBase {
      * @param documentManager The text document manager
      * @returns An array of locations
      */
-    async handleRenameRequest (params: RenameParams, documentManager: TextDocuments<TextDocument>): Promise<WorkspaceEdit | null | undefined> {
+    async handleRenameRequest (params: RenameParams, documentManager: TextDocuments<TextDocument>): Promise<WorkspaceEdit | null> {
         const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection(true)
         if (matlabConnection == null) {
             LifecycleNotificationHelper.notifyMatlabRequirement()
+            reportTelemetry(RequestType.RenameSymbol, ActionErrorConditions.MatlabUnavailable)
             return null
         }
 
@@ -38,23 +31,27 @@ class RenameSymbolProvider extends NavigationBase {
         const textDocument = documentManager.get(uri)
 
         if (textDocument == null) {
+            reportTelemetry(RequestType.RenameSymbol, 'No document')
             return null
         }
 
         // Find ID for which to find the definition or references
-        const expression = this.getTarget(textDocument, params.position)
+        const expression = getTarget(textDocument, params.position)
         if (expression == null) {
+            reportTelemetry(RequestType.RenameSymbol, 'No rename target')
             return null
         }
 
+        // Ensure document index is up to date
+        await this.documentIndexer.ensureDocumentIndexIsUpdated(textDocument)
         const codeData = FileInfoIndex.codeDataCache.get(uri)
         if (codeData == null) {
+            reportTelemetry(RequestType.RenameSymbol, 'No code data')
             return null
         }
-        console.log(codeData)
 
-        const refs = this.findReferences(uri, params.position, expression)
-        const editJson: EditJson = {
+        const refs = this.findReferences(uri, params.position, expression, 'rename')
+        const editJson: WorkspaceEdit = {
             changes: {
                 [uri]: []
             }
@@ -72,14 +69,14 @@ class RenameSymbolProvider extends NavigationBase {
                 }
             }
 
-            if (expression.components.length > 1 && expression.selectedComponent != 0) {
+            if (expression.components.length > 1 && expression.selectedComponent !== 0) {
                 let newName = expression.components.slice()
                 newName[expression.selectedComponent] = params.newName
                 const newEdit: TextEdit = {
                     range: range,
                     newText: newName.join('.')
                 }
-                if (location.uri === uri) {
+                if (location.uri === uri && editJson.changes) {
                     editJson.changes[uri].push(newEdit)
                 }
             } else {
@@ -87,7 +84,7 @@ class RenameSymbolProvider extends NavigationBase {
                     range: range,
                     newText: params.newName
                 }
-                if (location.uri === uri) {
+                if (location.uri === uri && editJson.changes) {
                     editJson.changes[uri].push(newEdit)
                 }
             }
@@ -97,7 +94,7 @@ class RenameSymbolProvider extends NavigationBase {
         if (codeData.isClassDef && codeData.classInfo && codeData.classInfo.declaration) {
             const lineNumber = codeData.classInfo.declaration.start.line
             const declaration = getTextOnLine(textDocument, lineNumber)
-            if (declaration.substring(9, declaration.length - 2) === expression.fullExpression) {
+            if (declaration.split(/\s+/).includes(expression.fullExpression)) {
                 const range: Range = {
                     start: {
                         line: lineNumber,
@@ -112,7 +109,9 @@ class RenameSymbolProvider extends NavigationBase {
                     range: range,
                     newText: params.newName
                 }
-                editJson.changes[uri].push(newEdit)
+                if (editJson.changes) {
+                    editJson.changes[uri].push(newEdit)
+                }
             }
         }
 
@@ -122,7 +121,9 @@ class RenameSymbolProvider extends NavigationBase {
                 range: propertyInfo.range,
                 newText: params.newName
             }
-            editJson.changes[uri].push(newEdit)
+            if (editJson.changes) {
+                editJson.changes[uri].push(newEdit)
+            }
         }
 
         const edit: WorkspaceEdit = editJson

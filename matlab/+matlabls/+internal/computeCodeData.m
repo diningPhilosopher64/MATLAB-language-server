@@ -205,7 +205,7 @@ function codeInfo = computeCodeData (code, filePath)
 
     % Pre-allocate some space in the references array to improve performance
     startIndex = numel(functionReferences);
-    functionReferences = [functionReferences cell(1, numel(functions)+numel(var_names))];
+    functionReferences = [functionReferences cell(1, numel(functions) + numel(var_names))];
     for k = 1:numel(functions)
         functionName = functions{k};
         functionReferences{startIndex + k} = { functionName, ranges(k) };
