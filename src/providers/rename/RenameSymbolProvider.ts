@@ -1,16 +1,78 @@
 // Copyright 2024 The MathWorks, Inc.
 
-import { WorkspaceEdit, RenameParams, Range, TextDocuments, TextEdit } from 'vscode-languageserver'
+import { WorkspaceEdit, PrepareRenameParams, RenameParams, Range, TextDocuments, TextEdit } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
-import BaseSymbolSearcher from '../base/BaseSymbolSearcher'
 import { getTextOnLine } from '../../utils/TextDocumentUtils'
 import FileInfoIndex from '../../indexing/FileInfoIndex'
-import { RequestType, reportTelemetry } from '../base/BaseSymbolSearcher'
 import { ActionErrorConditions } from '../../logging/TelemetryUtils'
-import { getTarget } from '../../utils/ExpressionUtils'
+import { getExpressionAtPosition } from '../../utils/ExpressionUtils'
+import SymbolSearchService, { RequestType, reportTelemetry} from '../../indexing/SymbolSearchService'
+import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
+import DocumentIndexer from '../../indexing/DocumentIndexer'
 
-class RenameSymbolProvider extends BaseSymbolSearcher {
+class RenameSymbolProvider {
+    constructor (
+        protected matlabLifecycleManager: MatlabLifecycleManager,
+        protected documentIndexer: DocumentIndexer,
+    ) {}
+
+    async prepareRename (params: PrepareRenameParams, documentManager: TextDocuments<TextDocument>): Promise<{ range: Range; placeholder: string } | null> {
+        const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection(true)
+        if (matlabConnection == null) {
+            LifecycleNotificationHelper.notifyMatlabRequirement()
+            reportTelemetry(RequestType.RenameSymbol, ActionErrorConditions.MatlabUnavailable)
+            return null
+        }
+        
+        const uri = params.textDocument.uri
+        const textDocument = documentManager.get(uri)
+        
+        if (textDocument == null) {
+            reportTelemetry(RequestType.RenameSymbol, 'No document')
+            return null
+        }
+
+        const text = textDocument.getText()
+        const offset = textDocument.offsetAt(params.position)
+
+        // Find the start of the word
+        let startOffset = offset;
+        while (startOffset > 0 && /\w/.test(text.charAt(startOffset - 1))) {
+            startOffset--
+        }
+
+        // Find the end of the word
+        let endOffset = offset;
+        while (endOffset < text.length && /\w/.test(text.charAt(endOffset))) {
+            endOffset++
+        }
+
+        if (startOffset === endOffset) {
+            return null
+        }
+
+        const startPosition = textDocument.positionAt(startOffset)
+        const endPosition = textDocument.positionAt(endOffset)
+        const range = Range.create(startPosition, endPosition)
+
+        // Find ID for which to find the definition or references
+        const expression = getExpressionAtPosition(textDocument, params.position)
+        if (expression == null) {
+            reportTelemetry(RequestType.RenameSymbol, 'No rename target')
+            return null
+        }
+
+        if (expression.fullExpression.trim().length === 0) {
+            return null
+        }
+
+        if (SymbolSearchService.findReferences(uri, params.position, expression, documentManager, RequestType.RenameSymbol).length === 0) {
+            return null
+        }
+
+        return { range, placeholder: expression.unqualifiedTarget }
+    }
 
     /**
      * Handles requests for renaming.
@@ -36,7 +98,7 @@ class RenameSymbolProvider extends BaseSymbolSearcher {
         }
 
         // Find ID for which to find the definition or references
-        const expression = getTarget(textDocument, params.position)
+        const expression = getExpressionAtPosition(textDocument, params.position)
         if (expression == null) {
             reportTelemetry(RequestType.RenameSymbol, 'No rename target')
             return null
@@ -50,8 +112,8 @@ class RenameSymbolProvider extends BaseSymbolSearcher {
             return null
         }
 
-        const refs = this.findReferences(uri, params.position, expression, 'rename')
-        const editJson: WorkspaceEdit = {
+        const refs = SymbolSearchService.findReferences(uri, params.position, expression, documentManager, RequestType.RenameSymbol)
+        const workspaceEdit: WorkspaceEdit = {
             changes: {
                 [uri]: []
             }
@@ -76,16 +138,16 @@ class RenameSymbolProvider extends BaseSymbolSearcher {
                     range: range,
                     newText: newName.join('.')
                 }
-                if (location.uri === uri && editJson.changes) {
-                    editJson.changes[uri].push(newEdit)
+                if (location.uri === uri && workspaceEdit.changes) {
+                    workspaceEdit.changes[uri].push(newEdit)
                 }
             } else {
                 const newEdit: TextEdit = {
                     range: range,
                     newText: params.newName
                 }
-                if (location.uri === uri && editJson.changes) {
-                    editJson.changes[uri].push(newEdit)
+                if (location.uri === uri && workspaceEdit.changes) {
+                    workspaceEdit.changes[uri].push(newEdit)
                 }
             }
         })
@@ -109,24 +171,25 @@ class RenameSymbolProvider extends BaseSymbolSearcher {
                     range: range,
                     newText: params.newName
                 }
-                if (editJson.changes) {
-                    editJson.changes[uri].push(newEdit)
+                if (workspaceEdit.changes) {
+                    workspaceEdit.changes[uri].push(newEdit)
                 }
             }
         }
 
-        let propertyInfo = this.getPropertyDeclaration(codeData, expression.unqualifiedTarget)
+        // Checks if properties need to be renamed
+        let propertyInfo = SymbolSearchService.getPropertyDeclaration(codeData, expression.unqualifiedTarget)
         if (propertyInfo != null && expression.components.length > 1) {
             const newEdit: TextEdit = {
                 range: propertyInfo.range,
                 newText: params.newName
             }
-            if (editJson.changes) {
-                editJson.changes[uri].push(newEdit)
+            if (workspaceEdit.changes) {
+                workspaceEdit.changes[uri].push(newEdit)
             }
         }
 
-        const edit: WorkspaceEdit = editJson
+        const edit: WorkspaceEdit = workspaceEdit
         return edit
     }
 }

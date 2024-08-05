@@ -21,7 +21,7 @@ import ClientConnection from './ClientConnection'
 import PathResolver from './providers/navigation/PathResolver'
 import Indexer from './indexing/Indexer'
 import RenameSymbolProvider from './providers/rename/RenameSymbolProvider'
-import { RequestType } from './providers/base/BaseSymbolSearcher'
+import { RequestType } from './indexing/SymbolSearchService'
 
 export async function startServer () {
     // Create a connection for the server
@@ -41,7 +41,7 @@ export async function startServer () {
     const executeCommandProvider = new ExecuteCommandProvider(lintingSupportProvider)
     const completionSupportProvider = new CompletionSupportProvider(matlabLifecycleManager)
     const navigationSupportProvider = new NavigationSupportProvider(matlabLifecycleManager, indexer, documentIndexer, pathResolver)
-    const renameSymbolProvider = new RenameSymbolProvider(matlabLifecycleManager, indexer, documentIndexer, pathResolver)
+    const renameSymbolProvider = new RenameSymbolProvider(matlabLifecycleManager, documentIndexer)
 
     // Create basic text document manager
     const documentManager: TextDocuments<TextDocument> = new TextDocuments(TextDocument)
@@ -94,7 +94,9 @@ export async function startServer () {
                     triggerCharacters: ['(', ',']
                 },
                 documentSymbolProvider: true,
-                renameProvider: true,
+                renameProvider: {
+                    prepareProvider: true
+                },
             }
         }
 
@@ -237,6 +239,10 @@ export async function startServer () {
     documentManager.listen(connection)
 
     /** --------------------  RENAME SUPPORT   -------------------- **/
+    connection.onPrepareRename(async params => {
+        return await renameSymbolProvider.prepareRename(params, documentManager)
+    })
+
     connection.onRenameRequest(async params => {
         return await renameSymbolProvider.handleRenameRequest(params, documentManager)
     })

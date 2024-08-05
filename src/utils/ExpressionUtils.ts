@@ -47,14 +47,14 @@ class Expression {
     }
 }
 
-/**
+    /**
      * Gets the definition/references request target expression.
      *
      * @param textDocument The text document
      * @param position The position in the document
      * @returns The expression at the given position, or null if no expression is found
      */
-export function getTarget (textDocument: TextDocument, position: Position): Expression | null {
+export function getExpressionAtPosition (textDocument: TextDocument, position: Position): Expression | null {
     const idAtPosition = getIdentifierAtPosition(textDocument, position)
 
     if (idAtPosition.identifier === '') {

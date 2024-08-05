@@ -1,13 +1,11 @@
 // Copyright 2024 The MathWorks, Inc.
 
-import { Location, Position } from 'vscode-languageserver'
-import FileInfoIndex, { FunctionVisibility, MatlabClassMemberInfo, MatlabCodeData, MatlabFunctionInfo } from '../../indexing/FileInfoIndex'
-import Indexer from '../../indexing/Indexer'
-import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
-import PathResolver from '../navigation/PathResolver'
-import DocumentIndexer from '../../indexing/DocumentIndexer'
-import { Actions, reportTelemetryAction } from '../../logging/TelemetryUtils'
-import Expression from '../../utils/ExpressionUtils'
+import { Location, Position, TextDocuments } from 'vscode-languageserver'
+import { TextDocument } from 'vscode-languageserver-textdocument'
+import FileInfoIndex, { FunctionVisibility, MatlabClassMemberInfo, MatlabCodeData, MatlabFunctionInfo } from './FileInfoIndex'
+import { Actions, reportTelemetryAction } from '../logging/TelemetryUtils'
+import Expression from '../utils/ExpressionUtils'
+import { getTextOnLine } from '../utils/TextDocumentUtils'
 
 export enum RequestType {
     Definition,
@@ -35,15 +33,17 @@ export function reportTelemetry (type: RequestType, errorCondition = ''): void {
     reportTelemetryAction(action, errorCondition)
 }
 
-abstract class BaseSymbolSearcher {
+class SymbolSearchService {
+    private static instance: SymbolSearchService
     protected readonly DOTTED_IDENTIFIER_REGEX = /[\w.]+/
 
-    constructor (
-        protected matlabLifecycleManager: MatlabLifecycleManager,
-        protected indexer: Indexer,
-        protected documentIndexer: DocumentIndexer,
-        protected pathResolver: PathResolver
-    ) {}
+    public static getInstance (): SymbolSearchService {
+        if (SymbolSearchService.instance == null) {
+            SymbolSearchService.instance = new SymbolSearchService()
+        }
+
+        return SymbolSearchService.instance
+    }
 
     /**
      * Finds references of an expression.
@@ -51,30 +51,38 @@ abstract class BaseSymbolSearcher {
      * @param uri The URI of the document containing the expression
      * @param position The position of the expression
      * @param expression The expression for which we are looking for references
-     * @param workflow The workflow through which findReferences is being called, which can be either "navigation" or "rename"
+     * @param documentManager The text document manager
+     * @param requestType The type of request (definition, references, or rename)
      * @returns The references' locations
      */
-    protected findReferences (uri: string, position: Position, expression: Expression, workflow: string): Location[] {
+    findReferences (uri: string, position: Position, expression: Expression, documentManager: TextDocuments<TextDocument>, requestType: RequestType): Location[] {
         // Get code data for current file
         const codeData = FileInfoIndex.codeDataCache.get(uri)
 
         if (codeData == null) {
             // File not indexed - unable to look for references
-            if (workflow === 'navigation') {
-                reportTelemetry(RequestType.References, 'File not indexed')
-            } else {
-                reportTelemetry(RequestType.RenameSymbol, 'File not indexed')
-            }
+            reportTelemetry(requestType, 'File not indexed')
+            return []
+        }
+
+        const textDocument = documentManager.get(uri)
+
+        if (textDocument == null) {
+            reportTelemetry(requestType, 'No document')
+            return []
+        }
+
+        const line = getTextOnLine(textDocument, position.line)
+        const commentStart = line.indexOf('%')
+
+        if (commentStart > -1 && commentStart < position.character) {
+            // Current expression is in a comment - no references should be returned
             return []
         }
 
         const referencesInCodeData = this.findReferencesInCodeData(uri, position, expression, codeData)
 
-        if (workflow === 'navigation') {
-            reportTelemetry(RequestType.References)
-        } else {
-            reportTelemetry(RequestType.RenameSymbol)
-        }
+        reportTelemetry(requestType)
 
         if (referencesInCodeData != null) {
             return referencesInCodeData
@@ -93,7 +101,7 @@ abstract class BaseSymbolSearcher {
      * @param codeData The code data which is being searched
      * @returns The references' locations, or null if no reference was found
      */
-    protected findReferencesInCodeData (uri: string, position: Position, expression: Expression, codeData: MatlabCodeData): Location[] | null {
+    private findReferencesInCodeData (uri: string, position: Position, expression: Expression, codeData: MatlabCodeData): Location[] | null {
         // If first part of expression is targeted - look for a local variable
         if (expression.selectedComponent === 0) {
             const containingFunction = codeData.findContainingFunction(position)
@@ -137,7 +145,7 @@ abstract class BaseSymbolSearcher {
      * @param requestType The type of request (definition or references)
      * @returns The locations of the definition(s) or references of the given variable name within the given function info, or null if none can be found
      */
-    protected getVariableDefsOrRefs (containingFunction: MatlabFunctionInfo, variableName: string, uri: string, requestType: RequestType): Location[] | null {
+    getVariableDefsOrRefs (containingFunction: MatlabFunctionInfo, variableName: string, uri: string, requestType: RequestType): Location[] | null {
         const variableInfo = containingFunction.variableInfo.get(variableName)
 
         if (variableInfo == null) {
@@ -158,7 +166,7 @@ abstract class BaseSymbolSearcher {
      * @param functionName The name of the function being searched for
      * @returns The info about the desired function, or null if it cannot be found
      */
-    protected getFunctionDeclaration (codeData: MatlabCodeData, functionName: string): MatlabFunctionInfo | null {
+    getFunctionDeclaration (codeData: MatlabCodeData, functionName: string): MatlabFunctionInfo | null {
         let functionDecl = codeData.functions.get(functionName)
         if (codeData.isClassDef && (functionDecl == null || functionDecl.isPrototype)) {
             // For classes, look in the methods list to better handle @folders
@@ -175,7 +183,7 @@ abstract class BaseSymbolSearcher {
      * @param propertyName The name of the property being searched for
      * @returns The info about the desired property, or null if it cannot be found
      */
-    protected getPropertyDeclaration (codeData: MatlabCodeData, propertyName: string): MatlabClassMemberInfo | null {
+    getPropertyDeclaration (codeData: MatlabCodeData, propertyName: string): MatlabClassMemberInfo | null {
         if (codeData.classInfo == null) {
             return null
         }
@@ -184,4 +192,4 @@ abstract class BaseSymbolSearcher {
     }
 }
 
-export default BaseSymbolSearcher
+export default SymbolSearchService.getInstance()

@@ -8,11 +8,21 @@ import FileInfoIndex, { FunctionVisibility, MatlabClassMemberInfo, MatlabCodeDat
 import { MatlabConnection } from '../../lifecycle/MatlabCommunicationManager'
 import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHelper'
 import { ActionErrorConditions } from '../../logging/TelemetryUtils'
-import BaseSymbolSearcher, { RequestType, reportTelemetry } from '../base/BaseSymbolSearcher'
-import Expression, { getTarget } from '../../utils/ExpressionUtils'
+import Expression, { getExpressionAtPosition } from '../../utils/ExpressionUtils'
+import SymbolSearchService, { RequestType, reportTelemetry } from '../../indexing/SymbolSearchService'
+import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
+import Indexer from '../../indexing/Indexer'
+import DocumentIndexer from '../../indexing/DocumentIndexer'
+import PathResolver from './PathResolver'
 
+class NavigationSupportProvider {
+    constructor (
+        protected matlabLifecycleManager: MatlabLifecycleManager,
+        protected indexer: Indexer,
+        protected documentIndexer: DocumentIndexer,
+        protected pathResolver: PathResolver
+    ) {}
 
-class NavigationSupportProvider extends BaseSymbolSearcher {
     /**
      * Handles requests for definitions or references.
      *
@@ -38,7 +48,7 @@ class NavigationSupportProvider extends BaseSymbolSearcher {
         }
 
         // Find ID for which to find the definition or references
-        const expression = getTarget(textDocument, params.position)
+        const expression = getExpressionAtPosition(textDocument, params.position)
 
         if (expression == null) {
             // No target found
@@ -49,7 +59,7 @@ class NavigationSupportProvider extends BaseSymbolSearcher {
         if (requestType === RequestType.Definition) {
             return await this.findDefinition(uri, params.position, expression, matlabConnection)
         } else {
-            return this.findReferences(uri, params.position, expression, 'navigation')
+            return SymbolSearchService.findReferences(uri, params.position, expression, documentManager, requestType)
         }
     }
 
@@ -202,7 +212,7 @@ class NavigationSupportProvider extends BaseSymbolSearcher {
         if (expression.selectedComponent === 0) {
             const containingFunction = codeData.findContainingFunction(position)
             if (containingFunction != null) {
-                const varDefs = this.getVariableDefsOrRefs(containingFunction, expression.unqualifiedTarget, uri, RequestType.Definition)
+                const varDefs = SymbolSearchService.getVariableDefsOrRefs(containingFunction, expression.unqualifiedTarget, uri, RequestType.Definition)
                 if (varDefs != null) {
                     return varDefs
                 }
@@ -210,7 +220,7 @@ class NavigationSupportProvider extends BaseSymbolSearcher {
         }
 
         // Check for functions in file
-        let functionDeclaration = this.getFunctionDeclaration(codeData, expression.fullExpression)
+        let functionDeclaration = SymbolSearchService.getFunctionDeclaration(codeData, expression.fullExpression)
         if (functionDeclaration != null) {
             return [this.getLocationForFunctionDeclaration(functionDeclaration)]
         }
@@ -218,14 +228,14 @@ class NavigationSupportProvider extends BaseSymbolSearcher {
         // Check for definitions within classes
         if (codeData.isClassDef && codeData.classInfo != null) {
             // Look for methods/properties within class definitions (e.g. obj.foo)
-            functionDeclaration = this.getFunctionDeclaration(codeData, expression.last)
+            functionDeclaration = SymbolSearchService.getFunctionDeclaration(codeData, expression.last)
             if (functionDeclaration != null) {
                 return [this.getLocationForFunctionDeclaration(functionDeclaration)]
             }
 
             // Look for possible properties
             if (expression.selectedComponent === 1) {
-                const propertyDeclaration = this.getPropertyDeclaration(codeData, expression.last)
+                const propertyDeclaration = SymbolSearchService.getPropertyDeclaration(codeData, expression.last)
                 if (propertyDeclaration != null) {
                     const propertyRange = Range.create(propertyDeclaration.range.start, propertyDeclaration.range.end)
                     const uri = codeData.classInfo.uri
