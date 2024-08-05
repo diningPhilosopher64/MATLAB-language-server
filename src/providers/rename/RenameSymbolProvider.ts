@@ -17,6 +17,13 @@ class RenameSymbolProvider {
         protected documentIndexer: DocumentIndexer,
     ) {}
 
+    /**
+     * Handles requests for renaming.
+     *
+     * @param params Parameters for the rename request
+     * @param documentManager The text document manager
+     * @returns A range and placeholder text
+     */
     async prepareRename (params: PrepareRenameParams, documentManager: TextDocuments<TextDocument>): Promise<{ range: Range; placeholder: string } | null> {
         const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection(true)
         if (matlabConnection == null) {
@@ -79,7 +86,7 @@ class RenameSymbolProvider {
      *
      * @param params Parameters for the rename request
      * @param documentManager The text document manager
-     * @returns An array of locations
+     * @returns A WorkspaceEdit object
      */
     async handleRenameRequest (params: RenameParams, documentManager: TextDocuments<TextDocument>): Promise<WorkspaceEdit | null> {
         const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection(true)
