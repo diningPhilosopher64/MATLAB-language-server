@@ -18,9 +18,9 @@ class RenameSymbolProvider {
     ) {}
 
     /**
-     * Handles requests for renaming.
+     * Determines if a symbol that can be renamed exists at the specified position.
      *
-     * @param params Parameters for the rename request
+     * @param params Parameters for the prepare rename request
      * @param documentManager The text document manager
      * @returns A range and placeholder text
      */
@@ -43,18 +43,19 @@ class RenameSymbolProvider {
         const text = textDocument.getText()
         const offset = textDocument.offsetAt(params.position)
 
-        // Find the start of the word
+        // Find the start of the expression
         let startOffset = offset;
         while (startOffset > 0 && /\w/.test(text.charAt(startOffset - 1))) {
             startOffset--
         }
 
-        // Find the end of the word
+        // Find the end of the expression
         let endOffset = offset;
         while (endOffset < text.length && /\w/.test(text.charAt(endOffset))) {
             endOffset++
         }
 
+        // Check if an expression exists at the given position
         if (startOffset === endOffset) {
             return null
         }
@@ -70,10 +71,12 @@ class RenameSymbolProvider {
             return null
         }
 
+        // Check if expression contains only whitespace
         if (expression.fullExpression.trim().length === 0) {
             return null
         }
 
+        // Check if references exist
         if (SymbolSearchService.findReferences(uri, params.position, expression, documentManager, RequestType.RenameSymbol).length === 0) {
             return null
         }
