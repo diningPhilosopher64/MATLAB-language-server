@@ -27,6 +27,9 @@ MATLAB language server supports these editors by installing the corresponding ex
 
 ### Unreleased
 
+Fixed:
+* Leading or trailing whitespace in `installPath` setting is ignored when connecting to MATLAB
+
 ### 1.2.4 
 Release date: 2024-07-12
 

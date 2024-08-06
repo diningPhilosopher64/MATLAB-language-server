@@ -387,7 +387,7 @@ async function getMatlabLaunchCommand (outFile: string): Promise<{ command: stri
     let command = 'matlab'
     if (matlabInstallPath !== '') {
         command = path.normalize(path.join(
-            matlabInstallPath,
+            matlabInstallPath.trim(),
             'bin',
             'matlab'
         ))
