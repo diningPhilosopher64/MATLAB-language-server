@@ -309,6 +309,8 @@ class SymbolSearchService {
      * @param position The position of the expression
      * @param expression The expression for which we are looking for the definition
      * @param matlabConnection The connection to MATLAB
+     * @param pathResolver The path resolver
+     * @param indexer The workspace indexer
      * @returns The definition location(s), or null if no definition was found
      */
     private async findDefinitionOnPath (uri: string, position: Position, expression: Expression, matlabConnection: MatlabConnection, pathResolver: PathResolver, indexer: Indexer): Promise<Location[] | null> {
