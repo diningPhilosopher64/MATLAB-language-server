@@ -166,7 +166,7 @@ class RenameSymbolProvider {
         if (codeData.isClassDef && codeData.classInfo && codeData.classInfo.declaration) {
             const lineNumber = codeData.classInfo.declaration.start.line
             const declaration = getTextOnLine(textDocument, lineNumber)
-            if (declaration.split(/\s+/).includes(expression.fullExpression)) {
+            if (declaration.split(/\s+/).includes(expression.unqualifiedTarget)) {
                 const range: Range = {
                     start: {
                         line: lineNumber,
@@ -174,7 +174,7 @@ class RenameSymbolProvider {
                     },
                     end: {
                         line: lineNumber,
-                        character: declaration.length - 1
+                        character: 9 + expression.unqualifiedTarget.length
                     }
                 }
                 const newEdit: TextEdit = {
@@ -199,8 +199,7 @@ class RenameSymbolProvider {
             }
         }
 
-        const edit: WorkspaceEdit = workspaceEdit
-        return edit
+        return workspaceEdit
     }
 }
 
