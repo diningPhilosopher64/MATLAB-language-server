@@ -170,7 +170,7 @@ class RenameSymbolProvider {
                 const range: Range = {
                     start: {
                         line: lineNumber,
-                        character: 9
+                        character: 9  // Offset by 9 to get past classdef_
                     },
                     end: {
                         line: lineNumber,
