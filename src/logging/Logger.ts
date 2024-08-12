@@ -32,12 +32,12 @@ class Logger {
         // Get name of log file
         this.languageServerLogFile = path.join(this.logDir, SERVER_LOG)
         this.matlabLogFile = path.join(this.logDir, MATLAB_LOG)
-        
-        this.log(`Log Directory: ${this.logDir}`)
     }
 
     public initialize (console: RemoteConsole): void {
         this.console = console
+        
+        this.log(`Log Directory: ${this.logDir}`)
     }
 
     public static getInstance (): Logger {
