@@ -22,8 +22,11 @@ import PathResolver from './providers/navigation/PathResolver'
 import Indexer from './indexing/Indexer'
 import RenameSymbolProvider from './providers/rename/RenameSymbolProvider'
 import { RequestType } from './indexing/SymbolSearchService'
+import { cacheAndClearProxyEnvironmentVariables } from './utils/ProxyUtils'
 
 export async function startServer () {
+    cacheAndClearProxyEnvironmentVariables()
+
     // Create a connection for the server
     const connection = ClientConnection.getConnection()
 
