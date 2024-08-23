@@ -12,6 +12,7 @@ import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import Indexer from '../../indexing/Indexer'
 import DocumentIndexer from '../../indexing/DocumentIndexer'
 import PathResolver from './PathResolver'
+import NotificationService, { Notification } from '../../notifications/NotificationService'
 
 class NavigationSupportProvider {
     constructor (
@@ -135,11 +136,15 @@ class NavigationSupportProvider {
             classInfo.properties.forEach((info, name) => pushSymbol(name, SymbolKind.Property, info.range))
         }
         codeData.functions.forEach((info, name) => pushSymbol(name, info.isClassMethod ? SymbolKind.Method : SymbolKind.Function, info.range))
+        let sectionRanges : Range[] = []
         codeData.sections.forEach((range, title) => {
             range.forEach(range => {
                 pushSymbol(title, SymbolKind.Module, range)
+                sectionRanges.push(range)
             })
         })
+        NotificationService.sendNotification(Notification.MatlabSections, sectionRanges)       
+
 
         /**
          * Handle a case when the indexer fails due to the user being in the middle of an edit.
