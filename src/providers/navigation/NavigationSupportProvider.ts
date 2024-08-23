@@ -143,7 +143,7 @@ class NavigationSupportProvider {
                 sectionRanges.push(range)
             })
         })
-        NotificationService.sendNotification(Notification.MatlabSections, sectionRanges)       
+        NotificationService.sendNotification(Notification.MatlabSections, {uri, sectionRanges})       
 
 
         /**
