@@ -4,7 +4,7 @@ import { _Connection, createConnection, ProposedFeatures } from "vscode-language
 export type Connection = _Connection
 
 export default class ClientConnection {
-    private static connection: Connection
+    private static connection: Connection | undefined
 
     /**
      * Retrieves the connection to the client. If no connection currently exists,
@@ -28,5 +28,13 @@ export default class ClientConnection {
      */
     public static setConnection (connection: Connection): void {
         ClientConnection.connection = connection
+    }
+
+    /**
+     * Clears the current connection.
+     * This API is primarily meant for testing purposes.
+     */
+    public static clearConnection (): void {
+        ClientConnection.connection = undefined
     }
 }
