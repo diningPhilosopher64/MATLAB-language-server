@@ -34,6 +34,7 @@ export enum Notification {
     // Telemetry
     LogTelemetryData = 'telemetry/logdata',
 
+    // MATLAB File Sections Updates
     MatlabSections = 'matlab/sections'
 }
 
