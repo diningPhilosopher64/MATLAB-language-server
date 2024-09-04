@@ -92,7 +92,8 @@ class LintingSupportProvider {
         const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection()
         const isMatlabAvailable = matlabConnection != null
 
-        const fileName = URI.parse(uri).fsPath
+        const isIPYNBFile = this.isNotebookFile(uri)
+        const fileName = isIPYNBFile ? "Notebook.m" : URI.parse(uri).fsPath
 
         let lintData: string[] = []
 
@@ -100,7 +101,7 @@ class LintingSupportProvider {
             // Use MATLAB-based linting for better results and fixes
             const code = textDocument.getText()
             lintData = await this.getLintResultsFromMatlab(code, fileName, matlabConnection)
-        } else {
+        } else if (!isIPYNBFile) {
             // Try to use mlint executable for basic linting
             lintData = await this.getLintResultsFromExecutable(fileName)
         }
@@ -527,6 +528,16 @@ class LintingSupportProvider {
             a.range.end.line === b.range.end.line &&
             a.severity === b.severity &&
             a.source === b.source
+    }
+
+    /**
+     * Checks if the given URI corresponds to a Jupyter Notebook file.
+     *
+     * @param uri - The URI of the file to check.
+     * @returns True if the file is a Jupyter Notebook (.ipynb), false otherwise.
+     */
+    private isNotebookFile(uri: string): boolean {
+        return URI.parse(uri).fsPath.endsWith(".ipynb")
     }
 }
 
