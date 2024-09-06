@@ -9,7 +9,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
 import { _Connection, DocumentFormattingParams, Position, Range, TextDocuments, TextEdit } from 'vscode-languageserver'
 import getMockConnection from '../../mocks/Connection.mock'
 
-describe('FormatSupportProvider - handleDocumentFormatRequest', () => {
+describe('FormatSupportProvider', () => {
     let formatSupportProvider: FormatSupportProvider
     let matlabLifecycleManager: MatlabLifecycleManager
     let documentManager: TextDocuments<TextDocument>
