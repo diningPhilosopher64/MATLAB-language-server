@@ -17,11 +17,11 @@ describe('FormatSupportProvider - handleDocumentFormatRequest', () => {
     let mockTextDocument: TextDocument
 
     before(() => {
-        ClientConnection.setConnection(getMockConnection())
+        ClientConnection._setConnection(getMockConnection())
     })
 
     after(() => {
-        ClientConnection.clearConnection()
+        ClientConnection._clearConnection()
     })
     
     describe('#handleDocumentFormatRequest', () => {

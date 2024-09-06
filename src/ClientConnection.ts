@@ -26,7 +26,7 @@ export default class ClientConnection {
      *
      * @param connection The connection object to set
      */
-    public static setConnection (connection: Connection): void {
+    public static _setConnection (connection: Connection): void {
         ClientConnection.connection = connection
     }
 
@@ -34,7 +34,7 @@ export default class ClientConnection {
      * Clears the current connection.
      * This API is primarily meant for testing purposes.
      */
-    public static clearConnection (): void {
+    public static _clearConnection (): void {
         ClientConnection.connection = undefined
     }
 }
