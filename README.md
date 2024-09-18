@@ -28,6 +28,10 @@ MATLAB language server supports these editors by installing the corresponding ex
 
 ### Unreleased
 
+Fixed:
+* Patches CVE-2024-43788
+* Resolves issue preventing code navigation and variable renaming for variables followed by a matrix operation (e.g. `x.^2`)
+
 ### 1.2.5
 Release date: 2024-08-16
 
