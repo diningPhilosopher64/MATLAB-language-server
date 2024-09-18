@@ -263,7 +263,9 @@ function codeInfo = computeCodeData (code, filePath)
         end
 
     catch exception
-        disp(['Error occurred while fetching sections: ', exception.message]);        
+        disp(['Error occurred while fetching sections: ', exception.message]);
+        % Add the error message to the codeInfo for syntax errors
+        codeInfo.errorInfo = struct('message', exception.message);
     end
 
     %% Finalize Data
