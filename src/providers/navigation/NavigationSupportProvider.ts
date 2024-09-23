@@ -136,14 +136,11 @@ class NavigationSupportProvider {
             classInfo.properties.forEach((info, name) => pushSymbol(name, SymbolKind.Property, info.range))
         }
         codeData.functions.forEach((info, name) => pushSymbol(name, info.isClassMethod ? SymbolKind.Method : SymbolKind.Function, info.range))
-        let sectionRanges : Range[] = []
         codeData.sections.forEach((range, title) => {
             range.forEach(range => {
                 pushSymbol(title, SymbolKind.Module, range)
-                sectionRanges.push(range)
             })
         })
-        NotificationService.sendNotification(Notification.MatlabSections, {uri, sectionRanges})       
 
 
         /**
@@ -151,15 +148,25 @@ class NavigationSupportProvider {
          * Here the documentSymbol cache has some symbols but the codeData cache has none. So we
          * assume that the user will soon fix their code and just fall back to what we knew for now.
          */
-        if (result.length === 0) {
+        if (result.length === 0 && codeData.errorMessage !== undefined) {
             const cached = this._documentSymbolCache.get(uri) ?? result
             if (cached.length > 0) {
+                this.sendSectionRangesForHighlighting(cached, uri)
                 return cached
             }
         }
         this._documentSymbolCache.set(uri, result)
+        this.sendSectionRangesForHighlighting(result, uri)
         return result
     }
-}
+
+private sendSectionRangesForHighlighting(result: SymbolInformation[], uri: string) {
+    const sections = result.filter(result => result.kind === SymbolKind.Module)
+    const sectionRanges: Range[] = []
+    sections.forEach((section) => {
+        sectionRanges.push(section.location.range)
+    })
+    NotificationService.sendNotification(Notification.MatlabSections, { uri, sectionRanges })
+}}
 
 export default NavigationSupportProvider
