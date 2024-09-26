@@ -151,22 +151,23 @@ class NavigationSupportProvider {
         if (result.length === 0 && codeData.errorMessage !== undefined) {
             const cached = this._documentSymbolCache.get(uri) ?? result
             if (cached.length > 0) {
-                this.sendSectionRangesForHighlighting(cached, uri)
+                this._sendSectionRangesForHighlighting(cached, uri)
                 return cached
             }
         }
         this._documentSymbolCache.set(uri, result)
-        this.sendSectionRangesForHighlighting(result, uri)
+        this._sendSectionRangesForHighlighting(result, uri)
         return result
     }
 
-private sendSectionRangesForHighlighting(result: SymbolInformation[], uri: string) {
-    const sections = result.filter(result => result.kind === SymbolKind.Module)
-    const sectionRanges: Range[] = []
-    sections.forEach((section) => {
-        sectionRanges.push(section.location.range)
-    })
-    NotificationService.sendNotification(Notification.MatlabSections, { uri, sectionRanges })
-}}
+    private _sendSectionRangesForHighlighting(result: SymbolInformation[], uri: string) {
+        const sections = result.filter(result => result.kind === SymbolKind.Module)
+        const sectionRanges: Range[] = []
+        sections.forEach((section) => {
+            sectionRanges.push(section.location.range)
+        })
+        NotificationService.sendNotification(Notification.MatlabSections, { uri, sectionRanges })
+    }
+}
 
 export default NavigationSupportProvider
