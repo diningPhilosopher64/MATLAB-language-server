@@ -97,7 +97,7 @@ class LintingSupportProvider {
         let lintData: string[] = []
         const code = textDocument.getText()
         
-        const analysisLimit = (await ConfigurationManager.getConfiguration()).codeAnalysisCharacterLimit
+        const analysisLimit = (await ConfigurationManager.getConfiguration()).maxFileSizeForAnalysis
         if (analysisLimit > 0 && code.length > analysisLimit) {
             this.clearDiagnosticsForDocument(textDocument) // Clear document to handle setting changing value
             return

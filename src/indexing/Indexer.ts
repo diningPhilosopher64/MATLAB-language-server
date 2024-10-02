@@ -70,7 +70,7 @@ export default class Indexer {
             FileInfoIndex.parseAndStoreCodeData(fileUri, fileResults.codeData)
         })
 
-        const analysisLimit = (await ConfigurationManager.getConfiguration()).codeAnalysisCharacterLimit
+        const analysisLimit = (await ConfigurationManager.getConfiguration()).maxFileSizeForAnalysis
 
         matlabConnection.publish(this.INDEX_FOLDERS_REQUEST_CHANNEL, {
             folders,
@@ -119,7 +119,7 @@ export default class Indexer {
                 resolve(message as RawCodeData)
             })
 
-            const analysisLimit = (await ConfigurationManager.getConfiguration()).codeAnalysisCharacterLimit
+            const analysisLimit = (await ConfigurationManager.getConfiguration()).maxFileSizeForAnalysis
 
             matlabConnection.publish(this.INDEX_DOCUMENT_REQUEST_CHANNEL, {
                 code,

@@ -33,17 +33,17 @@ interface Settings {
     matlabConnectionTiming: ConnectionTiming
     indexWorkspace: boolean
     telemetry: boolean
-    codeAnalysisCharacterLimit: number
+    maxFileSizeForAnalysis: number
 }
 
-type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry' | 'codeAnalysisCharacterLimit'
+type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry' | 'maxFileSizeForAnalysis'
 
 const SETTING_NAMES: SettingName[] = [
     'installPath',
     'matlabConnectionTiming',
     'indexWorkspace',
     'telemetry',
-    'codeAnalysisCharacterLimit'
+    'maxFileSizeForAnalysis'
 ]
 
 class ConfigurationManager {
@@ -66,7 +66,7 @@ class ConfigurationManager {
             matlabConnectionTiming: ConnectionTiming.OnStart,
             indexWorkspace: false,
             telemetry: true,
-            codeAnalysisCharacterLimit: 0
+            maxFileSizeForAnalysis: 0
         }
 
         this.globalSettings = {
@@ -74,7 +74,7 @@ class ConfigurationManager {
             matlabConnectionTiming: cliArgs[Argument.MatlabConnectionTiming] as ConnectionTiming ?? this.defaultConfiguration.matlabConnectionTiming,
             indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.indexWorkspace,
             telemetry: this.defaultConfiguration.telemetry,
-            codeAnalysisCharacterLimit: this.defaultConfiguration.codeAnalysisCharacterLimit
+            maxFileSizeForAnalysis: this.defaultConfiguration.maxFileSizeForAnalysis
         }
 
         this.additionalArguments = {
