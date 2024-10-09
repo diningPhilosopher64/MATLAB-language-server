@@ -96,10 +96,16 @@ class LintingSupportProvider {
         const fileName = isMFile ? URI.parse(uri).fsPath : "untitled.m"
 
         let lintData: string[] = []
+        const code = textDocument.getText()
+        
+        const analysisLimit = (await ConfigurationManager.getConfiguration()).maxFileSizeForAnalysis
+        if (analysisLimit > 0 && code.length > analysisLimit) {
+            this.clearDiagnosticsForDocument(textDocument) // Clear document to handle setting changing value
+            return
+        }
 
         if (isMatlabAvailable) {
             // Use MATLAB-based linting for better results and fixes
-            const code = textDocument.getText()
             lintData = await this.getLintResultsFromMatlab(code, fileName, matlabConnection)
         } else if (isMFile) {
             // Try to use mlint executable for basic linting

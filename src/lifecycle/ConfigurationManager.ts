@@ -33,15 +33,17 @@ interface Settings {
     matlabConnectionTiming: ConnectionTiming
     indexWorkspace: boolean
     telemetry: boolean
+    maxFileSizeForAnalysis: number
 }
 
-type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry'
+type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry' | 'maxFileSizeForAnalysis'
 
 const SETTING_NAMES: SettingName[] = [
     'installPath',
     'matlabConnectionTiming',
     'indexWorkspace',
-    'telemetry'
+    'telemetry',
+    'maxFileSizeForAnalysis'
 ]
 
 class ConfigurationManager {
@@ -63,14 +65,16 @@ class ConfigurationManager {
             installPath: '',
             matlabConnectionTiming: ConnectionTiming.OnStart,
             indexWorkspace: false,
-            telemetry: true
+            telemetry: true,
+            maxFileSizeForAnalysis: 0
         }
 
         this.globalSettings = {
             installPath: cliArgs[Argument.MatlabInstallationPath] ?? this.defaultConfiguration.installPath,
             matlabConnectionTiming: cliArgs[Argument.MatlabConnectionTiming] as ConnectionTiming ?? this.defaultConfiguration.matlabConnectionTiming,
             indexWorkspace: cliArgs[Argument.ShouldIndexWorkspace] ?? this.defaultConfiguration.indexWorkspace,
-            telemetry: this.defaultConfiguration.telemetry
+            telemetry: this.defaultConfiguration.telemetry,
+            maxFileSizeForAnalysis: this.defaultConfiguration.maxFileSizeForAnalysis
         }
 
         this.additionalArguments = {
