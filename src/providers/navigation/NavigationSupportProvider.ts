@@ -151,7 +151,6 @@ class NavigationSupportProvider {
         if (result.length === 0 && codeData.errorMessage !== undefined) {
             const cached = this._documentSymbolCache.get(uri) ?? result
             if (cached.length > 0) {
-                this._sendSectionRangesForHighlighting(cached, uri)
                 return cached
             }
         }
