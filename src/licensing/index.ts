@@ -162,7 +162,7 @@ export default class Licensing {
      * @private
      * @returns {boolean} `true` if the licensing type is MHLM, `false` otherwise.
      */
-    private isMHLMLicensing (): boolean {
+    isMHLMLicensing (): boolean {
         return isMHLMLicensingDataType(this.data);
     }
 
@@ -171,7 +171,7 @@ export default class Licensing {
      * @private
      * @returns {boolean} `true` if the licensing type is NLM, `false` otherwise.
      */
-    private isNLMLicensing (): boolean {
+    isNLMLicensing (): boolean {
         return isNLMLicensingDataType(this.data)
     }
 
@@ -180,7 +180,7 @@ export default class Licensing {
      * @private
      * @returns {boolean} `true` if the licensing type is an existing license, `false` otherwise.
      */
-    private isExistingLicensing (): boolean {
+    isExistingLicensing (): boolean {
         return isExistingLicensingDataType(this.data)
     }
 
@@ -189,7 +189,7 @@ export default class Licensing {
      * @private
      * @returns {boolean} `true` if there is no licensing configured, `false` otherwise.
      */
-    private isNoLicensing (): boolean {
+    isNoLicensing (): boolean {
         return isNoLicensingDataType(this.data);
     }
 
@@ -214,10 +214,11 @@ export default class Licensing {
      */
     async unsetLicensing (): Promise<void> {
         this.data = null
-        if (this.error instanceof LicensingError) {
+        if (this.error && this.error instanceof LicensingError) {           
             this.error = null
-        }
+        }               
         await this.deleteCachedConfigFile()
+        console.log("Successfully unset licensing")
     }
 
     /**
@@ -329,11 +330,12 @@ export default class Licensing {
      * @param connectionStr - The NLM connection string.
      * @private
      */
-    private setLicensingToNLM (connectionStr: string): void {
+    private setLicensingToNLM (data: any): void {
+        const {connectionString} = data;
         this.data = {
             type: NLMLicenseType,
-            conn_str: connectionStr
-        };
+            conn_str: connectionString
+        }
 
         Logger.log('Persisting NLM info.')
         this.persistConfigData();
@@ -449,7 +451,7 @@ export default class Licensing {
      * @private
      * @returns {Promise<boolean>} `true` if the licensing information was updated and persisted successfully, `false` otherwise.
      */
-    private async updateAndPersistLicensing (): Promise<boolean> {
+    async updateAndPersistLicensing (): Promise<boolean> {
         const successfulUpdate = await this.updateEntitlements();
         if (successfulUpdate) {
             this.persistConfigData();

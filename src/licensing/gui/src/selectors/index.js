@@ -87,10 +87,28 @@ export const selectLicensingIsMhlm = createSelector(
     (licensingInfo, licensingProvided) => licensingProvided && licensingInfo.type === 'mhlm'
 );
 
+export const selectLicensingIsNlm = createSelector(
+    selectLicensingInfo,
+    selectLicensingProvided,
+    (licensingInfo, licensingProvided) => licensingProvided && licensingInfo.type === 'nlm'
+);
+
+export const selectLicensingIsExistingLicense = createSelector(
+    selectLicensingInfo,
+    selectLicensingProvided,
+    (licensingInfo, licensingProvided) => licensingProvided && licensingInfo.type === 'existing_license'
+);
+
 export const selectLicensingMhlmUsername = createSelector(
     selectLicensingInfo,
     selectLicensingIsMhlm,
     (licensingInfo, isMhlm) => isMhlm ? licensingInfo.emailAddress : ''
+);
+
+export const selectLicensingNLMConnectionString = createSelector(
+    selectLicensingInfo,
+    selectLicensingIsNlm,
+    (licensingInfo, isNlm) => isNlm ? licensingInfo.connectionString : ''
 );
 
 // Selector to check if the license type is mhlm and entitlements property is not empty

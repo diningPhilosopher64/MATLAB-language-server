@@ -60,17 +60,25 @@ function NLM() {
             <form onSubmit={submitForm}>
                 <div className={`form-group has-feedback ${changed ? (valid ? 'has-success' : 'has-error') : ''}`}>
                     <label htmlFor="nlm-connection-string">License Server Address</label>
-                    <input id="nlm-connection-string"
-                        type="text"
-                        required={true}
-                        placeholder={'port@hostname'}
-                        className="form-control"
-                        aria-invalid={!valid}
-                        value={connStr}
-                        onChange={event => { setChanged(true); setConnStr(event.target.value); }}
-                    />
-                    <span className="glyphicon form-control-feedback glyphicon-remove"></span>
-                    <span className="glyphicon form-control-feedback glyphicon-ok"></span>
+                    <div className="input-group">
+                        <input id="nlm-connection-string"
+                            type="text"
+                            required={true}
+                            placeholder={'port@hostname'}
+                            className="form-control"
+                            aria-invalid={!valid}
+                            value={connStr}
+                            onChange={event => { setChanged(true); setConnStr(event.target.value); }}
+                        />
+                        
+                        <span className="input-group-addon" >
+                            {valid ? (
+                                <span className="glyphicon glyphicon-ok form-control-feedback" style={{ paddingLeft: '8px' }}></span>
+                            ) : (
+                                <span className="glyphicon glyphicon-remove form-control-feedback" style={{ paddingLeft: '8px' }}></span>
+                            )}
+                        </span>                        
+                    </div>
                 </div>
                 <input type="submit" id="submit" value="Submit" className="btn btn_color_blue" disabled={!valid} />
             </form>

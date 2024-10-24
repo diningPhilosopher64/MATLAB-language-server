@@ -65,6 +65,12 @@ function initLogin(clientNonce, serverNonce, sourceId) {
     loginFrame.postMessage(JSON.stringify(initPayload), "*");
 }
 
+const versionRegex = /^[Rr]\d{4}[ab]$/
+
+function validateInput(matlabVersion) {    
+    return versionRegex.test(matlabVersion)
+} 
+
 // Adding a child prop with null as default for improved testability.
 function MHLM({mhlmLicensingInfo = null}) {
     const matlabVersionRef = useRef(null);
@@ -77,6 +83,10 @@ function MHLM({mhlmLicensingInfo = null}) {
     // useState variable to store response from mhlm after authentication
     const [fetchedMhlmLicensingInfo, setFetchedMhlmLicensingInfo] = useState(mhlmLicensingInfo)
     
+    const [matlabVersionInput, setMatlabVersionInput] = useState("");
+    const [changed, setChanged] = useState(false);
+    const valid = validateInput(matlabVersionInput)
+
     const mhlmLoginHostname = useMemo(
         () => {
             let subdomain = 'login';
@@ -172,22 +182,37 @@ function MHLM({mhlmLicensingInfo = null}) {
     const chooseMatlabVersionDropDown = (
     <div id="ChooseMatlabVersion">
             <form onSubmit={submitForm}>
-                <div className='form-group'>                     
+                <div className={`form-group has-feedback ${changed ? (valid ? 'has-success' : 'has-error') : ''}`}>                     
                     <p>
                         <b>Note</b>: The MATLAB version could not be determined. Enter the version of MATLAB you are attempting to start.
                     </p>
                     <br/>                   
                     <label htmlFor="matlabVersion">MATLAB Version:</label>
-                    <input
+
+
+                    <div className="input-group">
+                        <input
                         type="text"
                         className="form-control"
+                        placeholder={'R20XYb'}
                         id="matlabVersion"
-                        ref={matlabVersionRef}                                            
-                    />
+                        aria-invalid={!valid}
+                        ref={matlabVersionRef}
+                        value={matlabVersionInput}
+                        onChange={event => { setChanged(true); setMatlabVersionInput(event.target.value); }}
+                        />                        
+                        <span className="input-group-addon" >
+                        {valid ? (
+                            <span className="glyphicon glyphicon-ok form-control-feedback" style={{ paddingLeft: '8px' }}></span>
+                        ) : (
+                            <span className="glyphicon glyphicon-remove form-control-feedback" style={{ paddingLeft: '8px' }}></span>
+                        )}
+                        </span>
+                    </div>
 
                     <br/><br/>
 
-                    <input type="submit" id="startMatlabBtn" value="Submit" className="btn btn_color_blue" />
+                    <input disabled={!valid} type="submit" id="startMatlabBtn" value="Submit" className="btn btn_color_blue" />
                 </div>
             </form>
     </div>            

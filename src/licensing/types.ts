@@ -126,7 +126,7 @@ export function isMHLMLicensingDataType (data: LicensingData): boolean {
  */
 export function isNLMLicensingDataType (data: LicensingData): boolean {
     return typeof data === 'object' && data != null &&
-    Object.keys(data).length === 1 &&
+    Object.keys(data).length === 2 &&
     'conn_str' in data && data.conn_str !== null;
 }
 

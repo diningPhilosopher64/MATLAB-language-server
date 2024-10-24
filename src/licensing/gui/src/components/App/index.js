@@ -22,8 +22,12 @@ import {
     selectError,
     selectAuthEnabled,
     selectIsAuthenticated,
-    selectIsInvalidTokenError
-
+    selectIsInvalidTokenError,
+    selectLicensingIsMhlm,
+    selectLicensingIsNlm,
+    selectLicensingIsExistingLicense,
+    selectLicensingMhlmUsername,
+    selectLicensingNLMConnectionString
 } from "../../selectors";
 
 import {
@@ -53,7 +57,12 @@ function App() {
     const authEnabled = useSelector(selectAuthEnabled);
     const error = useSelector(selectError)
     const isInvalidTokenError = useSelector(selectIsInvalidTokenError)
-    
+    const isMHLM = useSelector(selectLicensingIsMhlm)
+    const isNLM = useSelector(selectLicensingIsNlm)
+    const isExistingLicense = useSelector(selectLicensingIsExistingLicense)
+    const mhlmUsername = useSelector(selectLicensingMhlmUsername)
+    const nlmConnectionString = useSelector(selectLicensingNLMConnectionString)
+
     function handleClick(e) {
         e.preventDefault();
         dispatch(fetchUnsetLicensing())
@@ -63,10 +72,15 @@ function App() {
         dialog = (
             <Error message="Server unreachable"> </Error>
         );
-    } else if(error && !isInvalidTokenError){
+    } else if(error && !isInvalidTokenError){     
+        const actionToTake = ['OnlineLicensingError', 'LicensingError', 'EntitlementError'].includes(error.type) ? (
+            <span onClick={handleClick} style={{ color: 'blue', cursor: 'pointer' }}> Try Licensing again </span>
+        ) : null;
+
+
         dialog = (
-            <Error message={error.message}> 
-                <span onClick={handleClick} style={{ color: 'blue', cursor: 'pointer' }}> Try Licensing again </span>            
+            <Error message={error.message}>                 
+                {actionToTake}      
             </Error>
         );
     }
@@ -136,7 +150,20 @@ function App() {
     } else if (hasEntitlements && !isEntitled) {
         overlayContent = <EntitlementSelector options={licensingInfo.entitlements} />;
     } else {
-        overlayContent = <div> <h1>You have successfully signed in. Please feel free to close this window</h1> </div>
+        // Licensing was successful        
+        let textToShow
+
+        if(isNLM){
+            textToShow = <div> <h1>Using Network License Manager at <i>{nlmConnectionString}</i><br/>Close this window and continue in VSCode.</h1> </div>               
+        } else if(isExistingLicense) {            
+            textToShow = <div> <h1> MATLAB is activated<br/>Close this window and continue in VSCode.` </h1> </div>
+        } else if(isMHLM){
+            textToShow = <div><h1> You have successfully signed in as <i>{mhlmUsername}</i><br/>Close this window and continue in VSCode.</h1> </div>
+        }  
+
+        overlayContent = <div style={{textAlign: 'center'}} >
+            {textToShow} 
+        </div>
         transparent = true;
     }
 

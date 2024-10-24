@@ -170,4 +170,18 @@ export async function handleSignInChanged (configuration: Settings): Promise<voi
  */
 export function handleInstallPathSettingChanged (configuration: Settings): void {
     setInstallPath(configuration.installPath)
+    const licensing = new Licensing()
+
+    // Entitlements are based on the MATLAB version
+    // As installPath is changed, we need to update the entitlements using the 
+    // new MATLAB version.
+    if(licensing.isMHLMLicensing()){
+        licensing.updateAndPersistLicensing().then(isSuccessful => {
+            if(isSuccessful){
+                Logger.log("Successfully updated entitlements using the new MATLAB version")
+            }  else {
+                Logger.log("Failed to update entitlements using the new MATLAB version")
+            }
+        })
+    }
 }
