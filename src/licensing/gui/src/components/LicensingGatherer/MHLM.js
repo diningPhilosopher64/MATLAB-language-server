@@ -169,7 +169,7 @@ function MHLM({mhlmLicensingInfo = null}) {
             </iframe>
 
             <p id="ExistingLicenseNote">
-                <b>Note</b>: If the MATLAB on PATH is already activated, you can skip this step by clicking on the <b>Existing License</b> tab                                        
+            <b>Note</b>: If the MATLAB installation specified in the Install Path setting is already activated, select <b>Existing License</b> at the top of this page to skip sign in.                                         
             </p>
         </div>
     )
