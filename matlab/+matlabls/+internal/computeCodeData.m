@@ -1,4 +1,4 @@
-function codeInfo = computeCodeData (code, filePath)
+function codeInfo = computeCodeData (code, filePath, analysisLimit)
     %COMPUTECODEDATA Compute sub-function location information for the
     % MATLAB® code file specified by fullpath. The data is a struct:
     %
@@ -42,8 +42,7 @@ function codeInfo = computeCodeData (code, filePath)
     functionReferences = {};
 
     %% Handle very large input
-    MAXCODE = 500000;
-    if strlength(code) > MAXCODE
+    if analysisLimit > 0 && strlength(code) > analysisLimit
         % File too large - do not try to index
         code = '';
     end
