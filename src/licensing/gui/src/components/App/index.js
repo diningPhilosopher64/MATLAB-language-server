@@ -154,11 +154,11 @@ function App() {
         let textToShow
 
         if(isNLM){
-            textToShow = <div> <h1>Sign in using network license manager successful<br/>Close this window and continue in Visual Studio® Code.</h1> </div>               
+            textToShow = <div> <h1>Sign in using network license manager successful.<br/>Close this window and continue in Visual Studio® Code.</h1> </div>               
         } else if(isExistingLicense) {            
-            textToShow = <div> <h1>Using existing MATLAB installation<br/>Close this window and continue in Visual Studio® Code.</h1> </div>
+            textToShow = <div> <h1>Using existing MATLAB installation.<br/>Close this window and continue in Visual Studio® Code.</h1> </div>
         } else if(isMHLM){
-            textToShow = <div><h1>Sign in successful<br/>Close this window and continue in Visual Studio® Code.</h1> </div>
+            textToShow = <div><h1>Sign in successful.<br/>Close this window and continue in Visual Studio® Code.</h1> </div>
         }  
 
         overlayContent = <div style={{textAlign: 'center'}} >
