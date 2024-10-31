@@ -1,3 +1,4 @@
+// Copyright 2024 The MathWorks, Inc.
 import * as xml2js from 'xml2js';
 import sendRequest from '../utils/NetworkUtils';
 import { findAllEntitlements } from '../utils/LicensingUtils';

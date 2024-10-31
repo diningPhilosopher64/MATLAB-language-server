@@ -1,11 +1,11 @@
+// Copyright 2024 The MathWorks, Inc.
+
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import {
     fetchSetLicensing
 } from '../../actionCreators';
 import "./ExistingLicense.css"
-
-
 
 function ExistingLicense() {
     const dispatch = useDispatch();

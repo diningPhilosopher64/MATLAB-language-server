@@ -1,3 +1,4 @@
+// Copyright 2024 The MathWorks, Inc.
 const fs = require('fs')
 const path = require('path')
 

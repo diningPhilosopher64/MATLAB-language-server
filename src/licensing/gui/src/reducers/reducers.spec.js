@@ -1,4 +1,4 @@
-// Copyright 2020-2023 The MathWorks, Inc.
+// Copyright 2024 The MathWorks, Inc.
 
 import * as reducers from './index';
 import * as actions from '../actions';

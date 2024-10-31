@@ -1,4 +1,4 @@
-// Copyright (c) 2020-2023 The MathWorks, Inc.
+// Copyright 2024 The MathWorks, Inc.
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
