@@ -1,3 +1,4 @@
+// Copyright 2024 The MathWorks, Inc.
 
 import { Request } from 'express';
 

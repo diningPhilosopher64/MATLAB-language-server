@@ -1,4 +1,4 @@
-// Copyright 2020-2024 The MathWorks, Inc.
+// Copyright 2024 The MathWorks, Inc.
 
 import configureMockStore from 'redux-mock-store';
 import thunk from 'redux-thunk';

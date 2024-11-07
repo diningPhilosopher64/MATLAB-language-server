@@ -1,4 +1,4 @@
-// Copyright 2020-2024 The MathWorks, Inc.
+// Copyright 2024 The MathWorks, Inc.
 
 import { combineReducers } from 'redux';
 

@@ -1,4 +1,4 @@
-// Copyright 2020-2024 The MathWorks, Inc.
+// Copyright 2024 The MathWorks, Inc.
 
 export const SET_OVERLAY_VISIBILITY = 'SET_OVERLAY_VISIBILITY';
 export const REQUEST_SERVER_STATUS = 'REQUEST_SERVER_STATUS';

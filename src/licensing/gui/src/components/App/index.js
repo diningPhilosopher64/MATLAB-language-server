@@ -1,4 +1,4 @@
-// Copyright 2020-2024 The MathWorks, Inc.
+// Copyright 2024 The MathWorks, Inc.
 
 import React, { useEffect, useMemo } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
@@ -60,8 +60,8 @@ function App() {
     const isMHLM = useSelector(selectLicensingIsMhlm)
     const isNLM = useSelector(selectLicensingIsNlm)
     const isExistingLicense = useSelector(selectLicensingIsExistingLicense)
-    const mhlmUsername = useSelector(selectLicensingMhlmUsername)
-    const nlmConnectionString = useSelector(selectLicensingNLMConnectionString)
+    const mhlmUsername = useSelector(selectLicensingMhlmUsername) // eslint-disable-line no-unused-vars
+    const nlmConnectionString = useSelector(selectLicensingNLMConnectionString) // eslint-disable-line no-unused-vars
 
     function handleClick(e) {
         e.preventDefault();

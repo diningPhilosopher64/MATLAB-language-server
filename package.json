@@ -1,12 +1,12 @@
 {
   "name": "matlab-language-server",
-  "version": "1.2.6",
+  "version": "1.2.7",
   "description": "Language Server for MATLAB code",
   "main": "./src/index.ts",
   "bin": "./out/index.js",
   "scripts": {
     "vscode:prepublish": "npm run package",
-    "compile": "webpack --mode development && mkdir -p ./out/licensing/static && cd src/licensing/gui && npm run build && cd ../../.. && cp -R src/licensing/gui/build/* ./out/licensing/static",
+    "compile": "webpack --mode development && node ./build/makeLicensingOut.js && cd src/licensing/gui && npm run build && cd ../../.. && node ./build/copyLicensingToOut.js",
     "watch": "webpack --watch",
     "package": "webpack --mode production --devtool hidden-source-map",
     "test-compile": "tsc -p ./",
@@ -14,6 +14,7 @@
     "pretest": "npm run test-compile",
     "lint": "eslint src --ext ts",
     "lint:fix": "eslint src --ext ts --fix",
+    "postinstall": "cd src/licensing/gui && npm install && cd ../../..",
     "test": "mocha"
   },
   "repository": {
@@ -26,8 +27,8 @@
     "@types/express": "^4.17.21",
     "@types/express-session": "^1.18.0",
     "@types/mocha": "^10.0.6",
-    "@types/node-fetch": "^2.6.11",
     "@types/node": "^18.7.18",
+    "@types/node-fetch": "^2.6.11",
     "@types/sinon": "^17.0.3",
     "@types/which": "^2.0.1",
     "@types/xml2js": "^0.4.14",
@@ -48,12 +49,13 @@
     "webpack": "^5.74.0",
     "webpack-cli": "^4.10.0"
   },
-  "dependencies": {    
+  "dependencies": {
     "chokidar": "^3.5.3",
     "cookie-parser": "^1.4.6",
     "express": "^4.18.2",
     "express-session": "^1.18.0",
     "faye": "^1.4.0",
+    "hpagent": "^1.2.0",
     "node-fetch": "^3.3.2",
     "vscode-languageserver": "^8.0.2",
     "vscode-languageserver-textdocument": "^1.0.7",
