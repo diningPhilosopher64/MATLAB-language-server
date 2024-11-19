@@ -1,6 +1,6 @@
 // Copyright 2022 - 2024 The MathWorks, Inc.
 
-import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, ParameterInformation, Position, SignatureHelp, SignatureHelpParams, SignatureInformation, TextDocuments } from 'vscode-languageserver'
+import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, ParameterInformation, Position, SignatureHelp, SignatureHelpParams, SignatureInformation, TextDocuments, InsertTextFormat } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
@@ -71,8 +71,23 @@ const MatlabCompletionToKind: { [index: string]: CompletionItemKind } = {
     enumeration: CompletionItemKind.EnumMember,
     messageId: CompletionItemKind.Text,
     keyword: CompletionItemKind.Keyword,
-    attribute: CompletionItemKind.Keyword
+    attribute: CompletionItemKind.Keyword,
+    codeSnippet: CompletionItemKind.Snippet
 }
+
+//  Create an array of strings representing the names of the code snippets that should be ignored for auto-completion
+const SNIPPET_IGNORE_LIST: string[] = [
+    "For Loop",
+    "If Statement",
+    "If-Else Statement",
+    "While Loop",
+    "Try-Catch Statement",
+    "Switch Statement",
+    "Function Definition",
+    "Class Definition",
+    "Parallel For Loop",
+    "SPMD block"
+];
 
 /**
  * Handles requests for completion-related features.
@@ -169,7 +184,7 @@ class CompletionSupportProvider {
     private parseCompletionItems (completionData: MCompletionData): CompletionList {
         const completionItems: CompletionItem[] = []
 
-        const completionsMap = new Map<string, { kind: CompletionItemKind, doc: string }>()
+        const completionsMap = new Map<string, { kind: CompletionItemKind, doc: string, insertText: string }>()
 
         // Gather completions from top-level object. This should find function completions.
         this.gatherCompletions(completionData, completionsMap)
@@ -203,6 +218,10 @@ class CompletionSupportProvider {
             completionItem.detail = completionData.doc
             completionItem.data = index++
             completionItem.sortText = sortText
+            if (completionData.kind === CompletionItemKind.Snippet) {
+                completionItem.insertText = completionData.insertText
+                completionItem.insertTextFormat = InsertTextFormat.Snippet
+            }
             completionItems.push(completionItem)
         })
 
@@ -215,13 +234,16 @@ class CompletionSupportProvider {
      * @param completionDataObj Raw completion or argument data
      * @param completionMap A map in which to store info about possible completions
      */
-    private gatherCompletions (completionDataObj: MCompletionData | MArgumentData, completionMap: Map<string, { kind: CompletionItemKind, doc: string }>): void {
+    private gatherCompletions (completionDataObj: MCompletionData | MArgumentData, completionMap: Map<string, { kind: CompletionItemKind, doc: string, insertText: string }>): void {
         let choices = completionDataObj.widgetData?.choices
         if (choices == null) {
             return
         }
 
         choices = Array.isArray(choices) ? choices : [choices]
+
+        // Remove choices with matchType codeSnippet and with display string in the list of SNIPPET_IGNORE_LIST
+        choices = choices.filter(choice => choice.matchType !== 'codeSnippet' || (choice.displayString !== undefined && !SNIPPET_IGNORE_LIST.includes(choice.displayString)));
 
         choices.forEach(choice => {
             let completion: string = choice.completion
@@ -238,16 +260,22 @@ class CompletionSupportProvider {
                     // Remove quotes from completion
                     completion = (choice.displayString ?? '').replace(/['"]/g, '')
                     break
+                case 'codeSnippet':
+                    completion = choice.displayString ?? ''
+                    break
             }
 
-            const dotIdx = choice.completion.lastIndexOf('.')
-            if (dotIdx > 0 && !isPath) {
-                completion = completion.slice(dotIdx + 1)
+            if (choice.matchType !== 'codeSnippet') {
+                const dotIdx = choice.completion.lastIndexOf('.')
+                if (dotIdx > 0 && !isPath) {
+                    completion = completion.slice(dotIdx + 1)
+                }
             }
 
             completionMap.set(completion, {
                 kind: MatlabCompletionToKind[choice.matchType] ?? CompletionItemKind.Function,
-                doc: choice.purpose
+                doc: choice.purpose,
+                insertText: choice.completion ?? ''
             })
         })
     }
