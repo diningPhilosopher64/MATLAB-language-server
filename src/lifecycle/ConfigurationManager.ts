@@ -14,7 +14,9 @@ export enum Argument {
     ShouldIndexWorkspace = 'indexWorkspace',
 
     // Advanced arguments
-    MatlabUrl = 'matlabUrl'
+    MatlabUrl = 'matlabUrl',
+
+    SnippetIgnoreList = 'snippetIgnoreList'
 }
 
 export enum ConnectionTiming {
@@ -26,6 +28,7 @@ export enum ConnectionTiming {
 interface CliArguments {
     [Argument.MatlabLaunchCommandArguments]: string
     [Argument.MatlabUrl]: string
+    [Argument.SnippetIgnoreList]: string
 }
 
 export interface Settings {
@@ -89,7 +92,8 @@ class ConfigurationManager {
 
         this.additionalArguments = {
             [Argument.MatlabLaunchCommandArguments]: cliArgs[Argument.MatlabLaunchCommandArguments] ?? '',
-            [Argument.MatlabUrl]: cliArgs[Argument.MatlabUrl] ?? ''
+            [Argument.MatlabUrl]: cliArgs[Argument.MatlabUrl] ?? '',
+            [Argument.SnippetIgnoreList]: cliArgs[Argument.SnippetIgnoreList] ?? ''
         }
     }
 
@@ -156,7 +160,7 @@ class ConfigurationManager {
      * @param argument The argument
      * @returns The argument's value
      */
-    getArgument (argument: Argument.MatlabLaunchCommandArguments | Argument.MatlabUrl): string {
+    getArgument (argument: Argument.MatlabLaunchCommandArguments | Argument.MatlabUrl | Argument.SnippetIgnoreList): string {
         return this.additionalArguments[argument]
     }
 

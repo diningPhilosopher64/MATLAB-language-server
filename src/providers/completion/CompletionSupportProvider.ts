@@ -4,6 +4,7 @@ import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, P
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
+import ConfigurationManager, { Argument } from '../../lifecycle/ConfigurationManager'
 
 interface MCompletionData {
     widgetData?: MWidgetData
@@ -74,20 +75,6 @@ const MatlabCompletionToKind: { [index: string]: CompletionItemKind } = {
     attribute: CompletionItemKind.Keyword,
     codeSnippet: CompletionItemKind.Snippet
 }
-
-//  Create an array of strings representing the names of the code snippets that should be ignored for auto-completion
-const SNIPPET_IGNORE_LIST: string[] = [
-    "For Loop",
-    "If Statement",
-    "If-Else Statement",
-    "While Loop",
-    "Try-Catch Statement",
-    "Switch Statement",
-    "Function Definition",
-    "Class Definition",
-    "Parallel For Loop",
-    "SPMD block"
-];
 
 /**
  * Handles requests for completion-related features.
@@ -242,8 +229,7 @@ class CompletionSupportProvider {
 
         choices = Array.isArray(choices) ? choices : [choices]
 
-        // Remove choices with matchType codeSnippet and with display string in the list of SNIPPET_IGNORE_LIST
-        choices = choices.filter(choice => choice.matchType !== 'codeSnippet' || (choice.displayString !== undefined && !SNIPPET_IGNORE_LIST.includes(choice.displayString)));
+        choices = this.filterSnippetChoices(choices);
 
         choices.forEach(choice => {
             let completion: string = choice.completion
@@ -360,6 +346,18 @@ class CompletionSupportProvider {
         })
 
         return signatureHelp
+    }
+
+    /**
+     * Filters out the snippet choices from the list of choices based on the configured snippet ignore list.
+     */
+    private filterSnippetChoices(choices: any[]): any[] {
+        // Remove choices with matchType codeSnippet and with display string in the list of SNIPPET_IGNORE_LIST
+        const snippetIgnoreList = ConfigurationManager.getArgument(Argument.SnippetIgnoreList).split(';');
+        return choices.filter(choice => {
+            return choice.matchType !== 'codeSnippet' ||
+            (choice.displayString !== undefined && !snippetIgnoreList.includes(choice.displayString));
+        });
     }
 }
 
