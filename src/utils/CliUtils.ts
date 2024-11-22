@@ -42,7 +42,7 @@ function makeParser (): yargs.Argv<CliArgs> {
         requiresArg: true
     }).option(Argument.SnippetIgnoreList, {
         type: 'string',
-        description: 'A comma-separated list of MATLAB code snippets to ignore',
+        description: 'A semi-colon separated list of MATLAB code snippets to ignore',
         default: ''
     }).usage(
         'Usage: $0 {--node-ipc | --stdio | --socket=socket} options\n' +
