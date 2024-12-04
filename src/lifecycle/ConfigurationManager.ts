@@ -148,10 +148,10 @@ class ConfigurationManager {
                 this.configuration = await connection.workspace.getConfiguration('MATLAB') as Settings
             }
 
-            return this.configuration
+            return Object.assign(this.defaultConfiguration, this.configuration)
         }
 
-        return this.globalSettings
+        return Object.assign(this.defaultConfiguration, this.globalSettings)
     }
 
     /**
