@@ -42,9 +42,6 @@ export interface Settings {
 
 type SettingName = 'installPath' | 'matlabConnectionTiming' | 'indexWorkspace' | 'telemetry' | 'maxFileSizeForAnalysis' | 'signIn'
 
-    
-
-
 const SETTING_NAMES: SettingName[] = [
     'installPath',
     'matlabConnectionTiming',
