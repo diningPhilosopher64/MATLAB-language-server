@@ -1,0 +1,32 @@
+{
+  "files": {
+    "main.css": "./static/css/main.0ab77c04.css",
+    "main.js": "./static/js/main.f970209d.js",
+    "static/media/mathworks-pictograms.svg?20181009": "./static/media/mathworks-pictograms.f6f087b008b5a9435f26.svg",
+    "static/media/mathworks.svg?20181004": "./static/media/mathworks.80a3218e1ba29f0573fb.svg",
+    "static/media/glyphicons-halflings-regular.svg": "./static/media/glyphicons-halflings-regular.060b2710bdbbe3dfe48b.svg",
+    "static/media/mathworks-pictograms.woff?20181009": "./static/media/mathworks-pictograms.3fc6513a06dce552eeb1.woff",
+    "static/media/mathworks-pictograms.ttf?20181009": "./static/media/mathworks-pictograms.6e128c0e7fc1a11f92ee.ttf",
+    "static/media/glyphicons-halflings-regular.ttf": "./static/media/glyphicons-halflings-regular.4692b9ec53fd5972caa2.ttf",
+    "static/media/mathworks.woff?20181004": "./static/media/mathworks.37a563ef6aeda1593bf6.woff",
+    "static/media/mathworks.ttf?20181004": "./static/media/mathworks.c422935b9ae545ac2ab5.ttf",
+    "static/media/glyphicons-halflings-regular.woff": "./static/media/glyphicons-halflings-regular.82b1212e45a2bc35dd73.woff",
+    "static/media/glyphicons-halflings-regular.eot": "./static/media/glyphicons-halflings-regular.5be1347c682810f199c7.eot",
+    "static/media/glyphicons-halflings-regular.woff2": "./static/media/glyphicons-halflings-regular.be810be3a3e14c682a25.woff2",
+    "static/media/mathworks-eps.svg?20181004": "./static/media/mathworks-eps.df1428dfa69cea896c05.svg",
+    "static/media/ico-sprite.png": "./static/media/ico-sprite.cbdb66c0ea4c2a7fd21c.png",
+    "static/media/mathworks-eps.woff?20181004": "./static/media/mathworks-eps.e5c41e8478df02cbdce1.woff",
+    "static/media/mathworks-eps.ttf?20181004": "./static/media/mathworks-eps.4d20e0ee46ea74bccfc1.ttf",
+    "static/media/ico-header-account-hover.svg": "./static/media/ico-header-account-hover.89438e91d0632893b106.svg",
+    "static/media/ico-header-account.svg": "./static/media/ico-header-account.86b10d7b4a2a511f6ca9.svg",
+    "static/media/ico-header-contact-hover.svg": "./static/media/ico-header-contact-hover.0958c44200d781def822.svg",
+    "static/media/ico-header-contact.svg": "./static/media/ico-header-contact.ae9169c8dcae37c6e04b.svg",
+    "index.html": "./index.html",
+    "main.0ab77c04.css.map": "./static/css/main.0ab77c04.css.map",
+    "main.f970209d.js.map": "./static/js/main.f970209d.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0ab77c04.css",
+    "static/js/main.f970209d.js"
+  ]
+}

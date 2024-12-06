@@ -84,7 +84,7 @@ class CompletionSupportProvider {
     private readonly REQUEST_CHANNEL = '/matlabls/completions/request'
     private readonly RESPONSE_CHANNEL = '/matlabls/completions/response'
 
-    constructor (private matlabLifecycleManager: MatlabLifecycleManager) {}
+    constructor (private readonly matlabLifecycleManager: MatlabLifecycleManager) {}
 
     /**
      * Handles a request for auto-completion choices.
