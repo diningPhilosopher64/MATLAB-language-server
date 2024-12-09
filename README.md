@@ -37,6 +37,7 @@ Added:
 
 Fixed:
 * Use default values when settings are missing from configuration
+* Patches CVE-2024-52798
 
 ### 1.2.7
 Release date: 2024-11-07
