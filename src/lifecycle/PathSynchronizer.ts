@@ -21,18 +21,18 @@ export default class PathSynchronizer {
 
     /**
      * Initializes the PathSynchronizer by setting up event listeners.
-     * 
+     *
      * Upon MATLAB connection, all workspace folders are added to the MATLAB search path.
      * Additionally, MATLAB's CWD is set to the first workspace folder to avoid potential
      * function shadowing issues.
-     * 
+     *
      * As workspace folders are added or removed, the MATLAB path is updated accordingly.
      */
-    initialize () {
+    initialize (): void {
         const clientConnection = ClientConnection.getConnection()
 
         this.matlabLifecycleManager.eventEmitter.on('connected', () => this.handleMatlabConnected(clientConnection))
-        
+
         clientConnection.workspace.onDidChangeWorkspaceFolders(event => this.handleWorkspaceFoldersChanged(event))
     }
 
