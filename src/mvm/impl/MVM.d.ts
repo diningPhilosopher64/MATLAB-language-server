@@ -20,7 +20,9 @@ export default class MVM extends EventEmitter implements IMVM {
     private _lifecycleManager;
     constructor(lifecycleManager: any);
     eval(command: string, isUserEval?: boolean, capabilitiesToRemove?: Capability[]): Promise<void>;
-    feval<T>(functionName: string, nargout: number, args: unknown[], capabilitiesToRemove?: Capability[]): Promise<MVMError | T>;
+    feval<T>(functionName: string, nargout: number, args: unknown[], capabilitiesToRemove?: Capability[]): Promise<MVMError | {
+        result: T[];
+    }>;
     setBreakpoint(fileName: string, lineNumber: number, condition?: string, anonymousIndex?: number): Promise<void>;
     clearBreakpoint(fileName: string, lineNumber: number, condition?: string, anonymousIndex?: number): Promise<void>;
     unpause(): void;
@@ -31,7 +33,6 @@ export default class MVM extends EventEmitter implements IMVM {
     private _tryAttach;
     private _handleReady;
     private _handleReadyError;
-    _detectImplBasedOnTimeout(): Promise<void>;
     private _detectImpl;
     private _setupDebuggerListeners;
     private _setupDebugListener;

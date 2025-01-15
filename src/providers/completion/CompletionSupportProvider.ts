@@ -1,10 +1,12 @@
-// Copyright 2022 - 2024 The MathWorks, Inc.
+// Copyright 2022 - 2025 The MathWorks, Inc.
 
 import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, ParameterInformation, Position, SignatureHelp, SignatureHelpParams, SignatureInformation, TextDocuments, InsertTextFormat } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import ConfigurationManager, { Argument } from '../../lifecycle/ConfigurationManager'
+import MVM from '../../mvm/impl/MVM'
+import Logger from '../../logging/Logger'
 
 interface MCompletionData {
     widgetData?: MWidgetData
@@ -81,10 +83,7 @@ const MatlabCompletionToKind: { [index: string]: CompletionItemKind } = {
  * Currently, this handles auto-completion as well as function signature help.
  */
 class CompletionSupportProvider {
-    private readonly REQUEST_CHANNEL = '/matlabls/completions/request'
-    private readonly RESPONSE_CHANNEL = '/matlabls/completions/response'
-
-    constructor (private readonly matlabLifecycleManager: MatlabLifecycleManager) {}
+    constructor (private readonly matlabLifecycleManager: MatlabLifecycleManager, private readonly mvm: MVM) {}
 
     /**
      * Handles a request for auto-completion choices.
@@ -132,34 +131,36 @@ class CompletionSupportProvider {
      * @returns The raw completion data
      */
     private async retrieveCompletionData (doc: TextDocument, position: Position): Promise<MCompletionData> {
+        if (!this.matlabLifecycleManager.isMatlabConnected()) {
+            return {}
+        }
+
         const docUri = doc.uri
 
         const code = doc.getText()
         const fileName = URI.parse(docUri).fsPath
         const cursorPosition = doc.offsetAt(position)
 
-        const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection()
+        try {
+            const response = await this.mvm.feval<MCompletionData>(
+                'matlabls.handlers.completions.getCompletions',
+                1,
+                [code, fileName, cursorPosition]
+            )
 
-        if (matlabConnection == null) {
+            if ('error' in response) {
+                // Handle MVMError
+                Logger.error('Error received while retrieving completion data:')
+                Logger.error(response.error.msg)
+                return {}
+            }
+
+            return response.result[0]
+        } catch (err) {
+            Logger.error('Error caught while retrieving completion data:')
+            Logger.error(err as string)
             return {}
         }
-
-        return await new Promise(resolve => {
-            const channelId = matlabConnection.getChannelId()
-            const channel = `${this.RESPONSE_CHANNEL}/${channelId}`
-            const responseSub = matlabConnection.subscribe(channel, message => {
-                matlabConnection.unsubscribe(responseSub)
-
-                resolve(message as MCompletionData)
-            })
-
-            matlabConnection.publish(this.REQUEST_CHANNEL, {
-                code,
-                fileName,
-                cursorPosition,
-                channelId
-            })
-        })
     }
 
     /**

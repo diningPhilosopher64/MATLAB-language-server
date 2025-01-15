@@ -1,4 +1,4 @@
-// Copyright 2022 - 2024 The MathWorks, Inc.
+// Copyright 2022 - 2025 The MathWorks, Inc.
 
 import { DocumentFormattingParams, FormattingOptions, HandlerResult, Position, Range, TextDocuments, TextEdit } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
@@ -6,10 +6,8 @@ import LifecycleNotificationHelper from '../../lifecycle/LifecycleNotificationHe
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import { ActionErrorConditions, Actions, reportTelemetryAction } from '../../logging/TelemetryUtils'
 import * as TextDocumentUtils from '../../utils/TextDocumentUtils'
-
-interface FormatDocumentResponse {
-    data: string // The formatted document contents
-}
+import MVM from '../../mvm/impl/MVM'
+import Logger from '../../logging/Logger'
 
 /**
  * Handles requests for format-related features.
@@ -17,10 +15,7 @@ interface FormatDocumentResponse {
  * include formatting a range witin the documemt.
  */
 class FormatSupportProvider {
-    readonly REQUEST_CHANNEL = '/matlabls/formatDocument/request'
-    readonly RESPONSE_CHANNEL = '/matlabls/formatDocument/response'
-
-    constructor (private readonly matlabLifecycleManager: MatlabLifecycleManager) {}
+    constructor (private readonly matlabLifecycleManager: MatlabLifecycleManager, private readonly mvm: MVM) {}
 
     /**
      * Handles a request for document formatting.
@@ -57,29 +52,36 @@ class FormatSupportProvider {
             return []
         }
 
-        return await new Promise<TextEdit[]>(resolve => {
-            const channelId = matlabConnection.getChannelId()
-            const channel = `${this.RESPONSE_CHANNEL}/${channelId}`
-            const responseSub = matlabConnection.subscribe(channel, message => {
-                matlabConnection.unsubscribe(responseSub)
-                const newCode = (message as FormatDocumentResponse).data
-                const endRange = TextDocumentUtils.getRangeUntilLineEnd(doc, doc.lineCount - 1, 0)
-                const edit = TextEdit.replace(Range.create(
-                    Position.create(0, 0),
-                    endRange.end
-                ), newCode)
-                reportTelemetryAction(Actions.FormatDocument)
-                resolve([edit])
-            })
-
-            matlabConnection.publish(this.REQUEST_CHANNEL, {
-                data: doc.getText(),
+        try {
+            const requestOpts = {
                 insertSpaces: options.insertSpaces,
                 tabSize: options.tabSize,
-                channelId
-            })
-        })
-    }
-}
+            }
+            const response = await this.mvm.feval<string>(
+                'matlabls.handlers.formatting.formatCode',
+                1,
+                [doc.getText(), requestOpts]
+            )
+
+            if ('error' in response) {
+                // Handle MVMError
+                Logger.error('Error received while formatting document:')
+                Logger.error(response.error.msg)
+                return []
+            }
+
+            const endRange = TextDocumentUtils.getRangeUntilLineEnd(doc, doc.lineCount - 1, 0)
+            const edit = TextEdit.replace(Range.create(
+                Position.create(0, 0),
+                endRange.end
+            ), response.result[0])
+            reportTelemetryAction(Actions.FormatDocument)
+            return [edit]
+        } catch (err) {
+            Logger.error('Error caught while formatting document')
+            Logger.error(err as string)
+            return []
+        }
+    }}
 
 export default FormatSupportProvider

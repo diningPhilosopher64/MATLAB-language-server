@@ -1,13 +1,14 @@
-// Copyright 2022 - 2024 The MathWorks, Inc.
+// Copyright 2022 - 2025 The MathWorks, Inc.
 
 import { TextDocument } from 'vscode-languageserver-textdocument'
 import { URI } from 'vscode-uri'
-import { MatlabConnection } from '../lifecycle/MatlabCommunicationManager'
 import MatlabLifecycleManager from '../lifecycle/MatlabLifecycleManager'
 import FileInfoIndex, { MatlabCodeData, RawCodeData } from './FileInfoIndex'
 import * as fs from 'fs/promises'
 import PathResolver from '../providers/navigation/PathResolver'
 import ConfigurationManager from '../lifecycle/ConfigurationManager'
+import MVM from '../mvm/impl/MVM'
+import Logger from '../logging/Logger'
 
 interface WorkspaceFileIndexedResponse {
     isDone: boolean
@@ -16,13 +17,13 @@ interface WorkspaceFileIndexedResponse {
 }
 
 export default class Indexer {
-    private readonly INDEX_DOCUMENT_REQUEST_CHANNEL = '/matlabls/indexDocument/request'
-    private readonly INDEX_DOCUMENT_RESPONSE_CHANNEL = '/matlabls/indexDocument/response'
-
-    private readonly INDEX_FOLDERS_REQUEST_CHANNEL = '/matlabls/indexFolders/request'
     private readonly INDEX_FOLDERS_RESPONSE_CHANNEL = '/matlabls/indexFolders/response'
 
-    constructor (private readonly matlabLifecycleManager: MatlabLifecycleManager, private readonly pathResolver: PathResolver) {}
+    constructor (
+        private readonly matlabLifecycleManager: MatlabLifecycleManager,
+        private readonly mvm: MVM,
+        private readonly pathResolver: PathResolver
+    ) {}
 
     /**
      * Indexes the given TextDocument and caches the data.
@@ -36,11 +37,15 @@ export default class Indexer {
             return
         }
 
-        const rawCodeData = await this.getCodeData(textDocument.getText(), textDocument.uri, matlabConnection)
+        const rawCodeData = await this.getCodeData(textDocument.getText(), textDocument.uri)
+
+        if (rawCodeData === null) {
+            return
+        }
 
         const parsedCodeData = FileInfoIndex.parseAndStoreCodeData(textDocument.uri, rawCodeData)
 
-        void this.indexAdditionalClassData(parsedCodeData, matlabConnection, textDocument.uri)
+        void this.indexAdditionalClassData(parsedCodeData, textDocument.uri)
     }
 
     /**
@@ -56,8 +61,11 @@ export default class Indexer {
         }
 
         const channelId = matlabConnection.getChannelId()
-        const channel = `${this.INDEX_FOLDERS_RESPONSE_CHANNEL}/${channelId}`
-        const responseSub = matlabConnection.subscribe(channel, message => {
+        const responseChannel = `${this.INDEX_FOLDERS_RESPONSE_CHANNEL}/${channelId}`
+
+        const analysisLimit = (await ConfigurationManager.getConfiguration()).maxFileSizeForAnalysis
+
+        const responseSub = matlabConnection.subscribe(responseChannel, message => {
             const fileResults = message as WorkspaceFileIndexedResponse
 
             if (fileResults.isDone) {
@@ -70,13 +78,24 @@ export default class Indexer {
             FileInfoIndex.parseAndStoreCodeData(fileUri, fileResults.codeData)
         })
 
-        const analysisLimit = (await ConfigurationManager.getConfiguration()).maxFileSizeForAnalysis
+        try {
+            const response = await this.mvm.feval<void>(
+                'matlabls.handlers.indexing.parseInfoFromFolder',
+                0,
+                [folders, analysisLimit, responseChannel]
+            )
 
-        matlabConnection.publish(this.INDEX_FOLDERS_REQUEST_CHANNEL, {
-            folders,
-            channelId,
-            analysisLimit
-        })
+            if ('error' in response) {
+                Logger.error('Error received while indexing folders:')
+                Logger.error(response.error.msg)
+                Logger.warn('Not all files may have been indexed successfully.')
+                matlabConnection.unsubscribe(responseSub)
+            }
+        } catch (err) {
+            Logger.error('Error caught while indexing folders:')
+            Logger.error(err as string)
+            Logger.warn('Not all files may have been indexed successfully.')
+        }
     }
 
     /**
@@ -93,7 +112,11 @@ export default class Indexer {
 
         const fileContentBuffer = await fs.readFile(URI.parse(uri).fsPath)
         const code = fileContentBuffer.toString()
-        const rawCodeData = await this.getCodeData(code, uri, matlabConnection)
+        const rawCodeData = await this.getCodeData(code, uri)
+
+        if (rawCodeData === null) {
+            return
+        }
 
         FileInfoIndex.parseAndStoreCodeData(uri, rawCodeData)
     }
@@ -107,27 +130,29 @@ export default class Indexer {
      *
      * @returns The raw data extracted from the document
      */
-    private async getCodeData (code: string, uri: string, matlabConnection: MatlabConnection): Promise<RawCodeData> {
+    private async getCodeData (code: string, uri: string): Promise<RawCodeData | null> {
         const filePath = URI.parse(uri).fsPath
+        const analysisLimit = (await ConfigurationManager.getConfiguration()).maxFileSizeForAnalysis
 
-        return await new Promise(async resolve => {
-            const channelId = matlabConnection.getChannelId()
-            const channel = `${this.INDEX_DOCUMENT_RESPONSE_CHANNEL}/${channelId}`
-            const responseSub = matlabConnection.subscribe(channel, message => {
-                matlabConnection.unsubscribe(responseSub)
+        try {
+            const response = await this.mvm.feval<RawCodeData>(
+                'matlabls.handlers.indexing.parseInfoFromDocument',
+                1,
+                [code, filePath, analysisLimit]
+            )
 
-                resolve(message as RawCodeData)
-            })
+            if ('error' in response) {
+                Logger.error('Error received while parsing file:')
+                Logger.error(response.error.msg)
+                return null
+            }
 
-            const analysisLimit = (await ConfigurationManager.getConfiguration()).maxFileSizeForAnalysis
-
-            matlabConnection.publish(this.INDEX_DOCUMENT_REQUEST_CHANNEL, {
-                code,
-                filePath,
-                channelId,
-                analysisLimit
-            })
-        })
+            return response.result[0]
+        } catch (err) {
+            Logger.error('Error caught while parsing file:')
+            Logger.error(err as string)
+            return null
+        }
     }
 
     /**
@@ -138,7 +163,7 @@ export default class Indexer {
      * @param matlabConnection The connection to MATLAB
      * @param uri The document's URI
      */
-    private async indexAdditionalClassData (parsedCodeData: MatlabCodeData, matlabConnection: MatlabConnection, uri: string): Promise<void> {
+    private async indexAdditionalClassData (parsedCodeData: MatlabCodeData, uri: string): Promise<void> {
         if (parsedCodeData.classInfo == null) {
             return
         }
@@ -152,7 +177,7 @@ export default class Indexer {
         // Find and queue indexing for parent classes
         const baseClasses = parsedCodeData.classInfo.baseClasses
 
-        const resolvedBaseClasses = await this.pathResolver.resolvePaths(baseClasses, uri, matlabConnection)
+        const resolvedBaseClasses = await this.pathResolver.resolvePaths(baseClasses, uri)
 
         resolvedBaseClasses.forEach(resolvedBaseClass => {
             const uri = resolvedBaseClass.uri

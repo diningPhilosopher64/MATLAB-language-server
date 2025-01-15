@@ -1,4 +1,4 @@
-// Copyright 2024 The MathWorks, Inc.
+// Copyright 2025 The MathWorks, Inc.
 
 import * as debug from '@vscode/debugadapter'
 import { DebugProtocol } from '@vscode/debugprotocol';
@@ -54,7 +54,7 @@ const mdaUnwrap = function (obj: MatlabData, property?: string, index?: number):
     }
 }
 
-const isError = function <T> (value: T | MVMError): boolean {
+const isError = function <T> (value: T | MVMError): value is MVMError {
     return typeof (value) === 'object' && (value != null) && 'error' in value;
 }
 

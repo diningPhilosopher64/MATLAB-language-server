@@ -1,11 +1,8 @@
-// Copyright 2022 - 2024 The MathWorks, Inc.
+// Copyright 2022 - 2025 The MathWorks, Inc.
 
 import { URI } from 'vscode-uri'
-import { MatlabConnection } from '../../lifecycle/MatlabCommunicationManager'
-
-interface ResolvePathResponse {
-    data: ResolvedPath[]
-}
+import MVM from '../../mvm/impl/MVM'
+import Logger from '../../logging/Logger'
 
 interface ResolvedPath {
     name: string
@@ -18,8 +15,7 @@ interface ResolvedUri {
 }
 
 class PathResolver {
-    private readonly REQUEST_CHANNEL = '/matlabls/navigation/resolvePath/request'
-    private readonly RESPONSE_CHANNEL = '/matlabls/navigation/resolvePath/response'
+    constructor (private readonly mvm: MVM) {}
 
     /**
      * Attempts to resolve the given names to the files in which the names are defined.
@@ -31,36 +27,35 @@ class PathResolver {
      *
      * @returns The resolved URIs. Any URIs which could not be determiend are denoted by empty strings.
      */
-    async resolvePaths (names: string[], contextFileUri: string, matlabConnection: MatlabConnection): Promise<ResolvedUri[]> {
+    async resolvePaths (names: string[], contextFileUri: string): Promise<ResolvedUri[]> {
         const contextFile = URI.parse(contextFileUri).fsPath
 
-        return await new Promise(resolve => {
-            const channelId = matlabConnection.getChannelId()
-            const channel = `${this.RESPONSE_CHANNEL}/${channelId}`
-            const responseSub = matlabConnection.subscribe(channel, message => {
-                matlabConnection.unsubscribe(responseSub)
+        try {
+            const response = await this.mvm.feval<ResolvedPath[]>(
+                'matlabls.handlers.navigation.resolveNameToPath',
+                1,
+                [names, contextFile]
+            )
 
-                const resolvedPaths = (message as ResolvePathResponse).data
+            if ('error' in response) {
+                Logger.error('Error received while resolving paths:')
+                Logger.error(response.error.msg)
+                return []
+            }
 
-                // Convert file system paths from MATLAB to URIs
-                const resolvedUris: ResolvedUri[] = resolvedPaths.map(resolvedPath => {
-                    const filePath = resolvedPath.path
-                    const uri = (filePath === '') ? '' : URI.file(filePath).toString()
-                    return {
-                        name: resolvedPath.name,
-                        uri
-                    }
-                })
-
-                resolve(resolvedUris)
+            return response.result[0].map(resolvedPath => {
+                const filePath = resolvedPath.path
+                const uri = (filePath === '') ? '' : URI.file(filePath).toString()
+                return {
+                    name: resolvedPath.name,
+                    uri
+                }
             })
-
-            matlabConnection.publish(this.REQUEST_CHANNEL, {
-                names,
-                contextFile,
-                channelId
-            })
-        })
+        } catch (err) {
+            Logger.error('Error caught while resolving paths:')
+            Logger.error(err as string)
+            return []
+        }
     }
 }
 
