@@ -7,7 +7,7 @@ function completionsData = getCompletions(code, fileName, cursorPosition)
     completionsData = filterCompletionResults(completionResultsStr);
 end
 
-function filterCompletionResults (completionResultsStr)
+function compResultsStruct = filterCompletionResults (completionResultsStr)
     completionResults = jsondecode(completionResultsStr);
 
     compResultsStruct = struct;

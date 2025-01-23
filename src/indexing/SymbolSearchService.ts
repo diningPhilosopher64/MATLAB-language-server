@@ -314,10 +314,9 @@ class SymbolSearchService {
      * @returns The definition location(s), or null if no definition was found
      */
     private async findDefinitionOnPath (uri: string, position: Position, expression: Expression, pathResolver: PathResolver, indexer: Indexer): Promise<Location[] | null> {
-        const resolvedPath = await pathResolver.resolvePaths([expression.targetExpression], uri)
-        const resolvedUri = resolvedPath[0].uri
+        const resolvedUri = await pathResolver.resolvePath(expression.targetExpression, uri)
 
-        if (resolvedUri === '') {
+        if (resolvedUri === '' || resolvedUri === null) {
             // Not found
             return null
         }

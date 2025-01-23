@@ -7,6 +7,7 @@ import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import ConfigurationManager, { Argument } from '../../lifecycle/ConfigurationManager'
 import MVM from '../../mvm/impl/MVM'
 import Logger from '../../logging/Logger'
+import parse from '../../mvm/MdaParser'
 
 interface MCompletionData {
     widgetData?: MWidgetData
@@ -142,7 +143,7 @@ class CompletionSupportProvider {
         const cursorPosition = doc.offsetAt(position)
 
         try {
-            const response = await this.mvm.feval<MCompletionData>(
+            const response = await this.mvm.feval(
                 'matlabls.handlers.completions.getCompletions',
                 1,
                 [code, fileName, cursorPosition]
@@ -155,7 +156,7 @@ class CompletionSupportProvider {
                 return {}
             }
 
-            return response.result[0]
+            return parse(response.result[0]) as MCompletionData
         } catch (err) {
             Logger.error('Error caught while retrieving completion data:')
             Logger.error(err as string)

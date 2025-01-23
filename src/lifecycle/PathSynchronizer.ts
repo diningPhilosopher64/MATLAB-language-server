@@ -7,6 +7,7 @@ import MatlabLifecycleManager from './MatlabLifecycleManager'
 import * as os from 'os'
 import path from 'path'
 import MVM from '../mvm/impl/MVM'
+import parse from '../mvm/MdaParser'
 
 export default class PathSynchronizer {
     constructor (private readonly matlabLifecycleManager: MatlabLifecycleManager, private readonly mvm: MVM) {}
@@ -84,7 +85,7 @@ export default class PathSynchronizer {
 
     private async setWorkingDirectory (path: string): Promise<void> {
         try {
-            const response = await this.mvm.feval<void>('cd', 0, [path])
+            const response = await this.mvm.feval('cd', 0, [path])
 
             if ('error' in response) {
                 Logger.error('Error received while setting MATLAB\'s working directory:')
@@ -100,7 +101,7 @@ export default class PathSynchronizer {
 
     private async getCurrentWorkingDirectory (): Promise<string> {
         try {
-            const response = await this.mvm.feval<string>('pwd', 0, [])
+            const response = await this.mvm.feval('pwd', 0, [])
 
             if ('error' in response) {
                 Logger.error('Error received while getting MATLAB\'s working directory:');
@@ -108,7 +109,7 @@ export default class PathSynchronizer {
                 return '';
             }
 
-            return response.result[0]
+            return parse(response.result[0])
         } catch (err) {
             Logger.error('Error caught while getting MATLAB\'s working directory:');
             Logger.error(err as string);
@@ -122,7 +123,7 @@ export default class PathSynchronizer {
         Logger.log(`Adding workspace folder(s) to the MATLAB Path: \n\t${paths.join('\n\t')}`)
 
         try {
-            const response = await this.mvm.feval<void>('addpath', 0, [paths])
+            const response = await this.mvm.feval('addpath', 0, [paths])
 
             if ('error' in response) {
                 Logger.error('Error received while adding paths to the MATLAB path:');
@@ -140,7 +141,7 @@ export default class PathSynchronizer {
         Logger.log(`Removing workspace folder(s) from the MATLAB Path: \n\t${paths.join('\n\t')}`)
 
         try {
-            const response = await this.mvm.feval<void>('rmpath', 0, [paths]);
+            const response = await this.mvm.feval('rmpath', 0, [paths]);
 
             if ('error' in response) {
                 Logger.error('Error received while removing paths from the MATLAB path:');

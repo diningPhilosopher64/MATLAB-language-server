@@ -13,6 +13,7 @@ import which = require('which')
 import { MatlabLSCommands } from '../lspCommands/ExecuteCommandProvider'
 import ClientConnection from '../../ClientConnection'
 import MVM from '../../mvm/impl/MVM'
+import parse from '../../mvm/MdaParser'
 
 type mlintSeverity = '0' | '1' | '2' | '3' | '4'
 
@@ -199,7 +200,7 @@ class LintingSupportProvider {
         }
 
         try {
-            const response = await this.mvm.feval<TextEdit[]>(
+            const response = await this.mvm.feval(
                 'matlabls.handlers.linting.getSuppressionEdits',
                 1,
                 [textDocument.getText(), id, range.start.line + 1, shouldSuppressThroughoutFile]
@@ -212,7 +213,7 @@ class LintingSupportProvider {
                 return
             }
 
-            const edits = response.result[0]
+            const edits = parse(response.result[0]) as TextEdit[]
 
             const wsEdit: WorkspaceEdit = {
                 changes: {
@@ -265,7 +266,7 @@ class LintingSupportProvider {
      */
     private async getLintResultsFromMatlab (code: string, fileName: string): Promise<string[]> {
         try {
-            const response = await this.mvm.feval<string[]>(
+            const response = await this.mvm.feval(
                 'matlabls.handlers.linting.getLintData',
                 1,
                 [code, fileName]
@@ -278,7 +279,7 @@ class LintingSupportProvider {
                 return []
             }
 
-            return response.result[0]
+            return parse(response.result[0]) as string[]
         } catch (err) {
             Logger.error('Error caught while linting document:')
             Logger.error(err as string)

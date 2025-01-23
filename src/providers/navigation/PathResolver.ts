@@ -3,58 +3,46 @@
 import { URI } from 'vscode-uri'
 import MVM from '../../mvm/impl/MVM'
 import Logger from '../../logging/Logger'
-
-interface ResolvedPath {
-    name: string
-    path: string
-}
-
-interface ResolvedUri {
-    name: string
-    uri: string
-}
+import parse from '../../mvm/MdaParser'
 
 class PathResolver {
     constructor (private readonly mvm: MVM) {}
 
     /**
-     * Attempts to resolve the given names to the files in which the names are defined.
+     * Attempts to resolve the given identifier to the file in which the identifier is defined.
      * For example, 'MyClass' may be resolved to 'file:///path/to/MyClass.m'.
      *
-     * @param names The names which should be resolved to paths
+     * @param identifier The identifier which should be resolved to a path
      * @param contextFileUri The file from which the context of the path resolution should be made
      * @param matlabConnection The connection to MATLAB®
      *
-     * @returns The resolved URIs. Any URIs which could not be determiend are denoted by empty strings.
+     * @returns The resolved URI. If a URI could not be determiend, it is denoted by an empty string.
      */
-    async resolvePaths (names: string[], contextFileUri: string): Promise<ResolvedUri[]> {
+    async resolvePath (identifier: string, contextFileUri: string): Promise<string | null> {
         const contextFile = URI.parse(contextFileUri).fsPath
 
         try {
-            const response = await this.mvm.feval<ResolvedPath[]>(
+            const response = await this.mvm.feval(
                 'matlabls.handlers.navigation.resolveNameToPath',
                 1,
-                [names, contextFile]
+                [identifier, contextFile]
             )
 
             if ('error' in response) {
                 Logger.error('Error received while resolving paths:')
                 Logger.error(response.error.msg)
-                return []
+                return null
             }
 
-            return response.result[0].map(resolvedPath => {
-                const filePath = resolvedPath.path
-                const uri = (filePath === '') ? '' : URI.file(filePath).toString()
-                return {
-                    name: resolvedPath.name,
-                    uri
-                }
-            })
+            const path = parse(response.result[0]) as string
+
+            const uri = (path === '') ? '' : URI.file(path).toString()
+
+            return uri
         } catch (err) {
             Logger.error('Error caught while resolving paths:')
             Logger.error(err as string)
-            return []
+            return null
         }
     }
 }

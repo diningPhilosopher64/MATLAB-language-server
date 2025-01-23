@@ -5,6 +5,7 @@ import { TextDocument } from 'vscode-languageserver-textdocument'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import MVM from '../../mvm/impl/MVM'
 import Logger from '../../logging/Logger'
+import parse from '../../mvm/MdaParser'
 
 class FoldingSupportProvider {
     constructor (private readonly matlabLifecycleManager: MatlabLifecycleManager, private readonly mvm: MVM) {}
@@ -43,7 +44,7 @@ class FoldingSupportProvider {
      */
     private async getFoldingRangesFromMatlab (code: string): Promise<number[]> {
         try {
-            const response = await this.mvm.feval<number[]>(
+            const response = await this.mvm.feval(
                 'matlabls.handlers.folding.getFoldingRanges',
                 1,
                 [code]
@@ -51,12 +52,12 @@ class FoldingSupportProvider {
 
             if ('error' in response) {
                 // Handle MVMError
-                Logger.error('Error received while retrieving folding ranges')
+                Logger.error('Error received while retrieving folding ranges:')
                 Logger.error(response.error.msg)
                 return []
             }
 
-            return response.result[0]
+            return parse(response.result[0]) as number[]
         } catch (err) {
             Logger.error('Error caught while retrieving folding ranges:')
             Logger.error(err as string)

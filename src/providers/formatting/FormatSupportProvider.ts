@@ -8,6 +8,7 @@ import { ActionErrorConditions, Actions, reportTelemetryAction } from '../../log
 import * as TextDocumentUtils from '../../utils/TextDocumentUtils'
 import MVM from '../../mvm/impl/MVM'
 import Logger from '../../logging/Logger'
+import parse from '../../mvm/MdaParser'
 
 /**
  * Handles requests for format-related features.
@@ -57,7 +58,7 @@ class FormatSupportProvider {
                 insertSpaces: options.insertSpaces,
                 tabSize: options.tabSize,
             }
-            const response = await this.mvm.feval<string>(
+            const response = await this.mvm.feval(
                 'matlabls.handlers.formatting.formatCode',
                 1,
                 [doc.getText(), requestOpts]
@@ -70,11 +71,13 @@ class FormatSupportProvider {
                 return []
             }
 
+            let result = parse(response.result[0]) as string
+
             const endRange = TextDocumentUtils.getRangeUntilLineEnd(doc, doc.lineCount - 1, 0)
             const edit = TextEdit.replace(Range.create(
                 Position.create(0, 0),
                 endRange.end
-            ), response.result[0])
+            ), result)
             reportTelemetryAction(Actions.FormatDocument)
             return [edit]
         } catch (err) {

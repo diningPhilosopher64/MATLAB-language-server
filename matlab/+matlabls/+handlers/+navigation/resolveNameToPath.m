@@ -1,30 +1,16 @@
-function resolvedPaths = resolveNameToPath(names, contextFile)
-    % RESOLVENAMETOPATH Resolves names (e.g. "plot") to the respective file path which
+function resolvedPath = resolveNameToPath(name, contextFile)
+    % RESOLVENAMETOPATH Resolves a name (e.g. "plot") to the respective file path which
     % corresponds to the definition of that name.
 
     % Copyright 2025 The MathWorks, Inc.
 
-    resolvedPaths = cell(1, numel(names));
-    for n = 1:numel(names)
-        name = names{n};
-        resolvedPath = resolvePath(name, contextFile);
-        resolvedPaths{n} = struct("name", name, "path", resolvedPath);
-    end
+    resolvedPath = resolvePath(name, contextFile);
 
-    % For any names which are not found, try CDing to the context
-    % file's directory and searching again
-    sArray = [resolvedPaths{:}];
-    missingPaths = cellfun(@isempty, {sArray.path});
-    missingIndices = find(missingPaths);
-
-    if ~isempty(missingIndices)
+    % If the name is not found, try CDing to the context file's
+    % directory and searching again
+    if strlength(resolvedPath) == 0
         returnDir = cdToPackageRoot(contextFile);
-        for n = missingIndices
-            resolvedPath = resolvePath(names{n}, contextFile);
-            if ~isempty(path)
-                resolvedPaths{n}.path = resolvedPath;
-            end
-        end
+        resolvedPath = resolvePath(name, contextFile);
         cd(returnDir);
     end
 end

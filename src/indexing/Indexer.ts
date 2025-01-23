@@ -9,6 +9,7 @@ import PathResolver from '../providers/navigation/PathResolver'
 import ConfigurationManager from '../lifecycle/ConfigurationManager'
 import MVM from '../mvm/impl/MVM'
 import Logger from '../logging/Logger'
+import parse from '../mvm/MdaParser'
 
 interface WorkspaceFileIndexedResponse {
     isDone: boolean
@@ -79,7 +80,7 @@ export default class Indexer {
         })
 
         try {
-            const response = await this.mvm.feval<void>(
+            const response = await this.mvm.feval(
                 'matlabls.handlers.indexing.parseInfoFromFolder',
                 0,
                 [folders, analysisLimit, responseChannel]
@@ -135,7 +136,7 @@ export default class Indexer {
         const analysisLimit = (await ConfigurationManager.getConfiguration()).maxFileSizeForAnalysis
 
         try {
-            const response = await this.mvm.feval<RawCodeData>(
+            const response = await this.mvm.feval(
                 'matlabls.handlers.indexing.parseInfoFromDocument',
                 1,
                 [code, filePath, analysisLimit]
@@ -147,7 +148,7 @@ export default class Indexer {
                 return null
             }
 
-            return response.result[0]
+            return parse(response.result[0]) as RawCodeData
         } catch (err) {
             Logger.error('Error caught while parsing file:')
             Logger.error(err as string)
@@ -177,12 +178,10 @@ export default class Indexer {
         // Find and queue indexing for parent classes
         const baseClasses = parsedCodeData.classInfo.baseClasses
 
-        const resolvedBaseClasses = await this.pathResolver.resolvePaths(baseClasses, uri)
-
-        resolvedBaseClasses.forEach(resolvedBaseClass => {
-            const uri = resolvedBaseClass.uri
-            if (uri !== '') {
-                void this.indexFile(uri)
+        baseClasses.forEach(async baseClass => {
+            const resolvedUri = await this.pathResolver.resolvePath(baseClass, uri)
+            if (resolvedUri !== '' && resolvedUri !== null) {
+                void this.indexFile(resolvedUri)
             }
         })
     }
