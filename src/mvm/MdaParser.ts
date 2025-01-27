@@ -28,6 +28,10 @@ function isMatlabDataArray (obj: any): obj is MatlabDataArray {
  */
 export default function parse (obj: any): any {
     if (isMatlabDataArray(obj)) {
+        if (obj.mwsize.length !== 2) {
+            Logger.error(`Unexpected size when parsing: [${obj.mwsize.join(', ')}]`)
+        }
+
         switch (obj.mwtype) {
             case 'string':
                 return parseString(obj)
@@ -143,7 +147,7 @@ function parseCellArray (obj: MatlabDataArray): any[] {
  * @returns An array of the desired size containing the reformatted and (optionally) parsed values.
  */
 function reformatData (values: any[], size: Size, shouldParse: boolean = true): any {
-    const [nRows, nCols] = size
+    const [nRows = 1, nCols = 1] = size
 
     if (nRows === 0 || nCols === 0) {
         // If 0-dimensional, return an empty array
@@ -186,7 +190,7 @@ function reformatData (values: any[], size: Size, shouldParse: boolean = true): 
  * @returns A string or array of the desired size containing the reformatted char vector
  */
 function reformatCharVector (charVector: string, size: Size): string | string[] {
-    const [nRows, nCols] = size
+    const [nRows = 1, nCols = 1] = size
 
     if (nRows === 0 || nCols === 0) {
         // If 0-dimensional, return an empty string
