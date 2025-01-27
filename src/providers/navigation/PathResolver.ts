@@ -19,6 +19,11 @@ class PathResolver {
      * @returns The resolved URI. If a URI could not be determiend, it is denoted by an empty string.
      */
     async resolvePath (identifier: string, contextFileUri: string): Promise<string | null> {
+        if (!this.mvm.isReady()) {
+            // MVM not yet ready
+            return null
+        }
+
         const contextFile = URI.parse(contextFileUri).fsPath
 
         try {

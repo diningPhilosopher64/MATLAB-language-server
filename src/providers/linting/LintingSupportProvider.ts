@@ -195,7 +195,8 @@ class LintingSupportProvider {
      * @param shouldSuppressThroughoutFile Whether or not to suppress the diagnostic throughout the entire file
      */
     async suppressDiagnostic (textDocument: TextDocument, range: Range, id: string, shouldSuppressThroughoutFile: boolean): Promise<void> {
-        if (!this.matlabLifecycleManager.isMatlabConnected()) {
+        if (!this.mvm.isReady()) {
+            // MVM not yet ready
             return
         }
 
@@ -265,6 +266,11 @@ class LintingSupportProvider {
      * @returns Raw lint data for the code
      */
     private async getLintResultsFromMatlab (code: string, fileName: string): Promise<string[]> {
+        if (!this.mvm.isReady()) {
+            // MVM not yet ready
+            return []
+        }
+        
         try {
             const response = await this.mvm.feval(
                 'matlabls.handlers.linting.getLintData',

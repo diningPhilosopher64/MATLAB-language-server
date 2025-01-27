@@ -132,7 +132,8 @@ class CompletionSupportProvider {
      * @returns The raw completion data
      */
     private async retrieveCompletionData (doc: TextDocument, position: Position): Promise<MCompletionData> {
-        if (!this.matlabLifecycleManager.isMatlabConnected()) {
+        if (!this.mvm.isReady()) {
+            // MVM not yet ready
             return {}
         }
 

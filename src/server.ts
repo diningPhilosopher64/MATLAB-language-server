@@ -15,7 +15,7 @@ import LintingSupportProvider from './providers/linting/LintingSupportProvider'
 import ExecuteCommandProvider, { MatlabLSCommands } from './providers/lspCommands/ExecuteCommandProvider'
 import NavigationSupportProvider from './providers/navigation/NavigationSupportProvider'
 import LifecycleNotificationHelper from './lifecycle/LifecycleNotificationHelper'
-import MVM from './mvm/impl/MVM'
+import MVM, { IMVM, MatlabState } from './mvm/impl/MVM'
 import FoldingSupportProvider from './providers/folding/FoldingSupportProvider'
 import ClientConnection from './ClientConnection'
 import PathResolver from './providers/navigation/PathResolver'
@@ -74,17 +74,23 @@ export async function startServer (): Promise<void> {
         // Handle things after MATLAB® has launched
 
         hasMatlabBeenRequested = false
+    })
 
-        // Initiate workspace indexing
-        void workspaceIndexer.indexWorkspace()
+    mvm.on(IMVM.Events.stateChange, (state: MatlabState) => {
+        if (state === MatlabState.READY) {
+            // Handle when the MVM has connected
 
-        documentManager.all().forEach(textDocument => {
-            // Lint the open documents
-            void lintingSupportProvider.lintDocument(textDocument)
+            // Initiate workspace indexing
+            void workspaceIndexer.indexWorkspace()
 
-            // Index the open document
-            void documentIndexer.indexDocument(textDocument)
-        })
+            documentManager.all().forEach(textDocument => {
+                // Lint the open documents
+                void lintingSupportProvider.lintDocument(textDocument)
+
+                // Index the open document
+                void documentIndexer.indexDocument(textDocument)
+            })
+        }
     })
 
     let capabilities: ClientCapabilities

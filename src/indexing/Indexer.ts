@@ -32,9 +32,8 @@ export default class Indexer {
      * @param textDocument The document being indexed
      */
     async indexDocument (textDocument: TextDocument): Promise<void> {
-        const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection()
-
-        if (matlabConnection == null) {
+        if (!this.mvm.isReady()) {
+            // MVM not yet ready
             return
         }
 
@@ -57,7 +56,7 @@ export default class Indexer {
     async indexFolders (folders: string[]): Promise<void> {
         const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection()
 
-        if (matlabConnection == null) {
+        if (matlabConnection == null || !this.mvm.isReady()) {
             return
         }
 
@@ -80,10 +79,16 @@ export default class Indexer {
         })
 
         try {
+            const mdaFolders = {
+                mwtype: 'string',
+                mwsize: [1, folders.length],
+                mwdata: folders
+            }
+
             const response = await this.mvm.feval(
                 'matlabls.handlers.indexing.parseInfoFromFolder',
                 0,
-                [folders, analysisLimit, responseChannel]
+                [mdaFolders, analysisLimit, responseChannel]
             )
 
             if ('error' in response) {
@@ -105,9 +110,8 @@ export default class Indexer {
      * @param uri The URI for the file being indexed
      */
     async indexFile (uri: string): Promise<void> {
-        const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection()
-
-        if (matlabConnection == null) {
+        if (!this.mvm.isReady()) {
+            // MVM not yet ready
             return
         }
 

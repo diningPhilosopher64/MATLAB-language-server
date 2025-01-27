@@ -6,7 +6,7 @@ import Logger from '../logging/Logger'
 import MatlabLifecycleManager from './MatlabLifecycleManager'
 import * as os from 'os'
 import path from 'path'
-import MVM from '../mvm/impl/MVM'
+import MVM, { IMVM, MatlabState } from '../mvm/impl/MVM'
 import parse from '../mvm/MdaParser'
 
 export default class PathSynchronizer {
@@ -24,7 +24,11 @@ export default class PathSynchronizer {
     initialize () {
         const clientConnection = ClientConnection.getConnection()
 
-        this.matlabLifecycleManager.eventEmitter.on('connected', () => this.handleMatlabConnected(clientConnection))
+        this.mvm.on(IMVM.Events.stateChange, (state: MatlabState) => {
+            if (state === MatlabState.READY) {
+                this.handleMatlabConnected(clientConnection)
+            }
+        })
         
         clientConnection.workspace.onDidChangeWorkspaceFolders(event => this.handleWorkspaceFoldersChanged(event))
     }
@@ -36,9 +40,9 @@ export default class PathSynchronizer {
      * @param clientConnection The current client connection
      */
     private async handleMatlabConnected (clientConnection: Connection): Promise<void> {
-        if (!this.matlabLifecycleManager.isMatlabConnected()) {
+        if (!this.mvm.isReady()) {
             // As the connection was just established, this should not happen
-            Logger.warn('MATLAB connection is unavailable after connection established');
+            Logger.warn('MVM is not ready after connection established')
             return
         }
 
@@ -63,7 +67,8 @@ export default class PathSynchronizer {
      * @param event The workspace folders change event
      */
     private async handleWorkspaceFoldersChanged (event: WorkspaceFoldersChangeEvent): Promise<void> {
-        if (!this.matlabLifecycleManager.isMatlabConnected()) {
+        if (!this.mvm.isReady()) {
+            // MVM not yet ready
             return
         }
 
@@ -104,16 +109,16 @@ export default class PathSynchronizer {
             const response = await this.mvm.feval('pwd', 0, [])
 
             if ('error' in response) {
-                Logger.error('Error received while getting MATLAB\'s working directory:');
-                Logger.error(response.error.msg);
-                return '';
+                Logger.error('Error received while getting MATLAB\'s working directory:')
+                Logger.error(response.error.msg)
+                return ''
             }
 
             return parse(response.result[0])
         } catch (err) {
-            Logger.error('Error caught while getting MATLAB\'s working directory:');
-            Logger.error(err as string);
-            return '';
+            Logger.error('Error caught while getting MATLAB\'s working directory:')
+            Logger.error(err as string)
+            return ''
         }
     }
 
@@ -122,16 +127,24 @@ export default class PathSynchronizer {
 
         Logger.log(`Adding workspace folder(s) to the MATLAB Path: \n\t${paths.join('\n\t')}`)
 
+        // An array of strings needs to be wrapped as a MATLAB Data Array
+        // before being passed as an argument to `feval`.
+        const mdaPaths = {
+            mwtype: 'string',
+            mwsize: [1, paths.length],
+            mwdata: paths
+        }
+
         try {
-            const response = await this.mvm.feval('addpath', 0, [paths])
+            const response = await this.mvm.feval('addpath', 0, [mdaPaths])
 
             if ('error' in response) {
-                Logger.error('Error received while adding paths to the MATLAB path:');
-                Logger.error(response.error.msg);
+                Logger.error('Error received while adding paths to the MATLAB path:')
+                Logger.error(response.error.msg)
             }
         } catch (err) {
-            Logger.error('Error caught while adding paths to the MATLAB path:');
-            Logger.error(err as string);
+            Logger.error('Error caught while adding paths to the MATLAB path:')
+            Logger.error(err as string)
         }
     }
 
@@ -140,16 +153,24 @@ export default class PathSynchronizer {
 
         Logger.log(`Removing workspace folder(s) from the MATLAB Path: \n\t${paths.join('\n\t')}`)
 
+        // An array of strings needs to be wrapped as a MATLAB Data Array
+        // before being passed as an argument to `feval`.
+        const mdaPaths = {
+            mwtype: 'string',
+            mwsize: [1, paths.length],
+            mwdata: paths
+        }
+
         try {
-            const response = await this.mvm.feval('rmpath', 0, [paths]);
+            const response = await this.mvm.feval('rmpath', 0, [mdaPaths])
 
             if ('error' in response) {
-                Logger.error('Error received while removing paths from the MATLAB path:');
-                Logger.error(response.error.msg);
+                Logger.error('Error received while removing paths from the MATLAB path:')
+                Logger.error(response.error.msg)
             }
         } catch (err) {
-            Logger.error('Error caught while removing paths from the MATLAB path:');
-            Logger.error(err as string);
+            Logger.error('Error caught while removing paths from the MATLAB path:')
+            Logger.error(err as string)
         }
     }
 
@@ -158,16 +179,16 @@ export default class PathSynchronizer {
             let uri = decodeURIComponent(folder.uri)
             uri = uri.replace('file:///', '')
             return path.normalize(uri)
-        });
+        })
     }
 
     private isCwdInPaths (folderPaths: string[], cwd: string): boolean {
         if (os.platform() === 'win32') {
             // On Windows, paths are case-insensitive
-            return folderPaths.some(folderPath => folderPath.toLowerCase() === cwd.toLowerCase());
+            return folderPaths.some(folderPath => folderPath.toLowerCase() === cwd.toLowerCase())
         } else {
             // On Unix-like systems, paths are case-sensitive
-            return folderPaths.includes(cwd);
+            return folderPaths.includes(cwd)
         }
     }
 }

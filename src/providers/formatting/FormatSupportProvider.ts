@@ -53,6 +53,10 @@ class FormatSupportProvider {
             return []
         }
 
+        // As this action may have triggered MATLAB to launch, we may
+        // //need to wait until the MVM is ready before proceeding
+        await this.mvm.waitUntilReady()
+
         try {
             const requestOpts = {
                 insertSpaces: options.insertSpaces,

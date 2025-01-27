@@ -16,12 +16,11 @@ class FoldingSupportProvider {
             return null
         }
 
-        const matlabConnection = await this.matlabLifecycleManager.getMatlabConnection()
-        const isMatlabAvailable = (matlabConnection != null)
+        const isConnected = this.mvm.isReady()
         const matlabRelease = this.matlabLifecycleManager.getMatlabRelease()
 
         // check for connection and release
-        if (!isMatlabAvailable || (matlabRelease == null) || (matlabRelease < 'R2024b')) {
+        if (!isConnected || (matlabRelease == null) || (matlabRelease < 'R2024b')) {
             return null
         }
 
