@@ -5,7 +5,7 @@ classdef tFormatCode < matlab.unittest.TestCase
     end
 
     methods (TestClassSetup)
-        function setup(~)
+        function setup (~)
             % Add function under test to path
             addpath("../../../../../matlab");
         end
