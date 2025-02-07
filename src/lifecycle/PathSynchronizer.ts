@@ -140,10 +140,7 @@ export default class PathSynchronizer {
         return workspaceFolders.map(folder => {
             const uri = URI.parse(folder.uri)
 
-            // On Windows, need to trim the leading '/' from the URI path
-            const filePath = process.platform === 'win32' ? uri.path.substring(1) : uri.path
-
-            return path.normalize(filePath)
+            return path.normalize(uri.fsPath)
         });
     }
 
