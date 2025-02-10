@@ -7,6 +7,7 @@ import MatlabLifecycleManager from './MatlabLifecycleManager'
 import { MatlabConnection } from './MatlabCommunicationManager'
 import * as os from 'os'
 import path from 'path'
+import { URI } from 'vscode-uri'
 
 export default class PathSynchronizer {
     readonly CD_REQUEST_CHANNEL = '/matlabls/pathSynchronizer/cd/request'
@@ -137,9 +138,9 @@ export default class PathSynchronizer {
 
     private convertWorkspaceFoldersToFilePaths (workspaceFolders: WorkspaceFolder[]): string[] {
         return workspaceFolders.map(folder => {
-            let uri = decodeURIComponent(folder.uri)
-            uri = uri.replace('file:///', '')
-            return path.normalize(uri)
+            const uri = URI.parse(folder.uri)
+
+            return path.normalize(uri.fsPath)
         });
     }
 
