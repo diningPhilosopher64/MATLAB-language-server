@@ -837,9 +837,9 @@ export default class MatlabDebugAdaptor {
         if (dbAmount !== 0) {
             try {
                 if (dbAmount > 0) {
-                    await this._mvm.feval<undefined>('dbup', 0, [dbAmount]);
+                    await this._mvm.feval('dbup', 0, [dbAmount]);
                 } else {
-                    await this._mvm.feval<undefined>('dbdown', 0, [-dbAmount]);
+                    await this._mvm.feval('dbdown', 0, [-dbAmount]);
                 }
             } catch (e) {
             }
