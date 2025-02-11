@@ -1,5 +1,5 @@
 function lintData = getLintData(code, fileName)
-    % LINTDATA Gathers linting data for the provided MATLAB® code.
+    % GETLINTDATA Gathers linting data for the provided MATLAB® code.
 
     % Copyright 2025 The MathWorks, Inc.
 
