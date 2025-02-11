@@ -1,6 +1,8 @@
 // Copyright 2025 The MathWorks, Inc.
 import Logger from '../logging/Logger'
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 // Currently, parsing does not support n-dimensional matrices where n > 2
 type Size = [nRows: number, nCols: number]
 
@@ -18,11 +20,11 @@ function isMatlabDataArray (obj: any): obj is MatlabDataArray {
  * Parses a value returned by the MVM. This parser will remove the
  * MATLAB Data Array format and return a value which is much closer
  * to the data's format in MATLAB.
- * 
+ *
  * Note: There are values which are representable in MATLAB but not
  * in JavaScript. This does not attempt to handle those cases, as
  * they are not currently necessary in the language server.
- * 
+ *
  * @param obj A value or object returned by the MVM
  * @returns A parsed value or object
  */
@@ -79,10 +81,10 @@ function parseArray (obj: any[]): any[] {
  * @param obj An object representing a MATLAB struct
  * @returns A recursively parsed object
  */
-function parseStruct (obj: any, index?: number): any {
+function parseStruct (obj: {[key: string]: any}, index?: number): any {
     const parsedStruct: any = {}
     for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
+        if (key in obj) {
             parsedStruct[key] = (index == null) ? parse(obj[key]) : parse(obj[key][index])
         }
     }
@@ -134,10 +136,10 @@ function parseCellArray (obj: MatlabDataArray): any[] {
  * Reformats an array of values into the specified size. If the size is 1-dimensional,
  * the values are simply mapped and parsed (if requested). For 2-dimensional sizes,
  * the values are reformatted into a 2D array.
- * 
+ *
  * This is because the MATLAB Data Array format stores values in a 1-dimensional array,
  * even for 2-dimensional matrices, in a column-major order.
- * 
+ *
  * Special case: If the desired size has has a value of 0 in any dimension, an empty
  * array will be returned.
  *
@@ -181,12 +183,12 @@ function reformatData (values: any[], size: Size, shouldParse: boolean = true): 
 /**
  * Similar to {@link reformatData}, this function reformats a character vector based on
  * the specified size.
- * 
+ *
  * Special case: If the desired size has a value of 0 in any dimension, an empty
  * string will be returned.
- * 
+ *
  * @param charVector The string representing the character vector
- * @param size The size the data should be reformatted to 
+ * @param size The size the data should be reformatted to
  * @returns A string or array of the desired size containing the reformatted char vector
  */
 function reformatCharVector (charVector: string, size: Size): string | string[] {

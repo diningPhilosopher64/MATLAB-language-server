@@ -270,7 +270,7 @@ class LintingSupportProvider {
             // MVM not yet ready
             return []
         }
-        
+
         try {
             const response = await this.mvm.feval(
                 'matlabls.handlers.linting.getLintData',

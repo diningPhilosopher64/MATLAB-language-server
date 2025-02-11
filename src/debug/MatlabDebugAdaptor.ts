@@ -54,6 +54,7 @@ const mdaUnwrap = function (obj: MatlabData, property?: string, index?: number):
     }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const isError = function (value: MVMError | any): value is MVMError {
     return typeof (value) === 'object' && (value != null) && 'error' in value;
 }
@@ -683,7 +684,7 @@ export default class MatlabDebugAdaptor {
             maybeResult = await this._mvm.feval('evalc', 1, ["try, datatipinfo('" + args.expression + "'), catch, disp('Error evaluating expression'); end"]);
         }
 
-        await this._mvm.feval('feature', 0, ['HotLinks', ((oldHotlinks as MatlabData)?.result?.[0] ?? true)]);
+        await this._mvm.feval('feature', 0, ['HotLinks', (oldHotlinks?.result?.[0] ?? true)]);
 
         if (stackChanger !== null) {
             try {

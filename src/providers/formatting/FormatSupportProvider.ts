@@ -60,7 +60,7 @@ class FormatSupportProvider {
         try {
             const requestOpts = {
                 insertSpaces: options.insertSpaces,
-                tabSize: options.tabSize,
+                tabSize: options.tabSize
             }
             const response = await this.mvm.feval(
                 'matlabls.handlers.formatting.formatCode',
@@ -75,7 +75,7 @@ class FormatSupportProvider {
                 return []
             }
 
-            let result = parse(response.result[0]) as string
+            const result = parse(response.result[0]) as string
 
             const endRange = TextDocumentUtils.getRangeUntilLineEnd(doc, doc.lineCount - 1, 0)
             const edit = TextEdit.replace(Range.create(
@@ -89,6 +89,7 @@ class FormatSupportProvider {
             Logger.error(err as string)
             return []
         }
-    }}
+    }
+}
 
 export default FormatSupportProvider

@@ -6,7 +6,6 @@ import FileInfoIndex, { FunctionVisibility, MatlabClassMemberInfo, MatlabCodeDat
 import { Actions, reportTelemetryAction } from '../logging/TelemetryUtils'
 import Expression from '../utils/ExpressionUtils'
 import { getTextOnLine } from '../utils/TextDocumentUtils'
-import { MatlabConnection } from '../lifecycle/MatlabCommunicationManager'
 import PathResolver from '../providers/navigation/PathResolver'
 import * as fs from 'fs/promises'
 import { URI } from 'vscode-uri'

@@ -27,10 +27,10 @@ export default class PathSynchronizer {
 
         this.mvm.on(IMVM.Events.stateChange, (state: MatlabState) => {
             if (state === MatlabState.READY) {
-                this.handleMatlabConnected(clientConnection)
+                void this.handleMatlabConnected(clientConnection)
             }
         })
-        
+
         clientConnection.workspace.onDidChangeWorkspaceFolders(event => this.handleWorkspaceFoldersChanged(event))
     }
 
