@@ -128,16 +128,8 @@ export default class PathSynchronizer {
 
         Logger.log(`Adding workspace folder(s) to the MATLAB Path: \n\t${paths.join('\n\t')}`)
 
-        // An array of strings needs to be wrapped as a MATLAB Data Array
-        // before being passed as an argument to `feval`.
-        const mdaPaths = {
-            mwtype: 'string',
-            mwsize: [1, paths.length],
-            mwdata: paths
-        }
-
         try {
-            const response = await this.mvm.feval('addpath', 0, [mdaPaths])
+            const response = await this.mvm.feval('addpath', 0, [paths.join(path.delimiter)])
 
             if ('error' in response) {
                 Logger.error('Error received while adding paths to the MATLAB path:')
@@ -154,16 +146,8 @@ export default class PathSynchronizer {
 
         Logger.log(`Removing workspace folder(s) from the MATLAB Path: \n\t${paths.join('\n\t')}`)
 
-        // An array of strings needs to be wrapped as a MATLAB Data Array
-        // before being passed as an argument to `feval`.
-        const mdaPaths = {
-            mwtype: 'string',
-            mwsize: [1, paths.length],
-            mwdata: paths
-        }
-
         try {
-            const response = await this.mvm.feval('rmpath', 0, [mdaPaths])
+            const response = await this.mvm.feval('rmpath', 0, [paths.join(path.delimiter)])
 
             if ('error' in response) {
                 Logger.error('Error received while removing paths from the MATLAB path:')
