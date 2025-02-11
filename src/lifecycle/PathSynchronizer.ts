@@ -6,6 +6,7 @@ import Logger from '../logging/Logger'
 import MatlabLifecycleManager from './MatlabLifecycleManager'
 import * as os from 'os'
 import path from 'path'
+import { URI } from 'vscode-uri'
 import MVM, { IMVM, MatlabState } from '../mvm/impl/MVM'
 import parse from '../mvm/MdaParser'
 
@@ -14,14 +15,14 @@ export default class PathSynchronizer {
 
     /**
      * Initializes the PathSynchronizer by setting up event listeners.
-     * 
+     *
      * Upon MATLAB connection, all workspace folders are added to the MATLAB search path.
      * Additionally, MATLAB's CWD is set to the first workspace folder to avoid potential
      * function shadowing issues.
-     * 
+     *
      * As workspace folders are added or removed, the MATLAB path is updated accordingly.
      */
-    initialize () {
+    initialize (): void {
         const clientConnection = ClientConnection.getConnection()
 
         this.mvm.on(IMVM.Events.stateChange, (state: MatlabState) => {
@@ -176,10 +177,10 @@ export default class PathSynchronizer {
 
     private convertWorkspaceFoldersToFilePaths (workspaceFolders: WorkspaceFolder[]): string[] {
         return workspaceFolders.map(folder => {
-            let uri = decodeURIComponent(folder.uri)
-            uri = uri.replace('file:///', '')
-            return path.normalize(uri)
-        })
+            const uri = URI.parse(folder.uri)
+
+            return path.normalize(uri.fsPath)
+        });
     }
 
     private isCwdInPaths (folderPaths: string[], cwd: string): boolean {

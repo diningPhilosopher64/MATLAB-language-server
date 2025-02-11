@@ -25,6 +25,20 @@ MATLAB language server supports these editors by installing the corresponding ex
 ## Release Notes
 
 ### Unreleased
+Release date: TBD
+
+Fixed:
+* Resolves error with adding workspace folders to the MATLAB path on Unix systems
+
+### 1.3.1
+Release date: 2025-01-23
+
+Added:
+* The language server keeps the MATLAB path in sync with the client workspace, improving code navigation, completions, and execution
+
+Fixed:
+* Resolves errors with document formatting when using with MATLAB R2025a
+* Resolves errors with execution and debugging when using with MATLAB R2022a
 
 ### 1.3.0
 Release date: 2024-12-18

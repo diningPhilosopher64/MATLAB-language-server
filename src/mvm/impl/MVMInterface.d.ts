@@ -67,7 +67,10 @@ export interface BreakpointResponse {
  * MATLAB Error result
  */
 export interface MVMError {
-    error: unknown;
+    error: {
+        id: string;
+        msg: string;
+    };
 }
 export declare enum PromptState {
     INITIALIZING = "INITIALIZING",
