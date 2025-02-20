@@ -266,8 +266,9 @@ class LintingSupportProvider {
      * @returns Raw lint data for the code
      */
     private async getLintResultsFromMatlab (code: string, fileName: string): Promise<string[]> {
-        if (!this.mvm.isReady()) {
-            // MVM not yet ready
+        if (code.length === 0 || !this.mvm.isReady()) {
+            // If no code in document or the MVM is not yet ready,
+            // return early with an empty lint result
             return []
         }
 
