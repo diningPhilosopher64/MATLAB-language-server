@@ -5,7 +5,13 @@ function foldingRanges = getFoldingRanges(codeToFold)
 
     % Copyright 2024 The MathWorks, Inc.
 
-    analysisObject = matlab.codeanalyzer.internal.analyzeCode(codeToFold);
+    try
+        analysisObject = matlab.codeanalyzer.internal.analyzeCode(codeToFold);
+    catch ME
+        % Error will occur when the code contains syntax errors
+        foldingRanges = [];
+        return
+    end
 
     % Get folding ranges
     foldingRanges = [];
