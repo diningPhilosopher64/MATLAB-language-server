@@ -8,6 +8,10 @@ function [pathFound, path] = resolvePath (name, contextFile)
 
     % Copyright 2022 - 2023 The MathWorks, Inc.
 
+    % Some of the `matlab.internal.language.introspective` APIs do not handle
+    % string inputs, so convert to char vector.
+    [name, contextFile] = convertStringsToChars(name, contextFile);
+
     elementName = name;
 
     % The given identifier may be a reference within a class (e.g. 'obj.Prop')
