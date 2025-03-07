@@ -226,7 +226,12 @@ function codeInfo = computeCodeData (code, filePath, analysisLimit)
         if lengthOfSections > 0
             % Splitting the code to lines upfront, used later to detect
             % explicit sections and to find the character end of line
-            lines = strsplit(code, newline, CollapseDelimiters = false);
+            if ispc
+                lineEnding = sprintf('\r\n');
+            else
+                lineEnding = newline;
+            end
+            lines = strsplit(code, lineEnding, CollapseDelimiters = false);
         end
         
         for row = 1:lengthOfSections
