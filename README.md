@@ -25,6 +25,8 @@ MATLAB language server supports these editors by installing the corresponding ex
 ## Release Notes
 
 ### Unreleased
+Fixed:
+* Resolves potential crash with autocompletion in files without a .m file extension
 
 ### 1.3.2
 Release date: 2025-03-06
