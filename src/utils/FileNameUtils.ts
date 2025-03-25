@@ -21,7 +21,7 @@ export function isMFile (uri: string): boolean {
  * @param shouldCoerceToMExt If true, the function will ensure the returned file path has a 
  * '.m' extension. If the file is a Jupyter Notebook ('.ipynb'), it will return 'untitled.m'
  * to ensure a valid MATLAB file name (to avoid invalid characters).
- * @returns 
+ * @returns The file path, optionally with the file extension replaced with '.m'.
  */
 export function getFilePathFromUri (uri: string, shouldCoerceToMExt: boolean = false): string {
     let filePath = URI.parse(uri).fsPath
