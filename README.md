@@ -26,6 +26,8 @@ MATLAB language server supports these editors by installing the corresponding ex
 
 ### Unreleased
 
+Fixed: Support debugging P coded files with an associated M file
+
 ### 1.3.2
 Release date: 2025-03-06
 
