@@ -2,12 +2,12 @@
 
 import { CompletionItem, CompletionItemKind, CompletionList, CompletionParams, ParameterInformation, Position, SignatureHelp, SignatureHelpParams, SignatureInformation, TextDocuments, InsertTextFormat } from 'vscode-languageserver'
 import { TextDocument } from 'vscode-languageserver-textdocument'
-import { URI } from 'vscode-uri'
 import MatlabLifecycleManager from '../../lifecycle/MatlabLifecycleManager'
 import ConfigurationManager, { Argument } from '../../lifecycle/ConfigurationManager'
 import MVM from '../../mvm/impl/MVM'
 import Logger from '../../logging/Logger'
 import parse from '../../mvm/MdaParser'
+import * as FileNameUtils from '../../utils/FileNameUtils'
 
 interface MCompletionData {
     widgetData?: MWidgetData
@@ -145,7 +145,7 @@ class CompletionSupportProvider {
         const docUri = doc.uri
 
         const code = doc.getText()
-        const fileName = URI.parse(docUri).fsPath
+        const fileName = FileNameUtils.getFilePathFromUri(docUri, true)
         const cursorPosition = doc.offsetAt(position)
 
         return this.retrieveCompletionData(code, fileName, cursorPosition);
