@@ -25,10 +25,13 @@ MATLAB language server supports these editors by installing the corresponding ex
 ## Release Notes
 
 ### Unreleased
-Fixed:
-* Resolves potential crash with autocompletion in files without a .m file extension
 
-Fixed: Support debugging P coded files with an associated M file
+### 1.3.3
+Release date: 2025-05-15
+
+Fixed:
+* Support debugging P-coded files with an associated M file
+* Resolves potential crash with completions in files without a .m file extension
 
 ### 1.3.2
 Release date: 2025-03-06
