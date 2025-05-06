@@ -112,7 +112,7 @@ class CompletionSupportProvider {
     async getCompletions (code: string, cursorOffset: number): Promise<CompletionList> {
         const completionData = await this.retrieveCompletionData(code, '', cursorOffset);
 
-        return this.parseCompletionItems(completionData as MCompletionData);
+        return this.parseCompletionItems(completionData);
     }
 
     /**
@@ -148,9 +148,9 @@ class CompletionSupportProvider {
         const fileName = FileNameUtils.getFilePathFromUri(docUri, true)
         const cursorPosition = doc.offsetAt(position)
 
-        return this.retrieveCompletionData(code, fileName, cursorPosition);
+        return await this.retrieveCompletionData(code, fileName, cursorPosition);
     }
-        
+
     /**
      * Retrieves raw completion data from MATLAB.
      *
@@ -164,7 +164,7 @@ class CompletionSupportProvider {
             // MVM not yet ready
             return {}
         }
-        
+
         try {
             const response = await this.mvm.feval(
                 'matlabls.handlers.completions.getCompletions',
