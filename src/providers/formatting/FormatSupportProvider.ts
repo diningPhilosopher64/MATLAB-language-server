@@ -58,30 +58,17 @@ class FormatSupportProvider {
         await this.mvm.waitUntilReady()
 
         try {
-            const requestOpts = {
-                insertSpaces: options.insertSpaces,
-                tabSize: options.tabSize
-            }
-            const response = await this.mvm.feval(
-                'matlabls.handlers.formatting.formatCode',
-                1,
-                [doc.getText(), requestOpts]
-            )
+            const formattedText = await this.getFormattedText(doc.getText(), options)
 
-            if ('error' in response) {
-                // Handle MVMError
-                Logger.error('Error received while formatting document:')
-                Logger.error(response.error.msg)
+            if (formattedText == null) {
                 return []
             }
-
-            const result = parse(response.result[0]) as string
 
             const endRange = TextDocumentUtils.getRangeUntilLineEnd(doc, doc.lineCount - 1, 0)
             const edit = TextEdit.replace(Range.create(
                 Position.create(0, 0),
                 endRange.end
-            ), result)
+            ), formattedText)
             reportTelemetryAction(Actions.FormatDocument)
             return [edit]
         } catch (err) {
@@ -89,6 +76,29 @@ class FormatSupportProvider {
             Logger.error(err as string)
             return []
         }
+    }
+
+    private async getFormattedText (unformattedText: string, options: FormattingOptions): Promise<string | null> {
+        const requestOpts = {
+            insertSpaces: options.insertSpaces,
+            tabSize: options.tabSize
+        }
+
+        const response = await this.mvm.feval(
+            'matlabls.handlers.formatting.formatCode',
+            1,
+            [unformattedText, requestOpts]
+        )
+
+        if ('error' in response) {
+            // Handle MVMError
+            Logger.error('Error received while formatting document:')
+            Logger.error(response.error.msg)
+            return null
+        }
+
+        const formattedText = parse(response.result[0]) as string
+        return formattedText
     }
 }
 
