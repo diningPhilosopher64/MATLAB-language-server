@@ -507,7 +507,7 @@ export default class MatlabDebugAdaptor {
         this._clearPendingBreakpointsRequest();
     }
 
-    _mapToPFile (filePath: string, checkIfExists: boolean) {
+    _mapToPFile (filePath: string, checkIfExists: boolean): string {
         // If this is an m-file then convert to p-file and check existence
         if (filePath.endsWith('.m')) {
             const pFile = filePath.substring(0, filePath.length - 1) + 'p';
@@ -522,7 +522,7 @@ export default class MatlabDebugAdaptor {
         return filePath;
     }
 
-    _mapToMFile (filePath: string, checkIfExists: boolean) {
+    _mapToMFile (filePath: string, checkIfExists: boolean): string {
         // If this is an p-file then convert to m-file and check existence
         if (filePath.endsWith('.p')) {
             const mFile = filePath.substring(0, filePath.length - 1) + 'm';
@@ -536,7 +536,6 @@ export default class MatlabDebugAdaptor {
         // Not an m file so p-code not supported
         return filePath;
     }
-    
 
     async continueRequest (response: DebugProtocol.ContinueResponse, args: DebugProtocol.ContinueArguments, request?: DebugProtocol.Request): Promise<void> {
         try {
@@ -604,7 +603,7 @@ export default class MatlabDebugAdaptor {
 
             const numberOfStackFrames: number = stack.length;
             return stack.map((stackFrame: MatlabData, i: number) => {
-                let fileName : string = this._mapToMFile(stackFrame.file, true);
+                const fileName: string = this._mapToMFile(stackFrame.file, true);
                 return new debug.StackFrame(numberOfStackFrames - i + 1, stackFrame.name, new debug.Source(stackFrame.name as string, fileName), Math.abs(stackFrame.line), 1)
             });
         };
