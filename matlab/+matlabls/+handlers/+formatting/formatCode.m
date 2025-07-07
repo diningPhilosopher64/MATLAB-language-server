@@ -17,10 +17,8 @@ function formattedCode = formatCode (code, startLine, endLine, options)
 end
 
 function formattedCode = doFormatLines (code, startLine, endLine, options)
-    % Replace any Windows line endings with \n
-    if ispc
-        code = strrep(code, sprintf('\r\n'), newline);
-    end
+    % Standardize line endings to \n
+    code = regexprep(code , sprintf('(\r\n)|\r|\n'), char(10));
 
     lines = strsplit(code, newline, CollapseDelimiters = false);
 
