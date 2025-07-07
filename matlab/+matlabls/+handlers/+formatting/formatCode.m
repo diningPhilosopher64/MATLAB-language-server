@@ -18,7 +18,7 @@ end
 
 function formattedCode = doFormatLines (code, startLine, endLine, options)
     % Standardize line endings to \n
-    code = regexprep(code , sprintf('(\r\n)|\r|\n'), char(10));
+    code = regexprep(code , sprintf('(\r\n)|\r|\n'), newline);
 
     lines = strsplit(code, newline, CollapseDelimiters = false);
 
