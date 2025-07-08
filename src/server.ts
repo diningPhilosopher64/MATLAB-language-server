@@ -44,7 +44,7 @@ export async function startServer (): Promise<void> {
     // Instantiate services
     const matlabLifecycleManager = new MatlabLifecycleManager()
 
-    const mvm = new MVM(matlabLifecycleManager);
+    const mvm = new MVM(matlabLifecycleManager, Logger);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const mvmServer = new MVMServer(mvm, NotificationService);
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
