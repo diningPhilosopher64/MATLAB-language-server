@@ -32,6 +32,9 @@ Added:
 Fixed:
 * Resolves a crash when language server is used over stdin/stdout
 
+Fixed:
+* Resolves language server being non-functional after a call to "restoredefaultpath"
+
 ### 1.3.3
 Release date: 2025-05-15
 
