@@ -459,11 +459,10 @@ async function getMatlabLaunchCommand (outFile: string): Promise<{ command: stri
 
     // If licensing mode is NLM, add licmode arg
     const licensing = new Licensing()
-    if(licensing.isNLMLicensing()){
+    if (licensing.isNLMLicensing()) {
         args.push('-licmode');
         args.push('file');
     }
-    
 
     if (os.platform() === 'win32') {
         args.push('-noDisplayDesktop') // Workaround for '-nodesktop' on Windows until a better solution is implemented

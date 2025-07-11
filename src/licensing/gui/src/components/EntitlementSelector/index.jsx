@@ -43,7 +43,7 @@ function EntitlementSelector({ options }) {
                 <div className="modal-content">
                     <div className="modal-header">
                         <h4 className="modal-title" id="confirmation-dialog-title">
-              Your MathWorks account has multiple licenses. Select a license.
+                            Your MathWorks account has multiple licenses. Select a license.
                         </h4>
                     </div>
                     <div className="modal-body">
@@ -64,7 +64,7 @@ function EntitlementSelector({ options }) {
                             data-testid="submitButton"
                             onClick={updateEntitlement}
                         >
-              Submit
+                            Submit
                         </button>
                     </div>
                 </div>
